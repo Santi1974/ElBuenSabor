@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api, { authService } from '../../services/api';
 import { useCart } from '../../context/CartContext';
@@ -37,6 +37,7 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const profileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -55,11 +56,23 @@ const Home = () => {
     fetchProducts();
   }, []);
 
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (userMenuOpen && profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [userMenuOpen]);
+
   const handleProductClick = (productId: number) => {
     navigate(`/product/${productId}`);
   };
 
-    const handleAddToCart = (e: React.MouseEvent, product: ManufacturedItem) => {    e.stopPropagation();    addItem({      id_key: product.id_key,      name: product.name,      price: product.price    });
+  const handleAddToCart = (e: React.MouseEvent, product: ManufacturedItem) => {
+    e.stopPropagation();
+    addItem({ id_key: product.id_key, name: product.name, price: product.price });
   };
 
   // Calculate pagination values
@@ -94,7 +107,40 @@ const Home = () => {
         </div>
         <div className="header-icons">
           <CartPreview />
-          <span className="header-icon">👤</span>
+          <div ref={profileRef} style={{ position: 'relative', display: 'inline-block' }}>
+            <button
+              className="btn btn-outline-secondary rounded-circle header-icon"
+              style={{ width: 40, height: 40, padding: 0 }}
+              onClick={() => setUserMenuOpen((open) => !open)}
+            >
+              <i className="bi bi-person fs-4 text-dark"></i>
+            </button>
+            {userMenuOpen && (
+              <div
+                className="position-absolute end-0 mt-2 p-2 bg-white rounded shadow"
+                style={{ minWidth: 160, zIndex: 2000 }}
+              >
+                <button
+                  className="dropdown-item text-dark"
+                  onClick={() => {
+                    setUserMenuOpen(false);
+                    navigate('/orders');
+                  }}
+                >
+                  Mis Pedidos
+                </button>
+                <button
+                  className="dropdown-item text-danger"
+                  onClick={() => {
+                    localStorage.removeItem('token');
+                    window.location.href = '/login';
+                  }}
+                >
+                  Cerrar Sesión
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 

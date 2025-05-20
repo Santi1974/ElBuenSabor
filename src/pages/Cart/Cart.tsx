@@ -4,6 +4,7 @@ import { useCart } from '../../context/CartContext';
 import type { DeliveryMethod, PaymentMethod } from '../../types/order';
 import type { Address, AddressFormData } from '../../types/address';
 import AddressModal from '../../components/AddressModal/AddressModal';
+import api from '../../services/api';
 
 const Cart = () => {
   const navigate = useNavigate();
@@ -14,6 +15,8 @@ const Cart = () => {
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [loadingAddresses, setLoadingAddresses] = useState(false);
+  const [loadingOrder, setLoadingOrder] = useState(false);
+  const [orderError, setOrderError] = useState('');
 
   const subtotal = items.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
   const cashDiscount = paymentMethod === 'cash' ? subtotal * 0.1 : 0; // 10% descuento en efectivo
@@ -22,21 +25,16 @@ const Cart = () => {
   useEffect(() => {
     if (deliveryMethod === 'delivery') {
       setLoadingAddresses(true);
-      fetch('https://buen-sabor-api.vercel.app/address/user/addresses', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      })
-        .then(res => res.json())
-        .then(data => {
-          const mapped = data.map((addr: any) => ({
+      api.get('/address/user/addresses')
+        .then(res => {
+          const mapped = res.data.map((addr: any) => ({
             id: addr.id_key,
             street: addr.street,
-            number: addr.street_number,
-            city: addr.locality?.name || '',
-            province: '', 
-            notes: addr.name, 
-            apartment: '',
+            street_number: addr.street_number,
+            zip_code: addr.zip_code,
+            name: addr.name,
+            locality_id: addr.locality?.id_key,
+            locality_name: addr.locality?.name,
           }));
           setAddresses(mapped);
         })
@@ -66,7 +64,8 @@ const Cart = () => {
   const handleAddressSave = (addressData: AddressFormData) => {
     const newAddress: Address = {
       ...addressData,
-      id: Date.now() // Simple way to generate unique IDs
+      id: Date.now(),
+      locality_name: '',
     };
     const updatedAddresses = [...addresses, newAddress];
     setAddresses(updatedAddresses);
@@ -75,13 +74,71 @@ const Cart = () => {
     setShowAddressModal(false);
   };
 
-  const handlePayment = () => {
+  const getUserId = () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return null;
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.user_id || payload.sub || null;
+    } catch {
+      return null;
+    }
+  };
+
+  const buildOrderPayload = () => {
+    const userId = parseInt(getUserId() || '0');
+    const now = new Date().toISOString();
+    const isDelivery = deliveryMethod === 'delivery';
+    const payload: any = {
+      date: now,
+      total: subtotal,
+      discount: cashDiscount,
+      final_total: total,
+      status: 'a_confirmar',
+      estimated_time: 0,
+      delivery_method: deliveryMethod,
+      payment_method: paymentMethod,
+      payment_id: '',
+      is_paid: false,
+      notes: '',
+      user_id: userId,
+      details: items.map(item => ({
+        manufactured_item_id: item.product.id_key,
+        quantity: item.quantity,
+        unit_price: item.product.price,
+        subtotal: item.product.price * item.quantity
+      }))
+    };
+    if (isDelivery) {
+      payload.address_id = selectedAddress?.id || null;
+    }
+    return payload;
+  };
+
+  const handlePayment = async () => {
     if (deliveryMethod === 'delivery' && !selectedAddress) {
       setShowAddressModal(true);
       return;
     }
-    // Aquí iría la lógica para procesar el pago
-    console.log('Procesando pago...');
+    setLoadingOrder(true);
+    setOrderError('');
+    try {
+      const orderPayload = buildOrderPayload();
+      const response = await api.post('/order/generate', orderPayload);
+      const order = response.data;
+      
+      if (paymentMethod === 'mercado_pago') {
+        const mpResponse = await api.put(`/order/${order.id_key}/mp-payment`);
+        window.location.href = mpResponse.data.payment_url;
+        console.log('Mercado Pago:', mpResponse.data);
+      } else {
+        console.log('Orden creada:', order);
+      }
+    } catch (err: any) {
+      setOrderError(err.message || 'Error al crear la orden');
+    } finally {
+      setLoadingOrder(false);
+    }
   };
 
   return (
@@ -198,13 +255,14 @@ const Cart = () => {
                         <div className="card-body">
                           <h6 className="card-subtitle mb-2 text-muted">Dirección de entrega</h6>
                           <p className="card-text mb-1">
-                            {selectedAddress.street} {selectedAddress.number}
-                            {selectedAddress.apartment && `, Apto ${selectedAddress.apartment}`}
+                            {selectedAddress.street} {selectedAddress.street_number}
                           </p>
-                          <p className="card-text mb-1">{selectedAddress.city}, {selectedAddress.province}</p>
-                          {selectedAddress.notes && (
-                            <p className="card-text"><small className="text-muted">{selectedAddress.notes}</small></p>
-                          )}
+                          <p className="card-text mb-1">
+                            {selectedAddress.locality_name
+                              ? `${selectedAddress.locality_name} (ID: ${selectedAddress.locality_id})`
+                              : `ID Localidad: ${selectedAddress.locality_id}`}
+                          </p>
+                          <small className="text-muted d-block">{selectedAddress.zip_code} - {selectedAddress.name}</small>
                           <button
                             className="btn btn-outline-primary btn-sm mt-2"
                             onClick={() => setShowAddressModal(true)}
@@ -245,11 +303,11 @@ const Cart = () => {
                     className="form-check-input"
                     type="radio"
                     name="paymentMethod"
-                    id="mercadopago"
-                    checked={paymentMethod === 'mercadopago'}
-                    onChange={() => setPaymentMethod('mercadopago')}
+                    id="mercado_pago"
+                    checked={paymentMethod === 'mercado_pago'}
+                    onChange={() => setPaymentMethod('mercado_pago')}
                   />
-                  <label className="form-check-label" htmlFor="mercadopago">
+                  <label className="form-check-label" htmlFor="mercado_pago">
                     Mercado Pago
                   </label>
                 </div>
@@ -269,12 +327,15 @@ const Cart = () => {
                 <span className="h5 mb-0">${total}</span>
               </div>
 
+              {orderError && (
+                <div className="alert alert-danger mb-3">{orderError}</div>
+              )}
               <button
                 className="btn btn-primary w-100"
                 onClick={handlePayment}
-                disabled={items.length === 0 || (deliveryMethod === 'delivery' && !selectedAddress)}
+                disabled={items.length === 0 || (deliveryMethod === 'delivery' && !selectedAddress) || loadingOrder}
               >
-                PAGAR
+                {loadingOrder ? 'Procesando...' : 'PAGAR'}
               </button>
             </div>
           </div>

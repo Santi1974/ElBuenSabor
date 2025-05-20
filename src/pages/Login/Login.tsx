@@ -53,74 +53,74 @@ const Login = () => {
             alt="El Buen Sabor dishes" 
             className="img-fluid h-100 w-100 object-fit-cover"
           />
-        </div>
-
+      </div>
+      
         {/* Right side - Login Form */}
         <div className="col-12 col-md-6 d-flex align-items-center justify-content-center">
           <div className="w-75">
             <h1 className="text-center mb-4">Iniciar Sesión</h1>
-            
+          
             {error && (
               <div className="alert alert-danger" role="alert">
                 {error}
               </div>
             )}
-            
+          
             <div className="mb-4">
-              <button 
+            <button 
                 className="btn btn-outline-dark w-100 d-flex align-items-center justify-content-center gap-2"
-                onClick={handleGoogleLogin}
-                type="button"
-                disabled={isLoading}
-              >
+              onClick={handleGoogleLogin}
+              type="button"
+              disabled={isLoading}
+            >
                 <img src={googleIcon} alt="Google" width="24" height="24" />
-                <span>Continuar con Google</span>
-              </button>
+              <span>Continuar con Google</span>
+            </button>
 
               <div className="text-center my-3">
                 <span className="bg-white px-3 text-muted">o</span>
               </div>
-            </div>
-            
+          </div>
+          
             <form onSubmit={handleSubmit}>
               <div className="mb-3">
-                <input
-                  type="email"
+              <input
+                type="email"
                   className="form-control"
-                  placeholder="Correo electrónico"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  disabled={isLoading}
-                  autoComplete="email"
-                />
-              </div>
-              
-              <div className="mb-4">
-                <input
-                  type="password"
-                  className="form-control"
-                  placeholder="Contraseña"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  disabled={isLoading}
-                  autoComplete="current-password"
-                />
-              </div>
-              
-              <button 
-                type="submit" 
-                className="btn btn-primary w-100"
+                placeholder="Correo electrónico"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
                 disabled={isLoading}
-              >
-                {isLoading ? 'Ingresando...' : 'Ingresar'}
-              </button>
-            </form>
+                autoComplete="email"
+              />
+            </div>
             
+              <div className="mb-4">
+              <input
+                type="password"
+                  className="form-control"
+                placeholder="Contraseña"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={isLoading}
+                autoComplete="current-password"
+              />
+            </div>
+            
+              <button 
+              type="submit" 
+                className="btn btn-primary w-100"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Ingresando...' : 'Ingresar'}
+              </button>
+          </form>
+          
             <p className="text-center mt-4">
               ¿No tienes cuenta? <Link to="/register" className="text-decoration-none">Regístrate</Link>
-            </p>
+          </p>
           </div>
         </div>
       </div>
