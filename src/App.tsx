@@ -1,15 +1,28 @@
 import React from 'react';
 import type { ReactNode } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { Login, Register, Home, Orders } from './pages';
+import { Login, Register, Home, Orders, Admin } from './pages';
 import ProductDetail from './pages/ProductDetail/ProductDetail';
 import Cart from './pages/Cart/Cart';
 import { CartProvider } from './context/CartContext';
+import { authService } from './services/api';
 import './App.css';
+import AdminRoutes from './routes/AdminRoutes';
 
 function PrivateRoute({ children }: { children: ReactNode }) {
   const token = localStorage.getItem('token');
   return token ? <>{children}</> : <Navigate to="/login" replace />;
+}
+ 
+function RoleRoute({ children, role }: { children: ReactNode; role: string }) {
+  const user = authService.getCurrentUser();
+  console.log(user);
+  if (!user) return <Navigate to="/login" replace />;
+  if (user.role !== role) {
+    // Si el rol no coincide, redirigir a la ruta correspondiente
+    return <Navigate to={user.role === 'administrador' ? '/admin' : '/'} replace />;
+  }
+  return <>{children}</>;
 }
 
 function App() {
@@ -20,10 +33,28 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/" element={<PrivateRoute><Home /></PrivateRoute>} />
-          <Route path="/product/:id" element={<PrivateRoute><ProductDetail /></PrivateRoute>} />
-          <Route path="/cart" element={<PrivateRoute><Cart /></PrivateRoute>} />
-          <Route path="/orders" element={<PrivateRoute><Orders /></PrivateRoute>} />
+          <Route path="/admin/*" element={<AdminRoutes />} />
+          {/* Rutas solo para clientes */}
+          <Route path="/" element={
+            <RoleRoute role="cliente">
+              <Home />
+            </RoleRoute>
+          } />
+          <Route path="/product/:id" element={
+            <RoleRoute role="cliente">
+              <ProductDetail />
+            </RoleRoute>
+          } />
+          <Route path="/cart" element={
+            <RoleRoute role="cliente">
+              <Cart />
+            </RoleRoute>
+          } />
+          <Route path="/orders" element={
+            <RoleRoute role="cliente">
+              <Orders />
+            </RoleRoute>
+          } />
         </Routes>
       </div>
     </Router>

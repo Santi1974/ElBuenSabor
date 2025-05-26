@@ -24,7 +24,7 @@ export interface AuthResponse {
     nombre: string;
     apellido: string;
     telefono: string;
-    rol: string;
+    role: string;
   };
 }
 

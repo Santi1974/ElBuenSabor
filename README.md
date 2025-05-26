@@ -1,140 +1,89 @@
 # El Buen Sabor - React + TypeScript + Vite
 
-This project is a modern web application built using React, TypeScript, and Vite.
+Santiago Beneitez, Sebastian Ortiz
 
-> **Note:** For comprehensive documentation, please see the [Documentation Index](./DOCUMENTATION_INDEX.md).
+### Descripción General
+El Buen Sabor es una aplicación web construida con React y TypeScript utilizando Vite como herramienta de construcción. Trabajo final para la TUP de la UTN
 
-## Project Documentation
+### Sistema de Colores
+La aplicación utiliza un sistema de colores consistente basado en la siguiente paleta:
+- **Primario**: #D87D4D (Naranja) - Color principal de la marca
+- **Peligro**: #FF4F4F (Rojo) - Para acciones destructivas
+- **Blanco Primario**: #F9F9F9 (Gris claro) - Fondo principal
+- **Blanco Secundario**: #EEEEEE (Gris medio) - Fondo secundario
+- **Éxito**: #6DBC62 (Verde) - Para confirmaciones
+- **Interfaz**: #747474 (Gris oscuro) - Para interfaces no cliente
 
-### Overview
-El Buen Sabor is a web application built with React and TypeScript using Vite as the build tool. This project provides a fast development environment with hot module replacement (HMR) and optimized production builds.
+El sistema de colores se implementa a través de variables CSS en `src/styles/theme.css`.
 
-### Color System
-The application uses a consistent color system based on the following palette:
-- **Primary**: #D87D4D (Orange) - Main brand color
-- **Danger**: #FF4F4F (Red) - For destructive actions
-- **White Primary**: #F9F9F9 (Light gray) - Primary background
-- **White Secondary**: #EEEEEE (Medium gray) - Secondary background
-- **Success**: #6DBC62 (Green) - For confirmations
-- **Interface**: #747474 (Dark gray) - For non-client interfaces
-
-The color system is implemented through CSS variables in `src/styles/theme.css`.
-
-### Project Structure
+### Estructura del Proyecto
 ```
 el-buen-sabor/
-├── node_modules/        # Dependencies
-├── public/              # Static assets
-├── src/                 # Source code
-│   ├── assets/          # Project assets (images, fonts, etc.)
-│   ├── styles/          # Global styles and theme
-│   ├── components/      # Reusable UI components
-│   ├── main.tsx         # Application entry point
-│   ├── App.tsx          # Main App component
-│   ├── App.css          # App-specific styles
-│   ├── index.css        # Global styles
-│   └── vite-env.d.ts    # Vite environment type declarations
-├── .gitignore           # Git ignore configuration
-├── CHANGELOG.md         # Project changelog
-├── eslint.config.js     # ESLint configuration
-├── index.html           # HTML entry point
-├── package.json         # Project metadata and dependencies
-├── tsconfig.json        # TypeScript configuration
-├── tsconfig.app.json    # App-specific TypeScript configuration
-├── tsconfig.node.json   # Node-specific TypeScript configuration
-└── vite.config.ts       # Vite configuration
+├── node_modules/        # Dependencias
+├── public/              # Archivos estáticos
+├── src/                 # Código fuente
+│   ├── assets/          # Recursos del proyecto (imágenes, fuentes, etc.)
+│   ├── components/      # Componentes UI reutilizables
+│   ├── context/         # Contextos de React
+│   ├── pages/           # Páginas de la aplicación
+│   ├── routes/          # Configuración de rutas
+│   ├── services/        # Servicios y llamadas a API
+│   ├── styles/          # Estilos globales y tema
+│   ├── types/           # Definiciones de tipos TypeScript
+│   ├── App.tsx          # Componente principal App
+│   ├── App.css          # Estilos específicos de App
+│   ├── index.css        # Estilos globales
+│   ├── main.tsx         # Punto de entrada de la aplicación
+│   └── vite-env.d.ts    # Declaraciones de tipos del entorno Vite
+├── .gitignore           # Configuración de Git ignore
+├── eslint.config.js     # Configuración de ESLint
+├── index.html           # Punto de entrada HTML
+├── package.json         # Metadatos y dependencias del proyecto
+├── package-lock.json    # Bloqueo de versiones de dependencias
+├── tsconfig.json        # Configuración de TypeScript
+├── tsconfig.app.json    # Configuración específica de TypeScript para la aplicación
+├── tsconfig.node.json   # Configuración específica de TypeScript para Node
+├── vite.config.ts       # Configuración de Vite
+└── WORK_LOG.md          # Registro de trabajo y cambios
 ```
 
-### Getting Started
+### Comenzando
 
-1. **Prerequisites**
-   - Node.js (v14.0.0 or later)
-   - npm (v6.0.0 or later)
+1. **Prerrequisitos**
+   - Node.js (v14.0.0 o posterior)
+   - npm (v6.0.0 o posterior)
 
-2. **Installation**
+2. **Instalación**
    ```bash
    npm install
    ```
 
-3. **Development**
+3. **Desarrollo**
    ```bash
    npm run dev
    ```
-   This will start the development server at http://localhost:5173/
+   Esto iniciará el servidor de desarrollo en http://localhost:5173/
 
-4. **Building for Production**
+4. **Construcción para Producción**
    ```bash
    npm run build
    ```
-   This will generate optimized assets in the `dist` directory.
+   Esto generará los archivos optimizados en el directorio `dist`.
 
-5. **Running Tests**
+5. **Ejecución de Pruebas**
    ```bash
    npm run test
    ```
 
-### Technologies Used
-- **React**: A JavaScript library for building user interfaces
-- **TypeScript**: Typed superset of JavaScript
-- **Vite**: Next-generation frontend tooling
-- **ESLint**: Code quality tool
-- **CSS**: Styling
+### Tecnologías Utilizadas
+- **React**: Una biblioteca JavaScript para construir interfaces de usuario
+- **TypeScript**: Superset tipado de JavaScript
+- **Vite**: Herramienta frontend de próxima generación
+- **ESLint**: Herramienta de calidad de código
+- **CSS**: Estilos
 
-### Project Conventions
-- Component files use `.tsx` extension
-- Style files use `.css` extension
-- TypeScript strict mode is enabled
+### Convenciones del Proyecto
+- Los archivos de componentes usan la extensión `.tsx`
+- Los archivos de estilo usan la extensión `.css`
+- El modo estricto de TypeScript está habilitado
 
-## Development Notes
-
-For detailed information about the development process, refer to the [CHANGELOG.md](./CHANGELOG.md).
-
-## ESLint Configuration
-
-This project uses ESLint for code quality. The configuration can be expanded as described below:
-
-### Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
-```
