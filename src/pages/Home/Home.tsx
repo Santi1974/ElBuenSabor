@@ -26,7 +26,7 @@ interface ManufacturedItem {
   id_key: number;
 }
 
-const PRODUCTS_PER_PAGE = 9;
+const PRODUCTS_PER_PAGE = 10;
 
 const Home = () => {
   const navigate = useNavigate();
@@ -37,14 +37,18 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [hasMorePages, setHasMorePages] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        const response = await api.get('/manufactured_item');
+        const offset = (currentPage - 1) * PRODUCTS_PER_PAGE;
+        const response = await api.get(`/manufactured_item/?offset=${offset}&limit=${PRODUCTS_PER_PAGE}`);
         setProducts(response.data);
+        // Check if there are more pages by seeing if we got a full page of results
+        setHasMorePages(response.data.length === PRODUCTS_PER_PAGE);
       } catch (err: any) {
         console.error('Error fetching products:', err);
         setError('Error al cargar los productos. Por favor, intente nuevamente.');
@@ -54,7 +58,7 @@ const Home = () => {
     };
 
     fetchProducts();
-  }, []);
+  }, [currentPage]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -75,18 +79,16 @@ const Home = () => {
     addItem({ id_key: product.id_key, name: product.name, price: product.price });
   };
 
-  // Calculate pagination values
-  const totalPages = Math.ceil(products.length / PRODUCTS_PER_PAGE);
-  const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
-  const endIndex = startIndex + PRODUCTS_PER_PAGE;
-  const currentProducts = products.slice(startIndex, endIndex);
-
   const handlePrevPage = () => {
-    setCurrentPage(prev => Math.max(prev - 1, 1));
+    if (currentPage > 1) {
+      setCurrentPage(prev => prev - 1);
+    }
   };
 
   const handleNextPage = () => {
-    setCurrentPage(prev => Math.min(prev + 1, totalPages));
+    if (hasMorePages) {
+      setCurrentPage(prev => prev + 1);
+    }
   };
 
   return (
@@ -149,10 +151,10 @@ const Home = () => {
           <div className="loading-message">Cargando productos...</div>
         ) : error ? (
           <div className="error-message">{error}</div>
-        ) : currentProducts.length === 0 ? (
+        ) : products.length === 0 ? (
           <div className="no-products-message">No hay productos disponibles</div>
         ) : (
-          currentProducts.map(product => (
+          products.map(product => (
             <div 
               className="product-card" 
               key={product.id_key}
@@ -179,7 +181,7 @@ const Home = () => {
         )}
       </div>
 
-      {!loading && !error && products.length > PRODUCTS_PER_PAGE && (
+      {!loading && !error && (currentPage > 1 || hasMorePages) && (
         <div className="pagination">
           <button 
             onClick={handlePrevPage} 
@@ -187,10 +189,10 @@ const Home = () => {
           >
             Anterior
           </button>
-          <span>Página {currentPage} de {totalPages}</span>
+          <span>Página {currentPage}</span>
           <button 
             onClick={handleNextPage} 
-            disabled={currentPage === totalPages}
+            disabled={!hasMorePages}
           >
             Siguiente
           </button>

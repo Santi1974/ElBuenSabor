@@ -19,7 +19,6 @@ export const Employees: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
   useEffect(() => {
     fetchEmployees();
@@ -60,15 +59,13 @@ export const Employees: React.FC = () => {
       options: [
         { value: 'administrador', label: 'Administrador' },
         { value: 'cliente', label: 'Cliente' },
-        { value: 'empleado', label: 'Empleado' }
+        { value: 'delivery', label: 'Delivery' },
+        { value: 'cocinero', label: 'Cocinero' },
+        { value: 'cajero', label: 'Cajero'}
       ]
     },
     { field: 'phone_number', headerName: 'Teléfono', width: 150 }
   ];
-
-  const handleRowClick = (employee: Employee) => {
-    setSelectedEmployee(employee);
-  };
 
   if (loading) {
     return <div className="text-center p-4">Cargando...</div>;
@@ -99,77 +96,8 @@ export const Employees: React.FC = () => {
       <GenericABM
         title="Empleados"
         columns={columns}
-        data={filteredEmployees}
-        onAdd={() => {}}
-        onEdit={() => {}}
-        onDelete={() => {}}
-        onRowClick={handleRowClick}
+        type="employee"
       />
-
-      {/* Modal de detalles */}
-      {selectedEmployee && (
-        <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Detalles del Empleado</h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => setSelectedEmployee(null)}
-                ></button>
-              </div>
-              <div className="modal-body">
-                <div className="mb-3">
-                  <label className="fw-bold">Nombre Completo:</label>
-                  <p>{selectedEmployee.full_name}</p>
-                </div>
-                <div className="mb-3">
-                  <label className="fw-bold">Email:</label>
-                  <p>{selectedEmployee.email}</p>
-                </div>
-                <div className="mb-3">
-                  <label className="fw-bold">Rol:</label>
-                  <p>{selectedEmployee.role}</p>
-                </div>
-                <div className="mb-3">
-                  <label className="fw-bold">Teléfono:</label>
-                  <p>{selectedEmployee.phone_number}</p>
-                </div>
-                <div className="mb-3">
-                  <label className="fw-bold">Estado:</label>
-                  <p>
-                    <span className={`badge ${selectedEmployee.active ? 'bg-success' : 'bg-danger'}`}>
-                      {selectedEmployee.active ? 'Activo' : 'Inactivo'}
-                    </span>
-                  </p>
-                </div>
-                {selectedEmployee.addresses && selectedEmployee.addresses.length > 0 && (
-                  <div className="mb-3">
-                    <label className="fw-bold">Direcciones:</label>
-                    <ul className="list-unstyled">
-                      {selectedEmployee.addresses.map((address, index) => (
-                        <li key={index} className="mb-2">
-                          {address.street}, {address.city}, {address.state}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-              <div className="modal-footer">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => setSelectedEmployee(null)}
-                >
-                  Cerrar
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
