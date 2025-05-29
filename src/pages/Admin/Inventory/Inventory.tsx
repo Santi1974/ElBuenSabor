@@ -3,17 +3,18 @@ import GenericABM from '../../../components/GenericABM/GenericABM';
 
 const Inventory: React.FC = () => {
   const inventarioColumns = [
-    { field: 'name', headerName: 'Nombre', width: 200 },
-    { field: 'description', headerName: 'Descripción', width: 250 },
-    { field: 'preparation_time', headerName: 'Tiempo de Preparación', width: 150, type: 'number' as const },
+    { field: 'name', headerName: 'Nombre', width: 180 },
+    { field: 'type_label', headerName: 'Tipo', width: 120 },
+    { field: 'description', headerName: 'Descripción', width: 200 },
+    { field: 'preparation_time', headerName: 'Tiempo Prep.', width: 120, type: 'number' as const },
     { field: 'price', headerName: 'Precio', width: 100, type: 'number' as const },
-    { field: 'recipe', headerName: 'Receta', width: 200 },
+    { field: 'recipe', headerName: 'Receta', width: 150 },
     { field: 'image_url', headerName: 'Imagen', width: 100 },
-    { field: 'category.name', headerName: 'Categoría', width: 150 },
+    { field: 'category.name', headerName: 'Categoría', width: 130 },
     { 
       field: 'active', 
       headerName: 'Activo', 
-      width: 100, 
+      width: 80, 
       type: 'select' as const, 
       options: [
         { value: 'true', label: 'Sí' },

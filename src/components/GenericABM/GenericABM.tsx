@@ -4,6 +4,7 @@ import employeeService from '../../services/employeeService';
 import clientService from '../../services/clientService';
 import inventoryService from '../../services/inventoryService';
 import categoryService from '../../services/categoryService';
+import ingredientService from '../../services/ingredientService';
 
 interface GenericABMProps {
   title: string;
@@ -15,7 +16,7 @@ interface GenericABMProps {
     options?: { value: string; label: string }[];
   }[];
   onRowClick?: (item: any) => void;
-  type?: 'employee' | 'client' | 'rubro' | 'inventario';
+  type?: 'employee' | 'client' | 'rubro' | 'inventario' | 'ingrediente';
 }
 
 const GenericABM: React.FC<GenericABMProps> = ({
@@ -36,33 +37,47 @@ const GenericABM: React.FC<GenericABMProps> = ({
   const [parentCategories, setParentCategories] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
   
-  // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
 
-  // Image handling for inventory
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  // Ingredients handling for inventory
   const [availableIngredients, setAvailableIngredients] = useState<any[]>([]);
   const [selectedDetails, setSelectedDetails] = useState<any[]>([]);
+
+  const [measurementUnits, setMeasurementUnits] = useState<any[]>([]);
 
   useEffect(() => {
     loadData();
   }, []);
 
   useEffect(() => {
-    if (type === 'inventario') {
+    if (type === 'inventario' || type === 'ingrediente') {
       loadData();
     }
   }, [currentPage]);
 
   const loadCategories = async () => {
+    if (type === 'inventario' || type === 'ingrediente') {
+      try {
+        const categoryType = type === 'ingrediente' ? 'inventory' : 'manufactured';
+        const categoriesData = await categoryService.getTopLevelAll(categoryType);
+        setCategories(categoriesData);
+      } catch (err) {
+        console.error('Error loading categories:', err);
+      }
+    }
+  };
+
+  const loadCategoriesForProduct = async (productType: string) => {
     if (type === 'inventario') {
       try {
-        const categoriesData = await categoryService.getTopLevelAll();
+        // Si es producto de inventario, usar categorías de inventory
+        // Si es producto manufacturado, usar categorías de manufactured
+        const categoryType = productType === 'inventory' ? 'inventory' : 'manufactured';
+        const categoriesData = await categoryService.getTopLevelAll(categoryType);
         setCategories(categoriesData);
       } catch (err) {
         console.error('Error loading categories:', err);
@@ -73,8 +88,18 @@ const GenericABM: React.FC<GenericABMProps> = ({
   const loadParentCategories = async () => {
     if (type === 'rubro') {
       try {
-        const categoriesData = await categoryService.getAll();
-        setParentCategories(categoriesData);
+        const [manufacturedCategories, inventoryCategories] = await Promise.all([
+          categoryService.getAll(),
+          categoryService.getInventoryCategories()
+        ]);
+        
+        // Combinar ambas listas y agregar un campo para identificar el tipo
+        const allCategories = [
+          ...manufacturedCategories.map((cat: any) => ({ ...cat, category_type: 'manufactured' })),
+          ...inventoryCategories.map((cat: any) => ({ ...cat, category_type: 'inventory' }))
+        ];
+        
+        setParentCategories(allCategories);
       } catch (err) {
         console.error('Error loading parent categories:', err);
       }
@@ -92,6 +117,18 @@ const GenericABM: React.FC<GenericABMProps> = ({
     }
   };
 
+  const loadMeasurementUnits = async () => {
+    if (type === 'ingrediente' || type === 'inventario') {
+      try {
+        const unitsData = await ingredientService.getMeasurementUnits();
+        console.log('Loaded measurement units:', unitsData);
+        setMeasurementUnits(unitsData);
+      } catch (err) {
+        console.error('Error loading measurement units:', err);
+      }
+    }
+  };
+
   const loadData = async () => {
     try {
       let response: any;
@@ -104,22 +141,38 @@ const GenericABM: React.FC<GenericABMProps> = ({
           break;
         case 'inventario':
           const offset = (currentPage - 1) * itemsPerPage;
-          response = await inventoryService.getAll(offset, itemsPerPage);
+          response = await inventoryService.getAllProducts(offset, itemsPerPage);
           const hasMorePages = response.length === itemsPerPage;
           setTotalItems(hasMorePages ? (currentPage * itemsPerPage) + 1 : (currentPage - 1) * itemsPerPage + response.length);
           break;
+        case 'ingrediente':
+          const ingredientOffset = (currentPage - 1) * itemsPerPage;
+          response = await ingredientService.getAll(ingredientOffset, itemsPerPage);
+          const hasMoreIngredientPages = response.length === itemsPerPage;
+          setTotalItems(hasMoreIngredientPages ? (currentPage * itemsPerPage) + 1 : (currentPage - 1) * itemsPerPage + response.length);
+          break;
         case 'rubro':
-          response = await categoryService.getAll();
-          // Add parent category name for display
-          const categoriesWithParent = response.map((category: any) => {
+          const [manufacturedCats, inventoryCats] = await Promise.all([
+            categoryService.getAll(),
+            categoryService.getInventoryCategories()
+          ]);
+          
+          // Combinar ambas listas y procesar para mostrar el nombre de la categoría padre
+          const allCats = [
+            ...manufacturedCats.map((cat: any) => ({ ...cat, category_type: 'manufactured' })),
+            ...inventoryCats.map((cat: any) => ({ ...cat, category_type: 'inventory' }))
+          ];
+          
+          const categoriesWithParent = allCats.map((category: any) => {
             let parentCategoryName = 'Sin categoría padre';
             if (category.parent_id) {
-              const parentCategory = response.find((cat: any) => cat.id_key === category.parent_id);
+              const parentCategory = allCats.find((cat: any) => cat.id_key === category.parent_id);
               parentCategoryName = parentCategory ? parentCategory.name : 'Categoría padre no encontrada';
             }
             return {
               ...category,
-              parent_category_name: parentCategoryName
+              parent_category_name: parentCategoryName,
+              type_label: category.category_type === 'manufactured' ? 'Producto' : 'Ingrediente'
             };
           });
           response = categoriesWithParent;
@@ -133,10 +186,14 @@ const GenericABM: React.FC<GenericABMProps> = ({
       setError('Error al cargar los datos');
       console.error('Error loading data:', err);
     }
+
+    if (type === 'ingrediente') {
+      loadCategories();
+      loadMeasurementUnits();
+    }
   };
 
-  const handleOpenModal = (item?: any) => {
-    // Reset category selection first
+  const handleOpenModal = async (item?: any) => {
     resetCategorySelection();
     
     if (item) {
@@ -145,7 +202,8 @@ const GenericABM: React.FC<GenericABMProps> = ({
         setFormData({
           ...item,
           category_id: item.category.id_key,
-          details: item.details || []
+          details: item.details || [],
+          measurement_unit_id: item.measurement_unit?.id_key || 0
         });
         
         // Transform existing details to match the expected format
@@ -157,6 +215,31 @@ const GenericABM: React.FC<GenericABMProps> = ({
         setSelectedDetails(transformedDetails);
         
         // Find the parent category for existing item
+        const parentCategory = categories.find(cat => 
+          cat.id_key === item.category.id_key || 
+          (cat.subcategories && cat.subcategories.some((sub: any) => sub.id_key === item.category.id_key))
+        );
+        
+        if (parentCategory) {
+          if (parentCategory.subcategories && parentCategory.subcategories.length > 0) {
+            // If the current category is a subcategory
+            const isSubcategory = parentCategory.subcategories.some((sub: any) => sub.id_key === item.category.id_key);
+            if (isSubcategory) {
+              setSelectedCategory(parentCategory);
+              setAvailableSubcategories(parentCategory.subcategories);
+            } else {
+              setSelectedCategory(item.category);
+            }
+          }
+        }
+      } else if (type === 'ingrediente' && item.category) {
+        setFormData({
+          ...item,
+          category_id: item.category.id_key,
+          measurement_unit_id: item.measurement_unit?.id_key
+        });
+        
+        // Find the parent category for existing ingredient
         const parentCategory = categories.find(cat => 
           cat.id_key === item.category.id_key || 
           (cat.subcategories && cat.subcategories.some((sub: any) => sub.id_key === item.category.id_key))
@@ -190,7 +273,27 @@ const GenericABM: React.FC<GenericABMProps> = ({
           recipe: '',
           active: true,
           category_id: 0,
-          details: []
+          details: [],
+          product_type: '', // manufactured or inventory
+          // Campos adicionales para productos de inventario
+          current_stock: 0,
+          minimum_stock: 0,
+          purchase_cost: 0,
+          measurement_unit_id: 0,
+          is_ingredient: false
+        });
+      } else if (type === 'ingrediente') {
+        setFormData({
+          name: '',
+          current_stock: 0,
+          minimum_stock: 0,
+          price: 0,
+          purchase_cost: 0,
+          image_url: '',
+          active: true,
+          is_ingredient: true,
+          category_id: 0,
+          measurement_unit_id: 0
         });
       } else {
         setFormData({
@@ -202,10 +305,17 @@ const GenericABM: React.FC<GenericABMProps> = ({
       }
     }
     
-    // Load categories for inventory items
+    // Load categories for inventory items and measurement units for inventory products
     if (type === 'inventario') {
-      loadCategories();
+      // Si es un item existente, cargar categorías según su product_type
+      if (item && item.product_type) {
+        await loadCategoriesForProduct(item.product_type);
+      } else {
+        // Para nuevos items, cargar categorías manufactured por defecto (se cambiarán al seleccionar tipo)
+        loadCategories();
+      }
       loadIngredients(); // Load ingredients as well
+      loadMeasurementUnits(); // Also load measurement units for inventory products
     }
     
     // Load parent categories for rubro items
@@ -257,18 +367,46 @@ const GenericABM: React.FC<GenericABMProps> = ({
             await clientService.update(selectedItem.id_key, formData);
             break;
           case 'inventario':
-            const { category, ...inventoryData } = formData;
-            const formattedData = {
-              ...inventoryData,
+            const { category: invCategory, product_type: invProdType, type_label: invProdLabel, ...invData } = formData;
+            const invFormattedData = {
+              ...invData,
               details: selectedDetails.map((detail: any) => ({
                 inventory_item_id: detail.inventory_item_id || 0,
                 quantity: detail.quantity || 0
               }))
             };
-            await inventoryService.update(selectedItem.id_key, formattedData);
+            
+            // Use the appropriate service based on product type
+            if (formData.product_type === 'inventory') {
+              await inventoryService.updateInventoryProduct(selectedItem.id_key, invFormattedData);
+            } else {
+              await inventoryService.update(selectedItem.id_key, invFormattedData);
+            }
+            break;
+          case 'ingrediente':
+            const { category: ingCategory, measurement_unit, ...ingredientData } = formData;
+            await ingredientService.update(selectedItem.id_key, ingredientData);
             break;
           case 'rubro':
-            await categoryService.update(selectedItem.id_key, formData);
+            // Use the appropriate service based on category type
+            const { category_type: updateCategoryType, type_label: updateTypeLabel, ...updateCategoryData } = formData;
+            
+            // Asegurar que parent_id sea null si es 0
+            const cleanUpdateCategoryData = {
+              name: updateCategoryData.name,
+              description: updateCategoryData.description || '',
+              active: updateCategoryData.active !== false, // default to true if not specified
+              parent_id: updateCategoryData.parent_id || null
+            };
+            
+            console.log('Updating category with data:', cleanUpdateCategoryData);
+            console.log('Category type:', selectedItem.category_type);
+            
+            if (selectedItem.category_type === 'inventory') {
+              await categoryService.updateInventoryCategory(selectedItem.id_key, cleanUpdateCategoryData);
+            } else {
+              await categoryService.update(selectedItem.id_key, cleanUpdateCategoryData);
+            }
             break;
         }
       } else {
@@ -280,18 +418,46 @@ const GenericABM: React.FC<GenericABMProps> = ({
             await clientService.create(formData);
             break;
           case 'inventario':
-            const { category, ...inventoryData } = formData;
-            const formattedData = {
-              ...inventoryData,
+            const { category: invCategory, product_type: invProdType, type_label: invProdLabel, ...invData } = formData;
+            const invFormattedData = {
+              ...invData,
               details: selectedDetails.map((detail: any) => ({
                 inventory_item_id: detail.inventory_item_id || 0,
                 quantity: detail.quantity || 0
               }))
             };
-            await inventoryService.create(formattedData);
+            
+            // Use the appropriate service based on product type
+            if (formData.product_type === 'inventory') {
+              await inventoryService.createInventoryProduct(invFormattedData);
+            } else {
+              await inventoryService.create(invFormattedData);
+            }
+            break;
+          case 'ingrediente':
+            const { category: ingCategory, measurement_unit, ...ingredientData } = formData;
+            await ingredientService.create(ingredientData);
             break;
           case 'rubro':
-            await categoryService.create(formData);
+            const { category_type, type_label, ...categoryData } = formData;
+            
+            // Asegurar que parent_id sea null si es 0
+            const cleanCategoryData = {
+              name: categoryData.name,
+              description: categoryData.description || '',
+              active: categoryData.active !== false, // default to true if not specified
+              parent_id: categoryData.parent_id || null
+            };
+            
+            console.log('Creating category with data:', cleanCategoryData);
+            console.log('Category type:', formData.category_type);
+            console.log('Original formData:', formData);
+            
+            if (formData.category_type === 'inventory') {
+              await categoryService.createInventoryCategory(cleanCategoryData);
+            } else {
+              await categoryService.create(cleanCategoryData);
+            }
             break;
         }
       }
@@ -315,10 +481,25 @@ const GenericABM: React.FC<GenericABMProps> = ({
             await clientService.delete(id);
             break;
           case 'inventario':
-            await inventoryService.delete(id);
+            // Find the item to determine its product type
+            const inventoryItemToDelete = data.find(item => item.id_key === id);
+            if (inventoryItemToDelete && inventoryItemToDelete.product_type === 'inventory') {
+              await inventoryService.deleteInventoryProduct(id);
+            } else {
+              await inventoryService.delete(id);
+            }
+            break;
+          case 'ingrediente':
+            await ingredientService.delete(id);
             break;
           case 'rubro':
-            await categoryService.delete(id);
+            // Find the item to determine its category type
+            const itemToDelete = data.find(item => item.id_key === id);
+            if (itemToDelete && itemToDelete.category_type === 'inventory') {
+              await categoryService.deleteInventoryCategory(id);
+            } else {
+              await categoryService.delete(id);
+            }
             break;
         }
         await loadData();
@@ -366,7 +547,6 @@ const GenericABM: React.FC<GenericABMProps> = ({
     if (category && category.subcategories && category.subcategories.length > 0) {
       // If category has subcategories, show them for selection
       setAvailableSubcategories(category.subcategories);
-      // Don't set category_id yet, wait for subcategory selection
       setFormData((prev: any) => ({ ...prev, category_id: '' }));
     } else {
       // If no subcategories, use this category directly
@@ -428,6 +608,21 @@ const GenericABM: React.FC<GenericABMProps> = ({
     updatedDetails[index] = { ...updatedDetails[index], [field]: value };
     setSelectedDetails(updatedDetails);
     setFormData((prev: any) => ({ ...prev, details: updatedDetails }));
+  };
+
+  const handleProductTypeChange = async (productType: string) => {
+    handleInputChange('product_type', productType);
+    
+    // Recargar categorías según el nuevo tipo de producto
+    if (type === 'inventario' && productType) {
+      await loadCategoriesForProduct(productType);
+      resetCategorySelection();
+      
+      // Cargar unidades de medida para productos de inventario
+      if (productType === 'inventory') {
+        loadMeasurementUnits();
+      }
+    }
   };
 
   return (
@@ -520,8 +715,8 @@ const GenericABM: React.FC<GenericABMProps> = ({
         </table>
       </div>
 
-      {/* Pagination controls for inventory */}
-      {type === 'inventario' && (currentPage > 1 || hasNextPage()) && (
+      {/* Pagination controls for inventory and ingredients */}
+      {(type === 'inventario' || type === 'ingrediente') && (currentPage > 1 || hasNextPage()) && (
         <div className="d-flex justify-content-between align-items-center mt-3">
           <div>
             <span className="text-muted">
@@ -580,9 +775,18 @@ const GenericABM: React.FC<GenericABMProps> = ({
                     .filter(column => 
                       column.field !== 'category.name' && 
                       column.field !== 'parent_category_name' &&
+                      column.field !== 'measurement_unit.name' &&
+                      column.field !== 'type_label' &&
                       (type !== 'inventario' || (
                         column.field !== 'description' && 
                         column.field !== 'recipe' && 
+                        column.field !== 'image_url' &&
+                        column.field !== 'preparation_time' &&
+                        column.field !== 'current_stock' &&
+                        column.field !== 'minimum_stock' &&
+                        column.field !== 'purchase_cost'
+                      )) &&
+                      (type !== 'ingrediente' || (
                         column.field !== 'image_url'
                       ))
                     )
@@ -620,6 +824,26 @@ const GenericABM: React.FC<GenericABMProps> = ({
                   {/* Custom fields for inventory items */}
                   {type === 'inventario' && (
                     <>
+                      {/* Product type select field for new inventory items */}
+                      {!selectedItem && (
+                        <div className="mb-3">
+                          <label className="form-label">Tipo de Producto</label>
+                          <select
+                            className="form-select"
+                            value={formData.product_type || ''}
+                            onChange={(e) => handleProductTypeChange(e.target.value)}
+                            required
+                          >
+                            <option value="">Seleccione el tipo...</option>
+                            <option value="manufactured">Producto Manufacturado</option>
+                            <option value="inventory">Producto de Inventario</option>
+                          </select>
+                          <div className="form-text">
+                            Seleccione si es un producto manufacturado (se fabrica) o un producto de inventario (se compra)
+                          </div>
+                        </div>
+                      )}
+
                       {/* Description field */}
                       <div className="mb-3">
                         <label className="form-label">Descripción</label>
@@ -632,17 +856,74 @@ const GenericABM: React.FC<GenericABMProps> = ({
                         />
                       </div>
 
-                      {/* Recipe field */}
-                      <div className="mb-3">
-                        <label className="form-label">Receta</label>
-                        <textarea
-                          className="form-control"
-                          rows={4}
-                          value={formData.recipe || ''}
-                          onChange={(e) => handleInputChange('recipe', e.target.value)}
-                          placeholder="Ingredientes y pasos de preparación..."
-                        />
-                      </div>
+                      {/* Recipe field - only for manufactured products */}
+                      {(selectedItem?.product_type === 'manufactured' || (!selectedItem && formData.product_type === 'manufactured')) && (
+                        <div className="mb-3">
+                          <label className="form-label">Receta</label>
+                          <textarea
+                            className="form-control"
+                            rows={4}
+                            value={formData.recipe || ''}
+                            onChange={(e) => handleInputChange('recipe', e.target.value)}
+                            placeholder="Ingredientes y pasos de preparación..."
+                          />
+                        </div>
+                      )}
+
+                      {/* Stock fields - only for inventory products */}
+                      {(selectedItem?.product_type === 'inventory' || (!selectedItem && formData.product_type === 'inventory')) && (
+                        <>
+                          <div className="mb-3">
+                            <label className="form-label">Stock Actual</label>
+                            <input
+                              type="number"
+                              className="form-control"
+                              min="0"
+                              value={formData.current_stock || 0}
+                              onChange={(e) => handleInputChange('current_stock', parseInt(e.target.value) || 0)}
+                            />
+                          </div>
+                          <div className="mb-3">
+                            <label className="form-label">Stock Mínimo</label>
+                            <input
+                              type="number"
+                              className="form-control"
+                              min="0"
+                              value={formData.minimum_stock || 0}
+                              onChange={(e) => handleInputChange('minimum_stock', parseInt(e.target.value) || 0)}
+                            />
+                          </div>
+                          <div className="mb-3">
+                            <label className="form-label">Costo de Compra</label>
+                            <input
+                              type="number"
+                              className="form-control"
+                              min="0"
+                              step="0.01"
+                              value={formData.purchase_cost || 0}
+                              onChange={(e) => handleInputChange('purchase_cost', parseFloat(e.target.value) || 0)}
+                            />
+                          </div>
+                          
+                          {/* Measurement unit field for inventory products */}
+                          <div className="mb-3">
+                            <label className="form-label">Unidad de Medida</label>
+                            <select
+                              className="form-select"
+                              value={formData.measurement_unit_id || ''}
+                              onChange={(e) => handleInputChange('measurement_unit_id', parseInt(e.target.value))}
+                              required
+                            >
+                              <option value="">Seleccione una unidad...</option>
+                              {measurementUnits.map((unit) => (
+                                <option key={unit.id_key} value={unit.id_key}>
+                                  {unit.name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </>
+                      )}
 
                       {/* Image field */}
                       <div className="mb-3">
@@ -679,8 +960,92 @@ const GenericABM: React.FC<GenericABMProps> = ({
                     </>
                   )}
                   
+                  {/* Custom fields for ingredients */}
+                  {type === 'ingrediente' && (
+                    <>
+                      {/* Image field for ingredients */}
+                      <div className="mb-3">
+                        <label className="form-label">Imagen del Ingrediente</label>
+                        <input
+                          type="file"
+                          className="form-control"
+                          accept="image/*"
+                          onChange={handleImageChange}
+                        />
+                        {imagePreview && (
+                          <div className="mt-2">
+                            <img
+                              src={imagePreview}
+                              alt="Preview"
+                              style={{ maxWidth: '200px', maxHeight: '200px', objectFit: 'cover' }}
+                              className="img-thumbnail"
+                            />
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-outline-danger ms-2"
+                              onClick={removeImage}
+                            >
+                              Eliminar imagen
+                            </button>
+                          </div>
+                        )}
+                        {formData.image_url && !imagePreview && (
+                          <div className="mt-2">
+                            <small className="text-muted">Imagen actual guardada</small>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Measurement unit field */}
+                      <div className="mb-3">
+                        <label className="form-label">Unidad de Medida</label>
+                        <select
+                          className="form-select"
+                          value={formData.measurement_unit_id || ''}
+                          onChange={(e) => handleInputChange('measurement_unit_id', parseInt(e.target.value))}
+                          required
+                        >
+                          <option value="">Seleccione una unidad...</option>
+                          {measurementUnits.map((unit) => (
+                            <option key={unit.id_key} value={unit.id_key}>
+                              {unit.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </>
+                  )}
+                  
                   {/* Category select field for inventory items */}
                   {type === 'inventario' && (
+                    <div className="mb-3">
+                      <label className="form-label">
+                        Categoría {selectedCategory && availableSubcategories.length > 0 && '(Seleccione subcategoría abajo)'}
+                      </label>
+                      <select
+                        className="form-select"
+                        value={selectedCategory ? selectedCategory.id_key : ''}
+                        onChange={(e) => handleCategorySelection(e.target.value)}
+                        required={availableSubcategories.length === 0}
+                      >
+                        <option value="">Seleccione una categoría...</option>
+                        {categories.map((category) => (
+                          <option key={category.id_key} value={category.id_key}>
+                            {category.name}
+                            {category.subcategories && category.subcategories.length > 0 && ' (tiene subcategorías)'}
+                          </option>
+                        ))}
+                      </select>
+                      {selectedCategory && availableSubcategories.length === 0 && (
+                        <div className="form-text text-success">
+                          ✓ Categoría seleccionada: {selectedCategory.name}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Category select field for ingredients */}
+                  {type === 'ingrediente' && (
                     <div className="mb-3">
                       <label className="form-label">
                         Categoría {selectedCategory && availableSubcategories.length > 0 && '(Seleccione subcategoría abajo)'}
@@ -728,9 +1093,31 @@ const GenericABM: React.FC<GenericABMProps> = ({
                       </select>
                     </div>
                   )}
+
+                  {/* Subcategory select field for ingredients */}
+                  {type === 'ingrediente' && selectedCategory && availableSubcategories.length > 0 && (
+                    <div className="mb-3">
+                      <label className="form-label">
+                        Subcategoría de "{selectedCategory.name}"
+                      </label>
+                      <select
+                        className="form-select"
+                        value={formData.category_id || ''}
+                        onChange={(e) => handleSubcategorySelection(e.target.value)}
+                        required
+                      >
+                        <option value="">Seleccione una subcategoría...</option>
+                        {availableSubcategories.map((subcategory) => (
+                          <option key={subcategory.id_key} value={subcategory.id_key}>
+                            {subcategory.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                   
-                  {/* Ingredients management for inventory items */}
-                  {type === 'inventario' && (
+                  {/* Ingredients management for inventory items - only for manufactured products */}
+                  {type === 'inventario' && (selectedItem?.product_type === 'manufactured' || (!selectedItem && formData.product_type === 'manufactured')) && (
                     <div className="mb-4">
                       <div className="d-flex justify-content-between align-items-center mb-3">
                         <label className="form-label mb-0">
@@ -803,6 +1190,26 @@ const GenericABM: React.FC<GenericABMProps> = ({
                     </div>
                   )}
                   
+                  {/* Category type select field for new rubro items */}
+                  {type === 'rubro' && !selectedItem && (
+                    <div className="mb-3">
+                      <label className="form-label">Tipo de Categoría</label>
+                      <select
+                        className="form-select"
+                        value={formData.category_type || ''}
+                        onChange={(e) => handleInputChange('category_type', e.target.value)}
+                        required
+                      >
+                        <option value="">Seleccione el tipo...</option>
+                        <option value="manufactured">Producto Manufacturado</option>
+                        <option value="inventory">Ingrediente</option>
+                      </select>
+                      <div className="form-text">
+                        Seleccione si esta categoría será para productos manufacturados o ingredientes
+                      </div>
+                    </div>
+                  )}
+                  
                   {/* Parent category select field for rubro items */}
                   {type === 'rubro' && (
                     <div className="mb-3">
@@ -816,15 +1223,46 @@ const GenericABM: React.FC<GenericABMProps> = ({
                       >
                         <option value="">Sin categoría padre</option>
                         {parentCategories
-                          .filter(cat => cat.id_key !== formData.id_key) // Don't allow selecting itself as parent
+                          .filter(cat => {
+                            if (cat.id_key === formData.id_key) return false;
+                            
+                            if (selectedItem && selectedItem.category_type) {
+                              return cat.category_type === selectedItem.category_type;
+                            }
+                            
+                            if (!selectedItem && formData.category_type) {
+                              return cat.category_type === formData.category_type;
+                            }
+                            
+                            if (!selectedItem && !formData.category_type) {
+                              return false;
+                            }
+                            
+                            return true;
+                          })
                           .map((category) => (
                           <option key={category.id_key} value={category.id_key}>
-                            {category.name}
+                            {category.name} ({category.category_type === 'manufactured' ? 'Producto' : 'Ingrediente'})
                           </option>
                         ))}
                       </select>
                       <div className="form-text">
                         Seleccione una categoría padre si esta es una subcategoría
+                        {selectedItem && selectedItem.category_type && (
+                          <span className="text-info">
+                            <br />Mostrando solo categorías de tipo: {selectedItem.category_type === 'manufactured' ? 'Producto' : 'Ingrediente'}
+                          </span>
+                        )}
+                        {!selectedItem && formData.category_type && (
+                          <span className="text-info">
+                            <br />Mostrando solo categorías de tipo: {formData.category_type === 'manufactured' ? 'Producto' : 'Ingrediente'}
+                          </span>
+                        )}
+                        {!selectedItem && !formData.category_type && (
+                          <span className="text-warning">
+                            <br />Primero seleccione el tipo de categoría para ver las opciones de categoría padre
+                          </span>
+                        )}
                       </div>
                     </div>
                   )}
@@ -879,7 +1317,22 @@ const GenericABM: React.FC<GenericABMProps> = ({
                         <div className="row">
                           {columns
                             .filter(column => 
-                              !['category.name', 'parent_category_name', 'image_url'].includes(column.field)
+                              column.field !== 'category.name' && 
+                              column.field !== 'parent_category_name' &&
+                              column.field !== 'measurement_unit.name' &&
+                              column.field !== 'type_label' &&
+                              (type !== 'inventario' || (
+                                column.field !== 'description' && 
+                                column.field !== 'recipe' && 
+                                column.field !== 'image_url' &&
+                                column.field !== 'preparation_time' &&
+                                column.field !== 'current_stock' &&
+                                column.field !== 'minimum_stock' &&
+                                column.field !== 'purchase_cost'
+                              )) &&
+                              (type !== 'ingrediente' || (
+                                column.field !== 'image_url'
+                              ))
                             )
                             .map((column) => (
                             <div key={column.field} className="col-md-6 mb-3">
@@ -911,13 +1364,13 @@ const GenericABM: React.FC<GenericABMProps> = ({
                       </div>
                     </div>
 
-                    {/* Image section for inventory items */}
-                    {type === 'inventario' && viewItem.image_url && (
+                    {/* Image section for inventory items and ingredients */}
+                    {(type === 'inventario' || type === 'ingrediente') && viewItem.image_url && (
                       <div className="card mb-3">
                         <div className="card-header">
                           <h6 className="mb-0">
                             <i className="bi bi-image me-2"></i>
-                            Imagen del Producto
+                            Imagen del {type === 'inventario' ? 'Producto' : 'Ingrediente'}
                           </h6>
                         </div>
                         <div className="card-body text-center">
@@ -932,7 +1385,7 @@ const GenericABM: React.FC<GenericABMProps> = ({
                     )}
 
                     {/* Category information */}
-                    {(type === 'inventario' || type === 'rubro') && (
+                    {(type === 'inventario' || type === 'rubro' || type === 'ingrediente') && (
                       <div className="card mb-3">
                         <div className="card-header">
                           <h6 className="mb-0">
@@ -941,16 +1394,50 @@ const GenericABM: React.FC<GenericABMProps> = ({
                           </h6>
                         </div>
                         <div className="card-body">
-                          {type === 'inventario' && viewItem.category && (
+                          {(type === 'inventario' || type === 'ingrediente') && viewItem.category && (
                             <div>
+                              {type === 'inventario' && viewItem.product_type && (
+                                <div className="mb-3">
+                                  <label className="fw-bold text-muted small">Tipo de Producto:</label>
+                                  <div className="ms-2">
+                                    <span className={`badge ${viewItem.product_type === 'manufactured' ? 'bg-primary' : 'bg-success'}`}>
+                                      {viewItem.type_label}
+                                    </span>
+                                  </div>
+                                </div>
+                              )}
+                              
                               <label className="fw-bold text-muted small">Categoría:</label>
                               <div className="ms-2">
                                 <span className="badge bg-primary">{viewItem.category.name}</span>
                               </div>
+                              {type === 'ingrediente' && viewItem.measurement_unit && (
+                                <div className="mt-2">
+                                  <label className="fw-bold text-muted small">Unidad de Medida:</label>
+                                  <div className="ms-2">
+                                    <span className="badge bg-info">{viewItem.measurement_unit.name}</span>
+                                  </div>
+                                </div>
+                              )}
+                              {type === 'inventario' && viewItem.product_type === 'inventory' && viewItem.measurement_unit && (
+                                <div className="mt-2">
+                                  <label className="fw-bold text-muted small">Unidad de Medida:</label>
+                                  <div className="ms-2">
+                                    <span className="badge bg-info">{viewItem.measurement_unit.name}</span>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           )}
                           {type === 'rubro' && (
                             <div>
+                              <label className="fw-bold text-muted small">Tipo de Categoría:</label>
+                              <div className="ms-2 mb-3">
+                                <span className={`badge ${viewItem.category_type === 'manufactured' ? 'bg-primary' : 'bg-success'}`}>
+                                  {viewItem.type_label}
+                                </span>
+                              </div>
+                              
                               <label className="fw-bold text-muted small">Categoría Padre:</label>
                               <div className="ms-2">
                                 {viewItem.parent_category_name === 'Sin categoría padre' ? (
@@ -977,8 +1464,96 @@ const GenericABM: React.FC<GenericABMProps> = ({
                       </div>
                     )}
 
-                    {/* Ingredients section for inventory items */}
-                    {type === 'inventario' && viewItem.details && viewItem.details.length > 0 && (
+                    {/* Inventory information section for inventory products */}
+                    {type === 'inventario' && viewItem.product_type === 'inventory' && (
+                      <div className="card mb-3">
+                        <div className="card-header">
+                          <h6 className="mb-0">
+                            <i className="bi bi-box-seam me-2"></i>
+                            Información de Inventario
+                          </h6>
+                        </div>
+                        <div className="card-body">
+                          <div className="row">
+                            <div className="col-md-6 mb-3">
+                              <label className="fw-bold text-muted small">Stock Actual:</label>
+                              <div className="ms-2">
+                                <span className={`badge ${(viewItem.current_stock || 0) > (viewItem.minimum_stock || 0) ? 'bg-success' : 'bg-warning'}`}>
+                                  {viewItem.current_stock || 0} {viewItem.measurement_unit?.name || 'unidades'}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="col-md-6 mb-3">
+                              <label className="fw-bold text-muted small">Stock Mínimo:</label>
+                              <div className="ms-2">
+                                <span className="badge bg-info">
+                                  {viewItem.minimum_stock || 0} {viewItem.measurement_unit?.name || 'unidades'}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="col-md-6 mb-3">
+                              <label className="fw-bold text-muted small">Costo de Compra:</label>
+                              <div className="ms-2">
+                                <span className="badge bg-secondary">
+                                  ${viewItem.purchase_cost || 0}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="col-md-6 mb-3">
+                              <label className="fw-bold text-muted small">Precio de Venta:</label>
+                              <div className="ms-2">
+                                <span className="badge bg-primary">
+                                  ${viewItem.price || 0}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Description and Recipe information for inventory items */}
+                    {type === 'inventario' && (viewItem.description || viewItem.recipe) && (
+                      <div className="card mb-3">
+                        <div className="card-header">
+                          <h6 className="mb-0">
+                            <i className="bi bi-file-text me-2"></i>
+                            Información Adicional
+                          </h6>
+                        </div>
+                        <div className="card-body">
+                          {viewItem.description && (
+                            <div className="mb-3">
+                              <label className="fw-bold text-muted small">Descripción:</label>
+                              <div className="ms-2 p-2 bg-light rounded">
+                                {viewItem.description}
+                              </div>
+                            </div>
+                          )}
+                          {viewItem.recipe && viewItem.product_type === 'manufactured' && (
+                            <div className="mb-3">
+                              <label className="fw-bold text-muted small">Receta:</label>
+                              <div className="ms-2 p-2 bg-light rounded">
+                                {viewItem.recipe}
+                              </div>
+                            </div>
+                          )}
+                          {viewItem.preparation_time && viewItem.product_type === 'manufactured' && (
+                            <div className="mb-3">
+                              <label className="fw-bold text-muted small">Tiempo de Preparación:</label>
+                              <div className="ms-2">
+                                <span className="badge bg-info">
+                                  {viewItem.preparation_time} minutos
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Ingredients section for inventory items - only for manufactured products */}
+                    {type === 'inventario' && viewItem.product_type === 'manufactured' && viewItem.details && viewItem.details.length > 0 && (
                       <div className="card mb-3">
                         <div className="card-header">
                           <h6 className="mb-0">

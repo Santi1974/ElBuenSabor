@@ -5,6 +5,7 @@ import { Employees } from '../pages/Admin/Employees/Employees';
 import Clients from '../pages/Admin/Clients/Clients';
 import Inventory from '../pages/Admin/Inventory/Inventory';
 import Categories from '../pages/Admin/Categories/Categories';
+import Ingredients from '../pages/Admin/Ingredients/Ingredients';
 
 
 const AdminRoutes: React.FC = () => {
@@ -21,8 +22,8 @@ const AdminRoutes: React.FC = () => {
           <Route path="inventory" element={<Inventory />} />
         </Route>
 
-        {/*<Route path="ingredients" element={<Ingredients />} />
-        <Route path="invoices" element={<Invoices />} />
+        <Route path="ingredients" element={<Ingredients />} />
+        {/*<Route path="invoices" element={<Invoices />} />
         <Route path="rankings" element={<Rankings />} />
         <Route path="movements" element={<Movements />} /> */}
       </Route>
