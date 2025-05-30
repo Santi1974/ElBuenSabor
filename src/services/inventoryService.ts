@@ -54,45 +54,84 @@ const inventoryService = {
     return response.data;
   },
 
+  // Get total count of all products (manufactured + inventory)
+  getTotalProductsCount: async () => {
+    try {
+      let totalCount = 0;
+      
+      try {
+        const manufacturedResponse = await api.get(`${API_URL}/manufactured_item/?offset=0&limit=1`);
+        // If there's no total count in response, we'll get all to count
+        if (manufacturedResponse.data && Array.isArray(manufacturedResponse.data)) {
+          const allManufacturedResponse = await api.get(`${API_URL}/manufactured_item/?offset=0&limit=1000`);
+          totalCount += allManufacturedResponse.data.length;
+        }
+      } catch (error) {
+        console.error('Error counting manufactured items:', error);
+      }
+
+      try {
+        const inventoryResponse = await api.get(`${API_URL}/inventory_item/products/all?offset=0&limit=1`);
+        // If there's no total count in response, we'll get all to count
+        if (inventoryResponse.data && Array.isArray(inventoryResponse.data)) {
+          const allInventoryResponse = await api.get(`${API_URL}/inventory_item/products/all?offset=0&limit=1000`);
+          totalCount += allInventoryResponse.data.length;
+        }
+      } catch (error) {
+        console.error('Error counting inventory products:', error);
+      }
+
+      return totalCount;
+    } catch (error) {
+      console.error('Error getting total products count:', error);
+      return 0;
+    }
+  },
+
   // Get both manufactured items and inventory products combined
   getAllProducts: async (offset: number = 0, limit: number = 10) => {
     try {
-      // Calculate how many items to get from each endpoint
-      const halfLimit = Math.ceil(limit / 2);
+      // Try to get manufactured items first
+      let allItems: any[] = [];
       
-      // Try to get data from both endpoints, but handle errors gracefully
-      const results = await Promise.allSettled([
-        inventoryService.getAll(Math.floor(offset / 2), halfLimit),
-        api.get(`${API_URL}/inventory_item/products/all?offset=${Math.floor(offset / 2)}&limit=${halfLimit}`)
-      ]);
-
-      let combinedItems: any[] = [];
-
-      // Handle manufactured items result
-      if (results[0].status === 'fulfilled') {
-        const manufacturedItems = results[0].value.map((item: any) => ({ 
+      try {
+        const manufacturedResponse = await api.get(`${API_URL}/manufactured_item/?offset=0&limit=1000`);
+        const manufacturedItems = manufacturedResponse.data.map((item: any) => ({ 
           ...item, 
           product_type: 'manufactured', 
           type_label: 'Manufacturado' 
         }));
-        combinedItems.push(...manufacturedItems);
-      } else {
-        console.error('Error fetching manufactured items:', results[0].reason);
+        allItems.push(...manufacturedItems);
+      } catch (error) {
+        console.error('Error fetching manufactured items:', error);
       }
 
-      // Handle inventory products result  
-      if (results[1].status === 'fulfilled') {
-        const inventoryProducts = results[1].value.data.map((item: any) => ({ 
+      // Then get inventory products
+      try {
+        const inventoryResponse = await api.get(`${API_URL}/inventory_item/products/all?offset=0&limit=1000`);
+        const inventoryProducts = inventoryResponse.data.map((item: any) => ({ 
           ...item, 
           product_type: 'inventory', 
           type_label: 'Producto' 
         }));
-        combinedItems.push(...inventoryProducts);
-      } else {
-        console.error('Error fetching inventory products:', results[1].reason);
+        allItems.push(...inventoryProducts);
+      } catch (error) {
+        console.error('Error fetching inventory products:', error);
       }
 
-      return combinedItems;
+      // Apply pagination to the combined results
+      const start = offset;
+      const end = offset + limit;
+      const paginatedItems = allItems.slice(start, end);
+      
+      console.log(`Pagination: offset=${offset}, limit=${limit}, total=${allItems.length}, returned=${paginatedItems.length}`);
+      
+      // Return both the paginated items and total count
+      return {
+        data: paginatedItems,
+        total: allItems.length,
+        hasNext: end < allItems.length
+      };
     } catch (error) {
       console.error('Error fetching combined products:', error);
       throw error;

@@ -33,8 +33,34 @@ interface Ingredient {
 
 const ingredientService = {
   getAll: async (offset: number = 0, limit: number = 10) => {
-    const response = await api.get(`${API_URL}/inventory_item/ingredients/all?offset=${offset}&limit=${limit}`);
-    return response.data;
+    try {
+      // First get all items to calculate total
+      const allResponse = await api.get(`${API_URL}/inventory_item/ingredients/all?offset=0&limit=1000`);
+      const allItems = allResponse.data;
+      
+      // Apply pagination
+      const start = offset;
+      const end = offset + limit;
+      const paginatedItems = allItems.slice(start, end);
+      
+      console.log(`Ingredients Pagination: offset=${offset}, limit=${limit}, total=${allItems.length}, returned=${paginatedItems.length}`);
+      
+      // Return both the paginated items and total count
+      return {
+        data: paginatedItems,
+        total: allItems.length,
+        hasNext: end < allItems.length
+      };
+    } catch (error) {
+      console.error('Error fetching ingredients:', error);
+      // Fallback to original method
+      const response = await api.get(`${API_URL}/inventory_item/ingredients/all?offset=${offset}&limit=${limit}`);
+      return {
+        data: response.data,
+        total: response.data.length, // We don't know the real total
+        hasNext: response.data.length === limit
+      };
+    }
   },
 
   getById: async (id: number) => {

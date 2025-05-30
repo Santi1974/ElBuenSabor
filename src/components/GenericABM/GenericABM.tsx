@@ -40,6 +40,7 @@ const GenericABM: React.FC<GenericABMProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
+  const [hasNext, setHasNext] = useState(false);
 
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -135,21 +136,29 @@ const GenericABM: React.FC<GenericABMProps> = ({
       switch (type) {
         case 'employee':
           response = await employeeService.getAll();
+          setData(response);
+          setTotalItems(response.length);
+          setHasNext(false);
           break;
         case 'client':
           response = await clientService.getAll();
+          setData(response);
+          setTotalItems(response.length);
+          setHasNext(false);
           break;
         case 'inventario':
           const offset = (currentPage - 1) * itemsPerPage;
-          response = await inventoryService.getAllProducts(offset, itemsPerPage);
-          const hasMorePages = response.length === itemsPerPage;
-          setTotalItems(hasMorePages ? (currentPage * itemsPerPage) + 1 : (currentPage - 1) * itemsPerPage + response.length);
+          const inventoryResponse = await inventoryService.getAllProducts(offset, itemsPerPage);
+          setData(inventoryResponse.data);
+          setTotalItems(inventoryResponse.total);
+          setHasNext(inventoryResponse.hasNext);
           break;
         case 'ingrediente':
           const ingredientOffset = (currentPage - 1) * itemsPerPage;
-          response = await ingredientService.getAll(ingredientOffset, itemsPerPage);
-          const hasMoreIngredientPages = response.length === itemsPerPage;
-          setTotalItems(hasMoreIngredientPages ? (currentPage * itemsPerPage) + 1 : (currentPage - 1) * itemsPerPage + response.length);
+          const ingredientResponse = await ingredientService.getAll(ingredientOffset, itemsPerPage);
+          setData(ingredientResponse.data);
+          setTotalItems(ingredientResponse.total);
+          setHasNext(ingredientResponse.hasNext);
           break;
         case 'rubro':
           const [manufacturedCats, inventoryCats] = await Promise.all([
@@ -175,12 +184,15 @@ const GenericABM: React.FC<GenericABMProps> = ({
               type_label: category.category_type === 'manufactured' ? 'Producto' : 'Ingrediente'
             };
           });
-          response = categoriesWithParent;
+          setData(categoriesWithParent);
+          setTotalItems(categoriesWithParent.length);
+          setHasNext(false);
           break;
         default:
-          response = [];
+          setData([]);
+          setTotalItems(0);
+          setHasNext(false);
       }
-      setData(response);
       setError(null);
     } catch (err) {
       setError('Error al cargar los datos');
@@ -512,8 +524,8 @@ const GenericABM: React.FC<GenericABMProps> = ({
   };
 
   const handleNextPage = () => {
-    // Only allow next page if current page has full results (indicating more data might exist)
-    if (data.length === itemsPerPage) {
+    // Only allow next page if there are more items
+    if (hasNext) {
       setCurrentPage(currentPage + 1);
     }
   };
@@ -529,15 +541,11 @@ const GenericABM: React.FC<GenericABMProps> = ({
   };
 
   const getTotalPages = () => {
-    // Since we don't have exact total, we'll estimate based on current data
-    if (data.length < itemsPerPage) {
-      return currentPage; // This is the last page
-    }
-    return currentPage + 1; // There might be more pages
+    return Math.ceil(totalItems / itemsPerPage);
   };
 
   const hasNextPage = () => {
-    return data.length === itemsPerPage;
+    return hasNext;
   };
 
   const handleCategorySelection = (categoryId: string) => {
@@ -720,7 +728,7 @@ const GenericABM: React.FC<GenericABMProps> = ({
         <div className="d-flex justify-content-between align-items-center mt-3">
           <div>
             <span className="text-muted">
-              Página {currentPage} - Mostrando {data.length} elementos
+              Página {currentPage} de {getTotalPages()} - Mostrando {data.length} de {totalItems} elementos
             </span>
           </div>
           <nav aria-label="Page navigation">
@@ -735,9 +743,55 @@ const GenericABM: React.FC<GenericABMProps> = ({
                 </button>
               </li>
               
-              <li className="page-item active">
-                <span className="page-link">{currentPage}</span>
-              </li>
+              {/* Show page numbers when we have multiple pages */}
+              {getTotalPages() > 1 && (
+                <>
+                  {/* First page */}
+                  {currentPage > 2 && (
+                    <>
+                      <li className="page-item">
+                        <button className="page-link" onClick={() => handlePageChange(1)}>1</button>
+                      </li>
+                      {currentPage > 3 && <li className="page-item disabled"><span className="page-link">...</span></li>}
+                    </>
+                  )}
+                  
+                  {/* Previous page */}
+                  {currentPage > 1 && (
+                    <li className="page-item">
+                      <button className="page-link" onClick={() => handlePageChange(currentPage - 1)}>
+                        {currentPage - 1}
+                      </button>
+                    </li>
+                  )}
+                  
+                  {/* Current page */}
+                  <li className="page-item active">
+                    <span className="page-link">{currentPage}</span>
+                  </li>
+                  
+                  {/* Next page */}
+                  {hasNextPage() && (
+                    <li className="page-item">
+                      <button className="page-link" onClick={() => handlePageChange(currentPage + 1)}>
+                        {currentPage + 1}
+                      </button>
+                    </li>
+                  )}
+                  
+                  {/* Last page indicator */}
+                  {hasNextPage() && currentPage < getTotalPages() - 1 && (
+                    <>
+                      {currentPage < getTotalPages() - 2 && <li className="page-item disabled"><span className="page-link">...</span></li>}
+                      <li className="page-item">
+                        <button className="page-link" onClick={() => handlePageChange(getTotalPages())}>
+                          {getTotalPages()}
+                        </button>
+                      </li>
+                    </>
+                  )}
+                </>
+              )}
               
               {hasNextPage() && (
                 <li className="page-item">
@@ -858,16 +912,31 @@ const GenericABM: React.FC<GenericABMProps> = ({
 
                       {/* Recipe field - only for manufactured products */}
                       {(selectedItem?.product_type === 'manufactured' || (!selectedItem && formData.product_type === 'manufactured')) && (
-                        <div className="mb-3">
-                          <label className="form-label">Receta</label>
-                          <textarea
-                            className="form-control"
-                            rows={4}
-                            value={formData.recipe || ''}
-                            onChange={(e) => handleInputChange('recipe', e.target.value)}
-                            placeholder="Ingredientes y pasos de preparación..."
-                          />
-                        </div>
+                        <>
+                          <div className="mb-3">
+                            <label className="form-label">Receta</label>
+                            <textarea
+                              className="form-control"
+                              rows={4}
+                              value={formData.recipe || ''}
+                              onChange={(e) => handleInputChange('recipe', e.target.value)}
+                              placeholder="Ingredientes y pasos de preparación..."
+                            />
+                          </div>
+
+                          {/* Preparation time field - only for manufactured products */}
+                          <div className="mb-3">
+                            <label className="form-label">Tiempo de Preparación (minutos)</label>
+                            <input
+                              type="number"
+                              className="form-control"
+                              min="0"
+                              value={formData.preparation_time || 0}
+                              onChange={(e) => handleInputChange('preparation_time', parseInt(e.target.value) || 0)}
+                              placeholder="Tiempo en minutos..."
+                            />
+                          </div>
+                        </>
                       )}
 
                       {/* Stock fields - only for inventory products */}
