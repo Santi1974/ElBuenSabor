@@ -498,7 +498,7 @@ const GenericABM: React.FC<GenericABMProps> = ({
             if (inventoryItemToDelete && inventoryItemToDelete.product_type === 'inventory') {
               await inventoryService.deleteInventoryProduct(id);
             } else {
-              await inventoryService.delete(id);
+            await inventoryService.delete(id);
             }
             break;
           case 'ingrediente':
@@ -510,7 +510,7 @@ const GenericABM: React.FC<GenericABMProps> = ({
             if (itemToDelete && itemToDelete.category_type === 'inventory') {
               await categoryService.deleteInventoryCategory(id);
             } else {
-              await categoryService.delete(id);
+            await categoryService.delete(id);
             }
             break;
         }
@@ -692,9 +692,9 @@ const GenericABM: React.FC<GenericABMProps> = ({
                                 item[column.field]
                               ) : ''
                             )
-                          : column.field.includes('.')
-                            ? column.field.split('.').reduce((obj, key) => obj?.[key], item)
-                            : item[column.field]}
+                      : column.field.includes('.')
+                        ? column.field.split('.').reduce((obj, key) => obj?.[key], item)
+                        : item[column.field]}
                   </td>
                 ))}
                 <td>
