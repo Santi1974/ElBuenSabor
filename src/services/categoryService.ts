@@ -12,10 +12,27 @@ interface Category {
 }
 
 const categoryService = {
-  getAll: async () => {
+  getAll: async (offset: number = 0, limit: number = 10) => {
     try {
-      const response = await api.get(`${API_URL}/manufactured_item_category/`);
-      return response.data;
+      const response = await api.get(`${API_URL}/manufactured_item_category/?offset=${offset}&limit=${limit}`);
+      
+      // Handle both old and new response formats
+      if (response.data && response.data.items !== undefined) {
+        // New format with pagination
+        return {
+          data: response.data.items,
+          total: response.data.total,
+          hasNext: (response.data.offset + response.data.limit) < response.data.total
+        };
+      } else {
+        // Old format - direct array
+        console.warn('API returned old format, converting to new format');
+        return {
+          data: response.data,
+          total: response.data.length,
+          hasNext: false
+        };
+      }
     } catch (error) {
       console.error('Error fetching categories:', error);
       throw error;
@@ -27,7 +44,9 @@ const categoryService = {
       const endpoint = type === 'inventory' 
         ? `${API_URL}/inventory_item_category/top-level/all`
         : `${API_URL}/manufactured_item_category/top-level/all`;
+      console.log(`Fetching top-level categories from: ${endpoint}`);
       const response = await api.get(endpoint);
+      console.log(`Top-level categories response:`, response.data);
       return response.data;
     } catch (error) {
       console.error('Error fetching top-level categories:', error);
@@ -36,10 +55,27 @@ const categoryService = {
   },
 
   // Métodos específicos para inventory item categories
-  getInventoryCategories: async () => {
+  getInventoryCategories: async (offset: number = 0, limit: number = 10) => {
     try {
-      const response = await api.get(`${API_URL}/inventory_item_category/`);
-      return response.data;
+      const response = await api.get(`${API_URL}/inventory_item_category/?offset=${offset}&limit=${limit}`);
+      
+      // Handle both old and new response formats
+      if (response.data && response.data.items !== undefined) {
+        // New format with pagination
+        return {
+          data: response.data.items,
+          total: response.data.total,
+          hasNext: (response.data.offset + response.data.limit) < response.data.total
+        };
+      } else {
+        // Old format - direct array
+        console.warn('API returned old format, converting to new format');
+        return {
+          data: response.data,
+          total: response.data.length,
+          hasNext: false
+        };
+      }
     } catch (error) {
       console.error('Error fetching inventory categories:', error);
       throw error;

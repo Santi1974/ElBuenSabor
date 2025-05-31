@@ -28,165 +28,126 @@ interface ManufacturedItem {
 const inventoryService = {
   getAll: async (offset: number = 0, limit: number = 10) => {
     try {
-      // Use the endpoint with pagination parameters
       console.log(`Requesting manufactured items: offset=${offset}, limit=${limit}`);
       const response = await api.get(`${API_URL}/manufactured_item/?offset=${offset}&limit=${limit}`);
-      console.log(`Received ${response.data.length} manufactured items`);
-      return response.data;
-    } catch (error) {
-      console.error('Error with paginated endpoint, trying without pagination:', error);
-      try {
-        // Fallback: try without pagination parameters and manually paginate
-        const response = await api.get(`${API_URL}/manufactured_item/`);
-        console.log(`Fallback: received ${response.data.length} total items, applying manual pagination`);
-        // Manually paginate the results if needed
-        const data = response.data;
-        const start = offset;
-        const end = offset + limit;
-        const paginatedData = data.slice(start, end);
-        console.log(`Manual pagination: returning items ${start} to ${end-1} (${paginatedData.length} items)`);
-        return paginatedData;
-      } catch (fallbackError) {
-        console.error('Error with fallback endpoint:', fallbackError);
-        throw fallbackError;
+      
+      // Handle both old and new response formats
+      if (response.data && response.data.items !== undefined) {
+        // New format with pagination
+        return {
+          data: response.data.items,
+          total: response.data.total,
+          hasNext: (response.data.offset + response.data.limit) < response.data.total
+        };
+      } else {
+        // Old format - direct array
+        console.warn('API returned old format, converting to new format');
+        return {
+          data: response.data,
+          total: response.data.length,
+          hasNext: false
+        };
       }
+    } catch (error) {
+      console.error('Error fetching manufactured items:', error);
+      throw error;
     }
   },
 
   // Get inventory items that are products (sellable items like Coca Cola)
   getInventoryProducts: async (offset: number = 0, limit: number = 10) => {
-    console.log(`Requesting inventory products: offset=${offset}, limit=${limit}`);
-    const response = await api.get(`${API_URL}/inventory_item/products/all?offset=${offset}&limit=${limit}`);
-    console.log(`Received ${response.data.length} inventory products`);
-    return response.data;
-  },
-
-  getTotalProductsCount: async () => {
     try {
-      let totalCount = 0;
-      
-      try {
-        console.log('Getting total count for manufactured items...');
-        const manufacturedResponse = await api.get(`${API_URL}/manufactured_item/?offset=0&limit=1`);
-        
-        if (manufacturedResponse.headers && manufacturedResponse.headers['x-total-count']) {
-          const manufacturedTotal = parseInt(manufacturedResponse.headers['x-total-count']);
-          totalCount += manufacturedTotal;
-          console.log(`Found ${manufacturedTotal} manufactured items from headers`);
-        } else {
-          const sampleResponse = await api.get(`${API_URL}/manufactured_item/?offset=0&limit=100`);
-          if (sampleResponse.data.length === 100) {
-            const largerSampleResponse = await api.get(`${API_URL}/manufactured_item/?offset=0&limit=500`);
-            totalCount += largerSampleResponse.data.length;
-            console.log(`Estimated ${largerSampleResponse.data.length} manufactured items from sample`);
-          } else {
-            totalCount += sampleResponse.data.length;
-            console.log(`Found ${sampleResponse.data.length} manufactured items (complete set)`);
-          }
-        }
-      } catch (error) {
-        console.error('Error counting manufactured items:', error);
-      }
-
-      try {
-        console.log('Getting total count for inventory products...');
-        const inventoryResponse = await api.get(`${API_URL}/inventory_item/products/all?offset=0&limit=1`);
-        
-        if (inventoryResponse.headers && inventoryResponse.headers['x-total-count']) {
-          const inventoryTotal = parseInt(inventoryResponse.headers['x-total-count']);
-          totalCount += inventoryTotal;
-          console.log(`Found ${inventoryTotal} inventory products from headers`);
-        } else {
-          const sampleResponse = await api.get(`${API_URL}/inventory_item/products/all?offset=0&limit=100`);
-          if (sampleResponse.data.length === 100) {
-            // There might be more, get a larger sample
-            const largerSampleResponse = await api.get(`${API_URL}/inventory_item/products/all?offset=0&limit=500`);
-            totalCount += largerSampleResponse.data.length;
-            console.log(`Estimated ${largerSampleResponse.data.length} inventory products from sample`);
-          } else {
-            totalCount += sampleResponse.data.length;
-            console.log(`Found ${sampleResponse.data.length} inventory products (complete set)`);
-          }
-        }
-      } catch (error) {
-        console.error('Error counting inventory products:', error);
-      }
-
-      console.log(`Total products count: ${totalCount}`);
-      return totalCount;
-    } catch (error) {
-      console.error('Error getting total products count:', error);
-      return 0;
-    }
-  },
-
-  // Get both manufactured items and inventory products combined
-  getAllProducts: async (offset: number = 0, limit: number = 10) => {
-    try {
-      console.log(`=== getAllProducts called with offset=${offset}, limit=${limit} ===`);
-      
-      const maxFetchPerEndpoint = Math.max(100, limit * 5);
-      
-      let allItems: any[] = [];
-      let manufacturedCount = 0;
-      let inventoryCount = 0;
-      
-      try {
-        console.log(`Fetching manufactured items (limit=${maxFetchPerEndpoint})...`);
-        const manufacturedResponse = await api.get(`${API_URL}/manufactured_item/?offset=0&limit=${maxFetchPerEndpoint}`);
-        const manufacturedItems = manufacturedResponse.data.map((item: any) => ({ 
-          ...item, 
-          product_type: 'manufactured', 
-          type_label: 'Manufacturado' 
-        }));
-        manufacturedCount = manufacturedItems.length;
-        allItems.push(...manufacturedItems);
-      } catch (error) {
-        console.error('Error fetching manufactured items:', error);
-      }
-
-      try {
-        console.log(`Fetching inventory products (limit=${maxFetchPerEndpoint})...`);
-        const inventoryResponse = await api.get(`${API_URL}/inventory_item/products/all?offset=0&limit=${maxFetchPerEndpoint}`);
-        const inventoryProducts = inventoryResponse.data.map((item: any) => ({ 
-          ...item, 
-          product_type: 'inventory', 
-          type_label: 'Producto' 
-        }));
-        inventoryCount = inventoryProducts.length;
-        allItems.push(...inventoryProducts);
-      } catch (error) {
-        console.error('Error fetching inventory products:', error);
-      }
-
-      const totalItemsAvailable = allItems.length;
-      console.log(`📊 Total items available: ${totalItemsAvailable} (${manufacturedCount} manufactured + ${inventoryCount} inventory)`);
-
-      const start = offset;
-      const end = offset + limit;
-      const paginatedItems = allItems.slice(start, end);
-      
-      console.log(`📄 Pagination applied: requesting items ${start}-${end-1}, got ${paginatedItems.length} items`);
-      console.log(`⏭️  Has next page: ${end < totalItemsAvailable}`);
-      
-      if (totalItemsAvailable === maxFetchPerEndpoint * 2) {
-        console.warn(`⚠️  Reached buffer limit (${maxFetchPerEndpoint * 2}). There might be more items available.`);
-      }
-      
+      console.log(`Requesting inventory products: offset=${offset}, limit=${limit}`);
+      const response = await api.get(`${API_URL}/inventory_item/products/all?offset=${offset}&limit=${limit}`);
       return {
-        data: paginatedItems,
-        total: totalItemsAvailable,
-        hasNext: end < totalItemsAvailable
+        data: response.data.items,
+        total: response.data.total,
+        hasNext: (response.data.offset + response.data.limit) < response.data.total
       };
     } catch (error) {
-      console.error('Error fetching combined products:', error);
+      console.error('Error fetching inventory products:', error);
       throw error;
     }
   },
 
+  // Get both manufactured items and inventory products combined with server-side pagination
+  getAllProducts: async (offset: number = 0, limit: number = 10) => {
+    try {
+      console.log(`=== getAllProducts called with offset=${offset}, limit=${limit} ===`);
+      
+      // For now, let's just get manufactured items to avoid complexity
+      // We can improve this later when the backend supports combined pagination
+      try {
+        const manufacturedResponse = await api.get(`${API_URL}/manufactured_item/?offset=${offset}&limit=${limit}`);
+        
+        let manufacturedItems: any[] = [];
+        let total = 0;
+        let hasNext = false;
+        
+        // Handle both old and new response formats
+        if (manufacturedResponse.data && manufacturedResponse.data.items !== undefined) {
+          // New format with pagination
+          manufacturedItems = manufacturedResponse.data.items.map((item: any) => ({ 
+            ...item, 
+            product_type: 'manufactured', 
+            type_label: 'Manufacturado' 
+          }));
+          total = manufacturedResponse.data.total;
+          hasNext = (manufacturedResponse.data.offset + manufacturedResponse.data.limit) < manufacturedResponse.data.total;
+        } else {
+          // Old format - direct array
+          console.warn('API returned old format, converting to new format');
+          manufacturedItems = manufacturedResponse.data.map((item: any) => ({ 
+            ...item, 
+            product_type: 'manufactured', 
+            type_label: 'Manufacturado' 
+          }));
+          total = manufacturedItems.length;
+          hasNext = false;
+        }
+        
+        console.log(`✓ Fetched ${manufacturedItems.length} manufactured items`);
+        
+        return {
+          data: manufacturedItems,
+          total: total,
+          hasNext: hasNext
+        };
+      } catch (error) {
+        console.error('Error fetching manufactured items:', error);
+        // Return empty result if there's an error
+        return {
+          data: [],
+          total: 0,
+          hasNext: false
+        };
+      }
+    } catch (error) {
+      console.error('Error fetching combined products:', error);
+      return {
+        data: [],
+        total: 0,
+        hasNext: false
+      };
+    }
+  },
+
   getIngredients: async () => {
-    const response = await api.get(`${API_URL}/inventory_item/ingredients/all`);
-    return response.data;
+    try {
+      const response = await api.get(`${API_URL}/inventory_item/ingredients/all`);
+      
+      // Handle both old and new response formats
+      if (response.data && response.data.items !== undefined) {
+        // New format with pagination
+        return response.data.items;
+      } else {
+        // Old format - direct array
+        return response.data;
+      }
+    } catch (error) {
+      console.error('Error fetching ingredients:', error);
+      return []; // Return empty array instead of throwing
+    }
   },
 
   create: async (item: ManufacturedItem) => {

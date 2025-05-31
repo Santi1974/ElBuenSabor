@@ -15,14 +15,12 @@ interface GenericABMProps {
     type?: 'text' | 'number' | 'date' | 'select';
     options?: { value: string; label: string }[];
   }[];
-  onRowClick?: (item: any) => void;
   type?: 'employee' | 'client' | 'rubro' | 'inventario' | 'ingrediente';
 }
 
 const GenericABM: React.FC<GenericABMProps> = ({
   title,
   columns,
-  onRowClick,
   type = 'employee'
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -42,7 +40,6 @@ const GenericABM: React.FC<GenericABMProps> = ({
   const [totalItems, setTotalItems] = useState(0);
   const [hasNext, setHasNext] = useState(false);
 
-  const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const [availableIngredients, setAvailableIngredients] = useState<any[]>([]);
@@ -55,7 +52,8 @@ const GenericABM: React.FC<GenericABMProps> = ({
   }, []);
 
   useEffect(() => {
-    if (type === 'inventario' || type === 'ingrediente') {
+    // Reload data when currentPage changes for all types that use pagination
+    if (type === 'employee' || type === 'client' || type === 'inventario' || type === 'ingrediente' || type === 'rubro') {
       loadData();
     }
   }, [currentPage]);
@@ -64,10 +62,21 @@ const GenericABM: React.FC<GenericABMProps> = ({
     if (type === 'inventario' || type === 'ingrediente') {
       try {
         const categoryType = type === 'ingrediente' ? 'inventory' : 'manufactured';
+        console.log(`Loading categories for type: ${type}, categoryType: ${categoryType}`);
         const categoriesData = await categoryService.getTopLevelAll(categoryType);
-        setCategories(categoriesData);
+        console.log('Categories loaded:', categoriesData);
+        
+        // Handle both old and new response formats
+        if (categoriesData && categoriesData.items !== undefined) {
+          // New format with pagination
+          setCategories(Array.isArray(categoriesData.items) ? categoriesData.items : []);
+        } else {
+          // Old format - direct array
+          setCategories(Array.isArray(categoriesData) ? categoriesData : []);
+        }
       } catch (err) {
         console.error('Error loading categories:', err);
+        setCategories([]); // Ensure it's always an array
       }
     }
   };
@@ -78,10 +87,21 @@ const GenericABM: React.FC<GenericABMProps> = ({
         // Si es producto de inventario, usar categorías de inventory
         // Si es producto manufacturado, usar categorías de manufactured
         const categoryType = productType === 'inventory' ? 'inventory' : 'manufactured';
+        console.log(`Loading categories for product type: ${productType}, categoryType: ${categoryType}`);
         const categoriesData = await categoryService.getTopLevelAll(categoryType);
-        setCategories(categoriesData);
+        console.log('Categories loaded for product:', categoriesData);
+        
+        // Handle both old and new response formats
+        if (categoriesData && categoriesData.items !== undefined) {
+          // New format with pagination
+          setCategories(Array.isArray(categoriesData.items) ? categoriesData.items : []);
+        } else {
+          // Old format - direct array
+          setCategories(Array.isArray(categoriesData) ? categoriesData : []);
+        }
       } catch (err) {
         console.error('Error loading categories:', err);
+        setCategories([]); // Ensure it's always an array
       }
     }
   };
@@ -89,20 +109,21 @@ const GenericABM: React.FC<GenericABMProps> = ({
   const loadParentCategories = async () => {
     if (type === 'rubro') {
       try {
-        const [manufacturedCategories, inventoryCategories] = await Promise.all([
-          categoryService.getAll(),
-          categoryService.getInventoryCategories()
+        const [manufacturedCategoriesResponse, inventoryCategoriesResponse] = await Promise.all([
+          categoryService.getAll(0, 1000),
+          categoryService.getInventoryCategories(0, 1000)
         ]);
         
         // Combinar ambas listas y agregar un campo para identificar el tipo
         const allCategories = [
-          ...manufacturedCategories.map((cat: any) => ({ ...cat, category_type: 'manufactured' })),
-          ...inventoryCategories.map((cat: any) => ({ ...cat, category_type: 'inventory' }))
+          ...(Array.isArray(manufacturedCategoriesResponse.data) ? manufacturedCategoriesResponse.data : []).map((cat: any) => ({ ...cat, category_type: 'manufactured' })),
+          ...(Array.isArray(inventoryCategoriesResponse.data) ? inventoryCategoriesResponse.data : []).map((cat: any) => ({ ...cat, category_type: 'inventory' }))
         ];
         
         setParentCategories(allCategories);
       } catch (err) {
         console.error('Error loading parent categories:', err);
+        setParentCategories([]); // Ensure it's always an array
       }
     }
   };
@@ -111,9 +132,10 @@ const GenericABM: React.FC<GenericABMProps> = ({
     if (type === 'inventario') {
       try {
         const ingredientsData = await inventoryService.getIngredients();
-        setAvailableIngredients(ingredientsData);
+        setAvailableIngredients(Array.isArray(ingredientsData) ? ingredientsData : []);
       } catch (err) {
         console.error('Error loading ingredients:', err);
+        setAvailableIngredients([]); // Ensure it's always an array
       }
     }
   };
@@ -121,11 +143,20 @@ const GenericABM: React.FC<GenericABMProps> = ({
   const loadMeasurementUnits = async () => {
     if (type === 'ingrediente' || type === 'inventario') {
       try {
-        const unitsData = await ingredientService.getMeasurementUnits();
-        console.log('Loaded measurement units:', unitsData);
-        setMeasurementUnits(unitsData);
+        const unitsResponse = await ingredientService.getMeasurementUnits();
+        console.log('Loaded measurement units:', unitsResponse);
+        
+        // Handle both old and new response formats
+        if (unitsResponse && unitsResponse.items !== undefined) {
+          // New format with pagination
+          setMeasurementUnits(Array.isArray(unitsResponse.items) ? unitsResponse.items : []);
+        } else {
+          // Old format - direct array
+          setMeasurementUnits(Array.isArray(unitsResponse) ? unitsResponse : []);
+        }
       } catch (err) {
         console.error('Error loading measurement units:', err);
+        setMeasurementUnits([]); // Ensure it's always an array
       }
     }
   };
@@ -133,45 +164,47 @@ const GenericABM: React.FC<GenericABMProps> = ({
   const loadData = async () => {
     try {
       let response: any;
+      const offset = (currentPage - 1) * itemsPerPage;
+      
       switch (type) {
         case 'employee':
-          response = await employeeService.getAll();
-          setData(response);
-          setTotalItems(response.length);
-          setHasNext(false);
+          response = await employeeService.getAll(offset, itemsPerPage);
+          setData(response.data);
+          setTotalItems(response.total);
+          setHasNext(response.hasNext);
           break;
         case 'client':
-          response = await clientService.getAll();
-          setData(response);
-          setTotalItems(response.length);
-          setHasNext(false);
+          response = await clientService.getAll(offset, itemsPerPage);
+          setData(response.data);
+          setTotalItems(response.total);
+          setHasNext(response.hasNext);
           break;
         case 'inventario':
-          const offset = (currentPage - 1) * itemsPerPage;
           const inventoryResponse = await inventoryService.getAllProducts(offset, itemsPerPage);
           setData(inventoryResponse.data);
           setTotalItems(inventoryResponse.total);
           setHasNext(inventoryResponse.hasNext);
           break;
         case 'ingrediente':
-          const ingredientOffset = (currentPage - 1) * itemsPerPage;
-          const ingredientResponse = await ingredientService.getAll(ingredientOffset, itemsPerPage);
+          const ingredientResponse = await ingredientService.getAll(offset, itemsPerPage);
           setData(ingredientResponse.data);
           setTotalItems(ingredientResponse.total);
           setHasNext(ingredientResponse.hasNext);
           break;
         case 'rubro':
-          const [manufacturedCats, inventoryCats] = await Promise.all([
-            categoryService.getAll(),
-            categoryService.getInventoryCategories()
+          // For categories, we now use server-side pagination for each type
+          const [manufacturedCatsResponse, inventoryCatsResponse] = await Promise.all([
+            categoryService.getAll(offset, itemsPerPage),
+            categoryService.getInventoryCategories(offset, itemsPerPage)
           ]);
           
-          // Combinar ambas listas y procesar para mostrar el nombre de la categoría padre
+          // Combine both lists and process for parent category names
           const allCats = [
-            ...manufacturedCats.map((cat: any) => ({ ...cat, category_type: 'manufactured' })),
-            ...inventoryCats.map((cat: any) => ({ ...cat, category_type: 'inventory' }))
+            ...(Array.isArray(manufacturedCatsResponse.data) ? manufacturedCatsResponse.data : []).map((cat: any) => ({ ...cat, category_type: 'manufactured' })),
+            ...(Array.isArray(inventoryCatsResponse.data) ? inventoryCatsResponse.data : []).map((cat: any) => ({ ...cat, category_type: 'inventory' }))
           ];
           
+          // For parent category resolution, we need all categories (for this page)
           const categoriesWithParent = allCats.map((category: any) => {
             let parentCategoryName = 'Sin categoría padre';
             if (category.parent_id) {
@@ -184,9 +217,14 @@ const GenericABM: React.FC<GenericABMProps> = ({
               type_label: category.category_type === 'manufactured' ? 'Producto' : 'Ingrediente'
             };
           });
+          
           setData(categoriesWithParent);
-          setTotalItems(categoriesWithParent.length);
-          setHasNext(false);
+          // Calculate total from both responses
+          const totalFromBoth = (manufacturedCatsResponse.total || 0) + (inventoryCatsResponse.total || 0);
+          setTotalItems(totalFromBoth);
+          // Check if either has more pages
+          const hasNextFromEither = manufacturedCatsResponse.hasNext || inventoryCatsResponse.hasNext;
+          setHasNext(hasNextFromEither);
           break;
         default:
           setData([]);
@@ -203,6 +241,12 @@ const GenericABM: React.FC<GenericABMProps> = ({
       loadCategories();
       loadMeasurementUnits();
     }
+    
+    if (type === 'inventario') {
+      loadCategories();
+      loadMeasurementUnits();
+      loadIngredients();
+    }
   };
 
   const handleOpenModal = async (item?: any) => {
@@ -218,11 +262,10 @@ const GenericABM: React.FC<GenericABMProps> = ({
           measurement_unit_id: item.measurement_unit?.id_key || 0
         });
         
-        // Transform existing details to match the expected format
         const transformedDetails = (item.details || []).map((detail: any) => ({
           inventory_item_id: detail.inventory_item?.id_key || detail.inventory_item_id || '',
           quantity: detail.quantity || 0,
-          temp_id: detail.id_key || Date.now() + Math.random() // Use existing id or generate temp id
+          temp_id: detail.id_key || Date.now() + Math.random()
         }));
         setSelectedDetails(transformedDetails);
         
@@ -269,6 +312,16 @@ const GenericABM: React.FC<GenericABMProps> = ({
             }
           }
         }
+      } else if (type === 'employee') {
+        setFormData({
+          ...item,
+          password: '' // Keep password empty for security when editing
+        });
+      } else if (type === 'client') {
+        setFormData({
+          ...item,
+          password: '' // Keep password empty for security when editing
+        });
       } else {
         setFormData(item);
       }
@@ -286,8 +339,7 @@ const GenericABM: React.FC<GenericABMProps> = ({
           active: true,
           category_id: 0,
           details: [],
-          product_type: '', // manufactured or inventory
-          // Campos adicionales para productos de inventario
+          product_type: '', 
           current_stock: 0,
           minimum_stock: 0,
           purchase_cost: 0,
@@ -307,6 +359,24 @@ const GenericABM: React.FC<GenericABMProps> = ({
           category_id: 0,
           measurement_unit_id: 0
         });
+      } else if (type === 'employee') {
+        setFormData({
+          full_name: '',
+          email: '',
+          role: '',
+          phone_number: '',
+          password: '',
+          active: true
+        });
+      } else if (type === 'client') {
+        setFormData({
+          full_name: '',
+          email: '',
+          role: 'cliente',
+          phone_number: '',
+          password: '',
+          active: true
+        });
       } else {
         setFormData({
           name: '',
@@ -319,18 +389,16 @@ const GenericABM: React.FC<GenericABMProps> = ({
     
     // Load categories for inventory items and measurement units for inventory products
     if (type === 'inventario') {
-      // Si es un item existente, cargar categorías según su product_type
       if (item && item.product_type) {
         await loadCategoriesForProduct(item.product_type);
       } else {
-        // Para nuevos items, cargar categorías manufactured por defecto (se cambiarán al seleccionar tipo)
-        loadCategories();
+        // For new products, load default manufactured categories
+        await loadCategories();
       }
-      loadIngredients(); // Load ingredients as well
-      loadMeasurementUnits(); // Also load measurement units for inventory products
+      loadIngredients();
+      loadMeasurementUnits();
     }
     
-    // Load parent categories for rubro items
     if (type === 'rubro') {
       loadParentCategories();
     }
@@ -343,10 +411,7 @@ const GenericABM: React.FC<GenericABMProps> = ({
     setSelectedItem(null);
     setFormData({});
     resetCategorySelection();
-    // Clear image state
-    setImageFile(null);
     setImagePreview(null);
-    // Clear ingredients state
     setSelectedDetails([]);
   };
 
@@ -576,8 +641,6 @@ const GenericABM: React.FC<GenericABMProps> = ({
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      setImageFile(file);
-      
       // Create preview
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -591,9 +654,8 @@ const GenericABM: React.FC<GenericABMProps> = ({
   };
 
   const removeImage = () => {
-    setImageFile(null);
-    setImagePreview(null);
     setFormData((prev: any) => ({ ...prev, image_url: '' }));
+    setImagePreview(null);
   };
 
   const addIngredient = () => {
@@ -637,13 +699,15 @@ const GenericABM: React.FC<GenericABMProps> = ({
     <div className="container-fluid p-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2>{title}</h2>
-        <button
-          className="btn btn-primary"
-          onClick={() => handleOpenModal()}
-        >
-          <i className="bi bi-plus-lg me-2"></i>
-          Agregar
-        </button>
+        <div>
+          <button
+            className="btn btn-primary"
+            onClick={() => handleOpenModal()}
+          >
+            <i className="bi bi-plus-lg me-2"></i>
+            Agregar
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -723,8 +787,8 @@ const GenericABM: React.FC<GenericABMProps> = ({
         </table>
       </div>
 
-      {/* Pagination controls for inventory and ingredients */}
-      {(type === 'inventario' || type === 'ingrediente') && (currentPage > 1 || hasNextPage()) && (
+      {/* Pagination controls - now for all types */}
+      {(currentPage > 1 || hasNextPage()) && (
         <div className="d-flex justify-content-between align-items-center mt-3">
           <div>
             <span className="text-muted">
@@ -851,9 +915,16 @@ const GenericABM: React.FC<GenericABMProps> = ({
                         <select
                           className="form-select"
                           value={formData[column.field]?.toString() || ''}
-                          onChange={(e) =>
-                            handleInputChange(column.field, e.target.value === 'true')
-                          }
+                          onChange={(e) => {
+                            // Check if this is a boolean field (like 'active') by looking at options
+                            const isBooleanField = column.options?.some(opt => opt.value === 'true' || opt.value === 'false');
+                            if (isBooleanField) {
+                              handleInputChange(column.field, e.target.value === 'true');
+                            } else {
+                              // For string fields like 'role', keep the string value
+                              handleInputChange(column.field, e.target.value);
+                            }
+                          }}
                         >
                           <option value="">Seleccione...</option>
                           {column.options?.map((option) => (
@@ -984,7 +1055,7 @@ const GenericABM: React.FC<GenericABMProps> = ({
                               required
                             >
                               <option value="">Seleccione una unidad...</option>
-                              {measurementUnits.map((unit) => (
+                              {Array.isArray(measurementUnits) && measurementUnits.map((unit) => (
                                 <option key={unit.id_key} value={unit.id_key}>
                                   {unit.name}
                                 </option>
@@ -1075,7 +1146,7 @@ const GenericABM: React.FC<GenericABMProps> = ({
                           required
                         >
                           <option value="">Seleccione una unidad...</option>
-                          {measurementUnits.map((unit) => (
+                          {Array.isArray(measurementUnits) && measurementUnits.map((unit) => (
                             <option key={unit.id_key} value={unit.id_key}>
                               {unit.name}
                             </option>
@@ -1098,7 +1169,7 @@ const GenericABM: React.FC<GenericABMProps> = ({
                         required={availableSubcategories.length === 0}
                       >
                         <option value="">Seleccione una categoría...</option>
-                        {categories.map((category) => (
+                        {Array.isArray(categories) && categories.map((category) => (
                           <option key={category.id_key} value={category.id_key}>
                             {category.name}
                             {category.subcategories && category.subcategories.length > 0 && ' (tiene subcategorías)'}
@@ -1126,7 +1197,7 @@ const GenericABM: React.FC<GenericABMProps> = ({
                         required={availableSubcategories.length === 0}
                       >
                         <option value="">Seleccione una categoría...</option>
-                        {categories.map((category) => (
+                        {Array.isArray(categories) && categories.map((category) => (
                           <option key={category.id_key} value={category.id_key}>
                             {category.name}
                             {category.subcategories && category.subcategories.length > 0 && ' (tiene subcategorías)'}
@@ -1154,7 +1225,7 @@ const GenericABM: React.FC<GenericABMProps> = ({
                         required
                       >
                         <option value="">Seleccione una subcategoría...</option>
-                        {availableSubcategories.map((subcategory) => (
+                        {Array.isArray(availableSubcategories) && availableSubcategories.map((subcategory) => (
                           <option key={subcategory.id_key} value={subcategory.id_key}>
                             {subcategory.name}
                           </option>
@@ -1176,7 +1247,7 @@ const GenericABM: React.FC<GenericABMProps> = ({
                         required
                       >
                         <option value="">Seleccione una subcategoría...</option>
-                        {availableSubcategories.map((subcategory) => (
+                        {Array.isArray(availableSubcategories) && availableSubcategories.map((subcategory) => (
                           <option key={subcategory.id_key} value={subcategory.id_key}>
                             {subcategory.name}
                           </option>
@@ -1208,7 +1279,7 @@ const GenericABM: React.FC<GenericABMProps> = ({
                         </div>
                       ) : (
                         <div className="border rounded p-3">
-                          {selectedDetails.map((detail, index) => (
+                          {Array.isArray(selectedDetails) && selectedDetails.map((detail, index) => (
                             <div key={detail.temp_id || detail.id_key || index} className="row g-2 mb-3 align-items-end">
                               <div className="col-6">
                                 <label className="form-label small">Ingrediente</label>
@@ -1221,7 +1292,7 @@ const GenericABM: React.FC<GenericABMProps> = ({
                                   required
                                 >
                                   <option value="">Seleccione un ingrediente...</option>
-                                  {availableIngredients.map((ingredient) => (
+                                  {Array.isArray(availableIngredients) && availableIngredients.map((ingredient) => (
                                     <option key={ingredient.id_key} value={ingredient.id_key}>
                                       {ingredient.name} ({ingredient.measurement_unit?.name || 'unidad'})
                                     </option>
