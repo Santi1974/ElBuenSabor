@@ -6,6 +6,8 @@ import Clients from '../pages/Admin/Clients/Clients';
 import Inventory from '../pages/Admin/Inventory/Inventory';
 import Categories from '../pages/Admin/Categories/Categories';
 import Ingredients from '../pages/Admin/Ingredients/Ingredients';
+import Rankings from '../pages/Admin/Rankings/Rankings';
+import Invoices from '../pages/Admin/Invoices/Invoices';
 
 
 const AdminRoutes: React.FC = () => {
@@ -23,9 +25,9 @@ const AdminRoutes: React.FC = () => {
         </Route>
 
         <Route path="ingredients" element={<Ingredients />} />
-        {/*<Route path="invoices" element={<Invoices />} />
         <Route path="rankings" element={<Rankings />} />
-        <Route path="movements" element={<Movements />} /> */}
+        <Route path="invoices" element={<Invoices />} />
+        {/*<Route path="movements" element={<Movements />} /> */}
       </Route>
     </Routes>
   );

@@ -1,10 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import employeeService from '../../services/employeeService';
-import clientService from '../../services/clientService';
-import inventoryService from '../../services/inventoryService';
-import categoryService from '../../services/categoryService';
-import ingredientService from '../../services/ingredientService';
+import { useABMData } from '../../hooks/useABMData';
+import type { ABMType } from '../../hooks/useABMData';
+import { useFormData } from '../../hooks/useFormData';
+import { useCategories } from '../../hooks/useCategories';
+import DataTable from './DataTable';
+import PaginationControls from './PaginationControls';
+import FormFields from './FormFields';
+import InventoryFormFields from './InventoryFormFields';
+import CategoryFormFields from './CategoryFormFields';
+import ViewModal from './ViewModal';
 
 interface GenericABMProps {
   title: string;
@@ -15,7 +20,7 @@ interface GenericABMProps {
     type?: 'text' | 'number' | 'date' | 'select';
     options?: { value: string; label: string }[];
   }[];
-  type?: 'employee' | 'client' | 'rubro' | 'inventario' | 'ingrediente';
+  type?: ABMType;
 }
 
 const GenericABM: React.FC<GenericABMProps> = ({
@@ -25,382 +30,69 @@ const GenericABM: React.FC<GenericABMProps> = ({
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<any>(null);
   const [viewItem, setViewItem] = useState<any>(null);
-  const [formData, setFormData] = useState<any>({});
-  const [data, setData] = useState<any[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<any>(null);
-  const [availableSubcategories, setAvailableSubcategories] = useState<any[]>([]);
-  const [parentCategories, setParentCategories] = useState<any[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
-  const [totalItems, setTotalItems] = useState(0);
-  const [hasNext, setHasNext] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  // Custom hooks
+  const {
+    data,
+    currentPage,
+    totalItems,
+    hasNext,
+    error,
+    loadData,
+    handleDelete,
+    getTotalPages,
+    handlePageChange,
+    handleNextPage,
+    handlePrevPage
+  } = useABMData(type);
 
-  const [availableIngredients, setAvailableIngredients] = useState<any[]>([]);
-  const [selectedDetails, setSelectedDetails] = useState<any[]>([]);
-
-  const [measurementUnits, setMeasurementUnits] = useState<any[]>([]);
-
-  useEffect(() => {
+  const {
+    formData,
+    selectedItem,
+    selectedDetails,
+    setSelectedDetails,
+    imagePreview,
+    initializeFormData,
+    handleInputChange,
+    handleImageChange,
+    removeImage,
+    handleSubmit,
+    resetForm
+  } = useFormData(type, () => {
     loadData();
-  }, []);
+    handleCloseModal();
+    setFormError(null);
+  });
 
-  useEffect(() => {
-    // Reload data when currentPage changes for all types that use pagination
-    if (type === 'employee' || type === 'client' || type === 'inventario' || type === 'ingrediente' || type === 'rubro') {
-      loadData();
-    }
-  }, [currentPage]);
-
-  const loadCategories = async () => {
-    if (type === 'inventario' || type === 'ingrediente') {
-      try {
-        const categoryType = type === 'ingrediente' ? 'inventory' : 'manufactured';
-        console.log(`Loading categories for type: ${type}, categoryType: ${categoryType}`);
-        const categoriesData = await categoryService.getTopLevelAll(categoryType);
-        console.log('Categories loaded:', categoriesData);
-        
-        // Handle both old and new response formats
-        if (categoriesData && categoriesData.items !== undefined) {
-          // New format with pagination
-          setCategories(Array.isArray(categoriesData.items) ? categoriesData.items : []);
-        } else {
-          // Old format - direct array
-          setCategories(Array.isArray(categoriesData) ? categoriesData : []);
-        }
-      } catch (err) {
-        console.error('Error loading categories:', err);
-        setCategories([]); // Ensure it's always an array
-      }
-    }
-  };
-
-  const loadCategoriesForProduct = async (productType: string) => {
-    if (type === 'inventario') {
-      try {
-        // Si es producto de inventario, usar categorías de inventory
-        // Si es producto manufacturado, usar categorías de manufactured
-        const categoryType = productType === 'inventory' ? 'inventory' : 'manufactured';
-        console.log(`Loading categories for product type: ${productType}, categoryType: ${categoryType}`);
-        const categoriesData = await categoryService.getTopLevelAll(categoryType);
-        console.log('Categories loaded for product:', categoriesData);
-        
-        // Handle both old and new response formats
-        if (categoriesData && categoriesData.items !== undefined) {
-          // New format with pagination
-          setCategories(Array.isArray(categoriesData.items) ? categoriesData.items : []);
-        } else {
-          // Old format - direct array
-          setCategories(Array.isArray(categoriesData) ? categoriesData : []);
-        }
-      } catch (err) {
-        console.error('Error loading categories:', err);
-        setCategories([]); // Ensure it's always an array
-      }
-    }
-  };
-
-  const loadParentCategories = async () => {
-    if (type === 'rubro') {
-      try {
-        const [manufacturedCategoriesResponse, inventoryCategoriesResponse] = await Promise.all([
-          categoryService.getAll(0, 1000),
-          categoryService.getInventoryCategories(0, 1000)
-        ]);
-        
-        // Combinar ambas listas y agregar un campo para identificar el tipo
-        const allCategories = [
-          ...(Array.isArray(manufacturedCategoriesResponse.data) ? manufacturedCategoriesResponse.data : []).map((cat: any) => ({ ...cat, category_type: 'manufactured' })),
-          ...(Array.isArray(inventoryCategoriesResponse.data) ? inventoryCategoriesResponse.data : []).map((cat: any) => ({ ...cat, category_type: 'inventory' }))
-        ];
-        
-        setParentCategories(allCategories);
-      } catch (err) {
-        console.error('Error loading parent categories:', err);
-        setParentCategories([]); // Ensure it's always an array
-      }
-    }
-  };
-
-  const loadIngredients = async () => {
-    if (type === 'inventario') {
-      try {
-        const ingredientsData = await inventoryService.getIngredients();
-        setAvailableIngredients(Array.isArray(ingredientsData) ? ingredientsData : []);
-      } catch (err) {
-        console.error('Error loading ingredients:', err);
-        setAvailableIngredients([]); // Ensure it's always an array
-      }
-    }
-  };
-
-  const loadMeasurementUnits = async () => {
-    if (type === 'ingrediente' || type === 'inventario') {
-      try {
-        const unitsResponse = await ingredientService.getMeasurementUnits();
-        console.log('Loaded measurement units:', unitsResponse);
-        
-        // Handle both old and new response formats
-        if (unitsResponse && unitsResponse.items !== undefined) {
-          // New format with pagination
-          setMeasurementUnits(Array.isArray(unitsResponse.items) ? unitsResponse.items : []);
-        } else {
-          // Old format - direct array
-          setMeasurementUnits(Array.isArray(unitsResponse) ? unitsResponse : []);
-        }
-      } catch (err) {
-        console.error('Error loading measurement units:', err);
-        setMeasurementUnits([]); // Ensure it's always an array
-      }
-    }
-  };
-
-  const loadData = async () => {
-    try {
-      let response: any;
-      const offset = (currentPage - 1) * itemsPerPage;
-      
-      switch (type) {
-        case 'employee':
-          response = await employeeService.getAll(offset, itemsPerPage);
-          setData(response.data);
-          setTotalItems(response.total);
-          setHasNext(response.hasNext);
-          break;
-        case 'client':
-          response = await clientService.getAll(offset, itemsPerPage);
-          setData(response.data);
-          setTotalItems(response.total);
-          setHasNext(response.hasNext);
-          break;
-        case 'inventario':
-          const inventoryResponse = await inventoryService.getAllProducts(offset, itemsPerPage);
-          setData(inventoryResponse.data);
-          setTotalItems(inventoryResponse.total);
-          setHasNext(inventoryResponse.hasNext);
-          break;
-        case 'ingrediente':
-          const ingredientResponse = await ingredientService.getAll(offset, itemsPerPage);
-          setData(ingredientResponse.data);
-          setTotalItems(ingredientResponse.total);
-          setHasNext(ingredientResponse.hasNext);
-          break;
-        case 'rubro':
-          // For categories, we now use server-side pagination for each type
-          const [manufacturedCatsResponse, inventoryCatsResponse] = await Promise.all([
-            categoryService.getAll(offset, itemsPerPage),
-            categoryService.getInventoryCategories(offset, itemsPerPage)
-          ]);
-          
-          // Combine both lists and process for parent category names
-          const allCats = [
-            ...(Array.isArray(manufacturedCatsResponse.data) ? manufacturedCatsResponse.data : []).map((cat: any) => ({ ...cat, category_type: 'manufactured' })),
-            ...(Array.isArray(inventoryCatsResponse.data) ? inventoryCatsResponse.data : []).map((cat: any) => ({ ...cat, category_type: 'inventory' }))
-          ];
-          
-          // For parent category resolution, we need all categories (for this page)
-          const categoriesWithParent = allCats.map((category: any) => {
-            let parentCategoryName = 'Sin categoría padre';
-            if (category.parent_id) {
-              const parentCategory = allCats.find((cat: any) => cat.id_key === category.parent_id);
-              parentCategoryName = parentCategory ? parentCategory.name : 'Categoría padre no encontrada';
-            }
-            return {
-              ...category,
-              parent_category_name: parentCategoryName,
-              type_label: category.category_type === 'manufactured' ? 'Producto' : 'Ingrediente'
-            };
-          });
-          
-          setData(categoriesWithParent);
-          // Calculate total from both responses
-          const totalFromBoth = (manufacturedCatsResponse.total || 0) + (inventoryCatsResponse.total || 0);
-          setTotalItems(totalFromBoth);
-          // Check if either has more pages
-          const hasNextFromEither = manufacturedCatsResponse.hasNext || inventoryCatsResponse.hasNext;
-          setHasNext(hasNextFromEither);
-          break;
-        default:
-          setData([]);
-          setTotalItems(0);
-          setHasNext(false);
-      }
-      setError(null);
-    } catch (err) {
-      setError('Error al cargar los datos');
-      console.error('Error loading data:', err);
-    }
-
-    if (type === 'ingrediente') {
-      loadCategories();
-      loadMeasurementUnits();
-    }
-    
-    if (type === 'inventario') {
-      loadCategories();
-      loadMeasurementUnits();
-      loadIngredients();
-    }
-  };
+  const {
+    categories,
+    selectedCategory,
+    availableSubcategories,
+    parentCategories,
+    availableIngredients,
+    measurementUnits,
+    loadCategoriesForProduct,
+    handleCategorySelection,
+    handleSubcategorySelection,
+    resetCategorySelection,
+    findCategoryForItem
+  } = useCategories(type);
 
   const handleOpenModal = async (item?: any) => {
     resetCategorySelection();
+    initializeFormData(item);
     
-    if (item) {
-      setSelectedItem(item);
-      if (type === 'inventario' && item.category) {
-        setFormData({
-          ...item,
-          category_id: item.category.id_key,
-          details: item.details || [],
-          measurement_unit_id: item.measurement_unit?.id_key || 0
-        });
-        
-        const transformedDetails = (item.details || []).map((detail: any) => ({
-          inventory_item_id: detail.inventory_item?.id_key || detail.inventory_item_id || '',
-          quantity: detail.quantity || 0,
-          temp_id: detail.id_key || Date.now() + Math.random()
-        }));
-        setSelectedDetails(transformedDetails);
-        
-        // Find the parent category for existing item
-        const parentCategory = categories.find(cat => 
-          cat.id_key === item.category.id_key || 
-          (cat.subcategories && cat.subcategories.some((sub: any) => sub.id_key === item.category.id_key))
-        );
-        
-        if (parentCategory) {
-          if (parentCategory.subcategories && parentCategory.subcategories.length > 0) {
-            // If the current category is a subcategory
-            const isSubcategory = parentCategory.subcategories.some((sub: any) => sub.id_key === item.category.id_key);
-            if (isSubcategory) {
-              setSelectedCategory(parentCategory);
-              setAvailableSubcategories(parentCategory.subcategories);
-            } else {
-              setSelectedCategory(item.category);
-            }
-          }
-        }
-      } else if (type === 'ingrediente' && item.category) {
-        setFormData({
-          ...item,
-          category_id: item.category.id_key,
-          measurement_unit_id: item.measurement_unit?.id_key
-        });
-        
-        // Find the parent category for existing ingredient
-        const parentCategory = categories.find(cat => 
-          cat.id_key === item.category.id_key || 
-          (cat.subcategories && cat.subcategories.some((sub: any) => sub.id_key === item.category.id_key))
-        );
-        
-        if (parentCategory) {
-          if (parentCategory.subcategories && parentCategory.subcategories.length > 0) {
-            // If the current category is a subcategory
-            const isSubcategory = parentCategory.subcategories.some((sub: any) => sub.id_key === item.category.id_key);
-            if (isSubcategory) {
-              setSelectedCategory(parentCategory);
-              setAvailableSubcategories(parentCategory.subcategories);
-            } else {
-              setSelectedCategory(item.category);
-            }
-          }
-        }
-      } else if (type === 'employee') {
-        setFormData({
-          ...item,
-          password: '' // Keep password empty for security when editing
-        });
-      } else if (type === 'client') {
-        setFormData({
-          ...item,
-          password: '' // Keep password empty for security when editing
-        });
-      } else {
-        setFormData(item);
-      }
-    } else {
-      setSelectedItem(null);
-      setSelectedDetails([]); // Clear details for new item
-      if (type === 'inventario') {
-        setFormData({
-          name: '',
-          description: '',
-          preparation_time: 0,
-          price: 0,
-          image_url: '',
-          recipe: '',
-          active: true,
-          category_id: 0,
-          details: [],
-          product_type: '', 
-          current_stock: 0,
-          minimum_stock: 0,
-          purchase_cost: 0,
-          measurement_unit_id: 0,
-          is_ingredient: false
-        });
-      } else if (type === 'ingrediente') {
-        setFormData({
-          name: '',
-          current_stock: 0,
-          minimum_stock: 0,
-          price: 0,
-          purchase_cost: 0,
-          image_url: '',
-          active: true,
-          is_ingredient: true,
-          category_id: 0,
-          measurement_unit_id: 0
-        });
-      } else if (type === 'employee') {
-        setFormData({
-          full_name: '',
-          email: '',
-          role: '',
-          phone_number: '',
-          password: '',
-          active: true
-        });
-      } else if (type === 'client') {
-        setFormData({
-          full_name: '',
-          email: '',
-          role: 'cliente',
-          phone_number: '',
-          password: '',
-          active: true
-        });
-      } else {
-        setFormData({
-          name: '',
-          description: '',
-          active: true,
-          parent_id: 0
-        });
-      }
+    if (item && (type === 'inventario' || type === 'ingrediente')) {
+      findCategoryForItem(item);
     }
     
-    // Load categories for inventory items and measurement units for inventory products
+    // Load categories for inventory items
     if (type === 'inventario') {
       if (item && item.product_type) {
         await loadCategoriesForProduct(item.product_type);
-      } else {
-        // For new products, load default manufactured categories
-        await loadCategories();
       }
-      loadIngredients();
-      loadMeasurementUnits();
-    }
-    
-    if (type === 'rubro') {
-      loadParentCategories();
     }
     
     setIsModalOpen(true);
@@ -408,11 +100,9 @@ const GenericABM: React.FC<GenericABMProps> = ({
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    setSelectedItem(null);
-    setFormData({});
+    resetForm();
     resetCategorySelection();
-    setImagePreview(null);
-    setSelectedDetails([]);
+    setFormError(null);
   };
 
   const handleOpenViewModal = (item: any) => {
@@ -425,244 +115,29 @@ const GenericABM: React.FC<GenericABMProps> = ({
     setViewItem(null);
   };
 
-  const handleInputChange = (field: string, value: any) => {
-    setFormData((prev: any) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      if (selectedItem) {
-        switch (type) {
-          case 'employee':
-            await employeeService.update(selectedItem.id_key, formData);
-            break;
-          case 'client':
-            await clientService.update(selectedItem.id_key, formData);
-            break;
-          case 'inventario':
-            const { category: invCategory, product_type: invProdType, type_label: invProdLabel, ...invData } = formData;
-            const invFormattedData = {
-              ...invData,
-              details: selectedDetails.map((detail: any) => ({
-                inventory_item_id: detail.inventory_item_id || 0,
-                quantity: detail.quantity || 0
-              }))
-            };
-            
-            // Use the appropriate service based on product type
-            if (formData.product_type === 'inventory') {
-              await inventoryService.updateInventoryProduct(selectedItem.id_key, invFormattedData);
-            } else {
-              await inventoryService.update(selectedItem.id_key, invFormattedData);
-            }
-            break;
-          case 'ingrediente':
-            const { category: ingCategory, measurement_unit, ...ingredientData } = formData;
-            await ingredientService.update(selectedItem.id_key, ingredientData);
-            break;
-          case 'rubro':
-            // Use the appropriate service based on category type
-            const { category_type: updateCategoryType, type_label: updateTypeLabel, ...updateCategoryData } = formData;
-            
-            // Asegurar que parent_id sea null si es 0
-            const cleanUpdateCategoryData = {
-              name: updateCategoryData.name,
-              description: updateCategoryData.description || '',
-              active: updateCategoryData.active !== false, // default to true if not specified
-              parent_id: updateCategoryData.parent_id || null
-            };
-            
-            console.log('Updating category with data:', cleanUpdateCategoryData);
-            console.log('Category type:', selectedItem.category_type);
-            
-            if (selectedItem.category_type === 'inventory') {
-              await categoryService.updateInventoryCategory(selectedItem.id_key, cleanUpdateCategoryData);
-            } else {
-              await categoryService.update(selectedItem.id_key, cleanUpdateCategoryData);
-            }
-            break;
-        }
-      } else {
-        switch (type) {
-          case 'employee':
-            await employeeService.create(formData);
-            break;
-          case 'client':
-            await clientService.create(formData);
-            break;
-          case 'inventario':
-            const { category: invCategory, product_type: invProdType, type_label: invProdLabel, ...invData } = formData;
-            const invFormattedData = {
-              ...invData,
-              details: selectedDetails.map((detail: any) => ({
-                inventory_item_id: detail.inventory_item_id || 0,
-                quantity: detail.quantity || 0
-              }))
-            };
-            
-            // Use the appropriate service based on product type
-            if (formData.product_type === 'inventory') {
-              await inventoryService.createInventoryProduct(invFormattedData);
-            } else {
-              await inventoryService.create(invFormattedData);
-            }
-            break;
-          case 'ingrediente':
-            const { category: ingCategory, measurement_unit, ...ingredientData } = formData;
-            await ingredientService.create(ingredientData);
-            break;
-          case 'rubro':
-            const { category_type, type_label, ...categoryData } = formData;
-            
-            // Asegurar que parent_id sea null si es 0
-            const cleanCategoryData = {
-              name: categoryData.name,
-              description: categoryData.description || '',
-              active: categoryData.active !== false, // default to true if not specified
-              parent_id: categoryData.parent_id || null
-            };
-            
-            console.log('Creating category with data:', cleanCategoryData);
-            console.log('Category type:', formData.category_type);
-            console.log('Original formData:', formData);
-            
-            if (formData.category_type === 'inventory') {
-              await categoryService.createInventoryCategory(cleanCategoryData);
-            } else {
-              await categoryService.create(cleanCategoryData);
-            }
-            break;
-        }
-      }
-      await loadData();
-      handleCloseModal();
-      setError(null);
+      await handleSubmit();
     } catch (err) {
-      setError('Error al guardar los datos');
-      console.error('Error saving data:', err);
+      setFormError('Error al guardar los datos');
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (window.confirm('¿Está seguro de que desea eliminar este registro?')) {
-      try {
-        switch (type) {
-          case 'employee':
-            await employeeService.delete(id);
-            break;
-          case 'client':
-            await clientService.delete(id);
-            break;
-          case 'inventario':
-            // Find the item to determine its product type
-            const inventoryItemToDelete = data.find(item => item.id_key === id);
-            if (inventoryItemToDelete && inventoryItemToDelete.product_type === 'inventory') {
-              await inventoryService.deleteInventoryProduct(id);
-            } else {
-            await inventoryService.delete(id);
-            }
-            break;
-          case 'ingrediente':
-            await ingredientService.delete(id);
-            break;
-          case 'rubro':
-            // Find the item to determine its category type
-            const itemToDelete = data.find(item => item.id_key === id);
-            if (itemToDelete && itemToDelete.category_type === 'inventory') {
-              await categoryService.deleteInventoryCategory(id);
-            } else {
-            await categoryService.delete(id);
-            }
-            break;
-        }
-        await loadData();
-        setError(null);
-      } catch (err) {
-        setError('Error al eliminar el registro');
-        console.error('Error deleting data:', err);
-      }
+  const handleProductTypeChange = async (productType: string) => {
+    handleInputChange('product_type', productType);
+    if (type === 'inventario' && productType) {
+      await loadCategoriesForProduct(productType);
+      resetCategorySelection();
     }
   };
 
-  const handleNextPage = () => {
-    // Only allow next page if there are more items
-    if (hasNext) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
-  const handlePrevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
-
-  const getTotalPages = () => {
-    return Math.ceil(totalItems / itemsPerPage);
-  };
-
-  const hasNextPage = () => {
-    return hasNext;
-  };
-
-  const handleCategorySelection = (categoryId: string) => {
-    const category = categories.find(cat => cat.id_key.toString() === categoryId);
-    setSelectedCategory(category);
-    
-    if (category && category.subcategories && category.subcategories.length > 0) {
-      // If category has subcategories, show them for selection
-      setAvailableSubcategories(category.subcategories);
-      setFormData((prev: any) => ({ ...prev, category_id: '' }));
-    } else {
-      // If no subcategories, use this category directly
-      setAvailableSubcategories([]);
-      setFormData((prev: any) => ({ ...prev, category_id: parseInt(categoryId) }));
-    }
-  };
-
-  const handleSubcategorySelection = (subcategoryId: string) => {
-    setFormData((prev: any) => ({ ...prev, category_id: parseInt(subcategoryId) }));
-  };
-
-  const resetCategorySelection = () => {
-    setSelectedCategory(null);
-    setAvailableSubcategories([]);
-    setFormData((prev: any) => ({ ...prev, category_id: '' }));
-  };
-
-  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      // Create preview
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        setImagePreview(result);
-        // Store base64 in form data
-        setFormData((prev: any) => ({ ...prev, image_url: result }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const removeImage = () => {
-    setFormData((prev: any) => ({ ...prev, image_url: '' }));
-    setImagePreview(null);
-  };
-
+  // Ingredient management functions
   const addIngredient = () => {
     const newDetail = {
       inventory_item_id: '',
       quantity: 1,
-      temp_id: Date.now() // Temporary ID for React key
+      temp_id: Date.now()
     };
     setSelectedDetails([...selectedDetails, newDetail]);
   };
@@ -670,29 +145,29 @@ const GenericABM: React.FC<GenericABMProps> = ({
   const removeIngredient = (index: number) => {
     const updatedDetails = selectedDetails.filter((_, i) => i !== index);
     setSelectedDetails(updatedDetails);
-    setFormData((prev: any) => ({ ...prev, details: updatedDetails }));
   };
 
   const updateIngredientDetail = (index: number, field: string, value: any) => {
     const updatedDetails = [...selectedDetails];
     updatedDetails[index] = { ...updatedDetails[index], [field]: value };
     setSelectedDetails(updatedDetails);
-    setFormData((prev: any) => ({ ...prev, details: updatedDetails }));
   };
 
-  const handleProductTypeChange = async (productType: string) => {
-    handleInputChange('product_type', productType);
-    
-    // Recargar categorías según el nuevo tipo de producto
-    if (type === 'inventario' && productType) {
-      await loadCategoriesForProduct(productType);
-      resetCategorySelection();
-      
-      // Cargar unidades de medida para productos de inventario
-      if (productType === 'inventory') {
-        loadMeasurementUnits();
-      }
-    }
+  // Category handlers with form data binding
+  const handleCategorySelectionWithForm = (categoryId: string) => {
+    handleCategorySelection(categoryId, formData, (data) => {
+      Object.keys(data).forEach(key => {
+        handleInputChange(key, data[key]);
+      });
+    });
+  };
+
+  const handleSubcategorySelectionWithForm = (subcategoryId: string) => {
+    handleSubcategorySelection(subcategoryId, formData, (data) => {
+      Object.keys(data).forEach(key => {
+        handleInputChange(key, data[key]);
+      });
+    });
   };
 
   return (
@@ -717,160 +192,25 @@ const GenericABM: React.FC<GenericABMProps> = ({
       )}
 
       {/* Table */}
-      <div className="table-responsive">
-        <table className="table table-striped table-hover">
-          <thead>
-            <tr>
-              {columns.map((column) => (
-                <th key={column.field} style={{ width: column.width }}>
-                  {column.headerName}
-                </th>
-              ))}
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.map((item, index) => (
-              <tr 
-                key={index}
-                onClick={() => handleOpenViewModal(item)}
-                style={{ cursor: 'pointer' }}
-              >
-                {columns.map((column) => (
-                  <td key={column.field}>
-                    {column.type === 'select' && column.field === 'active' 
-                      ? (item[column.field] ? 'Sí' : 'No')
-                      : column.field === 'image_url' && item[column.field]
-                        ? (
-                          <img 
-                            src={item[column.field]} 
-                            alt="Product" 
-                            style={{ width: '40px', height: '40px', objectFit: 'cover' }}
-                            className="img-thumbnail"
-                          />
-                        )
-                        : column.field === 'description' || column.field === 'recipe'
-                          ? (item[column.field] ? 
-                              (item[column.field].length > 50 ? 
-                                item[column.field].substring(0, 50) + '...' : 
-                                item[column.field]
-                              ) : ''
-                            )
-                      : column.field.includes('.')
-                        ? column.field.split('.').reduce((obj, key) => obj?.[key], item)
-                        : item[column.field]}
-                  </td>
-                ))}
-                <td>
-                  <button
-                    className="btn btn-sm btn-outline-primary me-2"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleOpenModal(item);
-                    }}
-                  >
-                    <i className="bi bi-pencil"></i>
-                  </button>
-                  <button
-                    className="btn btn-sm btn-outline-danger"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(item.id_key);
-                    }}
-                  >
-                    <i className="bi bi-trash"></i>
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <DataTable
+        columns={columns}
+        data={data}
+        onEdit={(item) => handleOpenModal(item)}
+        onDelete={handleDelete}
+        onView={handleOpenViewModal}
+      />
 
-      {/* Pagination controls - now for all types */}
-      {(currentPage > 1 || hasNextPage()) && (
-        <div className="d-flex justify-content-between align-items-center mt-3">
-          <div>
-            <span className="text-muted">
-              Página {currentPage} de {getTotalPages()} - Mostrando {data.length} de {totalItems} elementos
-            </span>
-          </div>
-          <nav aria-label="Page navigation">
-            <ul className="pagination mb-0">
-              <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
-                <button 
-                  className="page-link" 
-                  onClick={handlePrevPage}
-                  disabled={currentPage === 1}
-                >
-                  Anterior
-                </button>
-              </li>
-              
-              {/* Show page numbers when we have multiple pages */}
-              {getTotalPages() > 1 && (
-                <>
-                  {/* First page */}
-                  {currentPage > 2 && (
-                    <>
-                      <li className="page-item">
-                        <button className="page-link" onClick={() => handlePageChange(1)}>1</button>
-                      </li>
-                      {currentPage > 3 && <li className="page-item disabled"><span className="page-link">...</span></li>}
-                    </>
-                  )}
-                  
-                  {/* Previous page */}
-                  {currentPage > 1 && (
-                    <li className="page-item">
-                      <button className="page-link" onClick={() => handlePageChange(currentPage - 1)}>
-                        {currentPage - 1}
-                      </button>
-                    </li>
-                  )}
-                  
-                  {/* Current page */}
-                  <li className="page-item active">
-                    <span className="page-link">{currentPage}</span>
-                  </li>
-                  
-                  {/* Next page */}
-                  {hasNextPage() && (
-                    <li className="page-item">
-                      <button className="page-link" onClick={() => handlePageChange(currentPage + 1)}>
-                        {currentPage + 1}
-                      </button>
-                    </li>
-                  )}
-                  
-                  {/* Last page indicator */}
-                  {hasNextPage() && currentPage < getTotalPages() - 1 && (
-                    <>
-                      {currentPage < getTotalPages() - 2 && <li className="page-item disabled"><span className="page-link">...</span></li>}
-                      <li className="page-item">
-                        <button className="page-link" onClick={() => handlePageChange(getTotalPages())}>
-                          {getTotalPages()}
-                        </button>
-                      </li>
-                    </>
-                  )}
-                </>
-              )}
-              
-              {hasNextPage() && (
-                <li className="page-item">
-                  <button 
-                    className="page-link" 
-                    onClick={handleNextPage}
-                  >
-                    Siguiente
-                  </button>
-                </li>
-              )}
-            </ul>
-          </nav>
-        </div>
-      )}
+      {/* Pagination */}
+      <PaginationControls
+        currentPage={currentPage}
+        totalItems={totalItems}
+        hasNext={hasNext}
+        dataLength={data.length}
+        getTotalPages={getTotalPages}
+        onPageChange={handlePageChange}
+        onNextPage={handleNextPage}
+        onPrevPage={handlePrevPage}
+      />
 
       {/* Modal */}
       {isModalOpen && (
@@ -888,523 +228,57 @@ const GenericABM: React.FC<GenericABMProps> = ({
                 ></button>
               </div>
               <div className="modal-body">
-                <form onSubmit={handleSubmit}>
-                  {columns
-                    .filter(column => 
-                      column.field !== 'category.name' && 
-                      column.field !== 'parent_category_name' &&
-                      column.field !== 'measurement_unit.name' &&
-                      column.field !== 'type_label' &&
-                      (type !== 'inventario' || (
-                        column.field !== 'description' && 
-                        column.field !== 'recipe' && 
-                        column.field !== 'image_url' &&
-                        column.field !== 'preparation_time' &&
-                        column.field !== 'current_stock' &&
-                        column.field !== 'minimum_stock' &&
-                        column.field !== 'purchase_cost'
-                      )) &&
-                      (type !== 'ingrediente' || (
-                        column.field !== 'image_url'
-                      ))
-                    )
-                    .map((column) => (
-                    <div className="mb-3" key={column.field}>
-                      <label className="form-label">{column.headerName}</label>
-                      {column.type === 'select' ? (
-                        <select
-                          className="form-select"
-                          value={formData[column.field]?.toString() || ''}
-                          onChange={(e) => {
-                            // Check if this is a boolean field (like 'active') by looking at options
-                            const isBooleanField = column.options?.some(opt => opt.value === 'true' || opt.value === 'false');
-                            if (isBooleanField) {
-                              handleInputChange(column.field, e.target.value === 'true');
-                            } else {
-                              // For string fields like 'role', keep the string value
-                              handleInputChange(column.field, e.target.value);
-                            }
-                          }}
-                        >
-                          <option value="">Seleccione...</option>
-                          {column.options?.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        <input
-                          type={column.type || 'text'}
-                          className="form-control"
-                          value={formData[column.field] || ''}
-                          onChange={(e) =>
-                            handleInputChange(column.field, e.target.value)
-                          }
-                        />
-                      )}
-                    </div>
-                  ))}
-                  
-                  {/* Custom fields for inventory items */}
+                {formError && (
+                  <div className="alert alert-danger" role="alert">
+                    {formError}
+                  </div>
+                )}
+                <form onSubmit={handleFormSubmit}>
+                  {/* Basic Form Fields */}
+                  <FormFields
+                    columns={columns}
+                    formData={formData}
+                    type={type}
+                    onInputChange={handleInputChange}
+                  />
+
+                  {/* Inventory Specific Fields */}
                   {type === 'inventario' && (
-                    <>
-                      {/* Product type select field for new inventory items */}
-                      {!selectedItem && (
-                        <div className="mb-3">
-                          <label className="form-label">Tipo de Producto</label>
-                          <select
-                            className="form-select"
-                            value={formData.product_type || ''}
-                            onChange={(e) => handleProductTypeChange(e.target.value)}
-                            required
-                          >
-                            <option value="">Seleccione el tipo...</option>
-                            <option value="manufactured">Producto Manufacturado</option>
-                            <option value="inventory">Producto de Inventario</option>
-                          </select>
-                          <div className="form-text">
-                            Seleccione si es un producto manufacturado (se fabrica) o un producto de inventario (se compra)
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Description field */}
-                      <div className="mb-3">
-                        <label className="form-label">Descripción</label>
-                        <textarea
-                          className="form-control"
-                          rows={3}
-                          value={formData.description || ''}
-                          onChange={(e) => handleInputChange('description', e.target.value)}
-                          placeholder="Describe el producto..."
-                        />
-                      </div>
-
-                      {/* Recipe field - only for manufactured products */}
-                      {(selectedItem?.product_type === 'manufactured' || (!selectedItem && formData.product_type === 'manufactured')) && (
-                        <>
-                          <div className="mb-3">
-                            <label className="form-label">Receta</label>
-                            <textarea
-                              className="form-control"
-                              rows={4}
-                              value={formData.recipe || ''}
-                              onChange={(e) => handleInputChange('recipe', e.target.value)}
-                              placeholder="Ingredientes y pasos de preparación..."
-                            />
-                          </div>
-
-                          {/* Preparation time field - only for manufactured products */}
-                          <div className="mb-3">
-                            <label className="form-label">Tiempo de Preparación (minutos)</label>
-                            <input
-                              type="number"
-                              className="form-control"
-                              min="0"
-                              value={formData.preparation_time || 0}
-                              onChange={(e) => handleInputChange('preparation_time', parseInt(e.target.value) || 0)}
-                              placeholder="Tiempo en minutos..."
-                            />
-                          </div>
-                        </>
-                      )}
-
-                      {/* Stock fields - only for inventory products */}
-                      {(selectedItem?.product_type === 'inventory' || (!selectedItem && formData.product_type === 'inventory')) && (
-                        <>
-                          <div className="mb-3">
-                            <label className="form-label">Stock Actual</label>
-                            <input
-                              type="number"
-                              className="form-control"
-                              min="0"
-                              value={formData.current_stock || 0}
-                              onChange={(e) => handleInputChange('current_stock', parseInt(e.target.value) || 0)}
-                            />
-                          </div>
-                          <div className="mb-3">
-                            <label className="form-label">Stock Mínimo</label>
-                            <input
-                              type="number"
-                              className="form-control"
-                              min="0"
-                              value={formData.minimum_stock || 0}
-                              onChange={(e) => handleInputChange('minimum_stock', parseInt(e.target.value) || 0)}
-                            />
-                          </div>
-                          <div className="mb-3">
-                            <label className="form-label">Costo de Compra</label>
-                            <input
-                              type="number"
-                              className="form-control"
-                              min="0"
-                              step="0.01"
-                              value={formData.purchase_cost || 0}
-                              onChange={(e) => handleInputChange('purchase_cost', parseFloat(e.target.value) || 0)}
-                            />
-                          </div>
-                          
-                          {/* Measurement unit field for inventory products */}
-                          <div className="mb-3">
-                            <label className="form-label">Unidad de Medida</label>
-                            <select
-                              className="form-select"
-                              value={formData.measurement_unit_id || ''}
-                              onChange={(e) => handleInputChange('measurement_unit_id', parseInt(e.target.value))}
-                              required
-                            >
-                              <option value="">Seleccione una unidad...</option>
-                              {Array.isArray(measurementUnits) && measurementUnits.map((unit) => (
-                                <option key={unit.id_key} value={unit.id_key}>
-                                  {unit.name}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        </>
-                      )}
-
-                      {/* Image field */}
-                      <div className="mb-3">
-                        <label className="form-label">Imagen del Producto</label>
-                        <input
-                          type="file"
-                          className="form-control"
-                          accept="image/*"
-                          onChange={handleImageChange}
-                        />
-                        {imagePreview && (
-                          <div className="mt-2">
-                            <img
-                              src={imagePreview}
-                              alt="Preview"
-                              style={{ maxWidth: '200px', maxHeight: '200px', objectFit: 'cover' }}
-                              className="img-thumbnail"
-                            />
-                            <button
-                              type="button"
-                              className="btn btn-sm btn-outline-danger ms-2"
-                              onClick={removeImage}
-                            >
-                              Eliminar imagen
-                            </button>
-                          </div>
-                        )}
-                        {formData.image_url && !imagePreview && (
-                          <div className="mt-2">
-                            <small className="text-muted">Imagen actual guardada</small>
-                          </div>
-                        )}
-                      </div>
-                    </>
-                  )}
-                  
-                  {/* Custom fields for ingredients */}
-                  {type === 'ingrediente' && (
-                    <>
-                      {/* Image field for ingredients */}
-                      <div className="mb-3">
-                        <label className="form-label">Imagen del Ingrediente</label>
-                        <input
-                          type="file"
-                          className="form-control"
-                          accept="image/*"
-                          onChange={handleImageChange}
-                        />
-                        {imagePreview && (
-                          <div className="mt-2">
-                            <img
-                              src={imagePreview}
-                              alt="Preview"
-                              style={{ maxWidth: '200px', maxHeight: '200px', objectFit: 'cover' }}
-                              className="img-thumbnail"
-                            />
-                            <button
-                              type="button"
-                              className="btn btn-sm btn-outline-danger ms-2"
-                              onClick={removeImage}
-                            >
-                              Eliminar imagen
-                            </button>
-                          </div>
-                        )}
-                        {formData.image_url && !imagePreview && (
-                          <div className="mt-2">
-                            <small className="text-muted">Imagen actual guardada</small>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Measurement unit field */}
-                      <div className="mb-3">
-                        <label className="form-label">Unidad de Medida</label>
-                        <select
-                          className="form-select"
-                          value={formData.measurement_unit_id || ''}
-                          onChange={(e) => handleInputChange('measurement_unit_id', parseInt(e.target.value))}
-                          required
-                        >
-                          <option value="">Seleccione una unidad...</option>
-                          {Array.isArray(measurementUnits) && measurementUnits.map((unit) => (
-                            <option key={unit.id_key} value={unit.id_key}>
-                              {unit.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </>
-                  )}
-                  
-                  {/* Category select field for inventory items */}
-                  {type === 'inventario' && (
-                    <div className="mb-3">
-                      <label className="form-label">
-                        Categoría {selectedCategory && availableSubcategories.length > 0 && '(Seleccione subcategoría abajo)'}
-                      </label>
-                      <select
-                        className="form-select"
-                        value={selectedCategory ? selectedCategory.id_key : ''}
-                        onChange={(e) => handleCategorySelection(e.target.value)}
-                        required={availableSubcategories.length === 0}
-                      >
-                        <option value="">Seleccione una categoría...</option>
-                        {Array.isArray(categories) && categories.map((category) => (
-                          <option key={category.id_key} value={category.id_key}>
-                            {category.name}
-                            {category.subcategories && category.subcategories.length > 0 && ' (tiene subcategorías)'}
-                          </option>
-                        ))}
-                      </select>
-                      {selectedCategory && availableSubcategories.length === 0 && (
-                        <div className="form-text text-success">
-                          ✓ Categoría seleccionada: {selectedCategory.name}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  
-                  {/* Category select field for ingredients */}
-                  {type === 'ingrediente' && (
-                    <div className="mb-3">
-                      <label className="form-label">
-                        Categoría {selectedCategory && availableSubcategories.length > 0 && '(Seleccione subcategoría abajo)'}
-                      </label>
-                      <select
-                        className="form-select"
-                        value={selectedCategory ? selectedCategory.id_key : ''}
-                        onChange={(e) => handleCategorySelection(e.target.value)}
-                        required={availableSubcategories.length === 0}
-                      >
-                        <option value="">Seleccione una categoría...</option>
-                        {Array.isArray(categories) && categories.map((category) => (
-                          <option key={category.id_key} value={category.id_key}>
-                            {category.name}
-                            {category.subcategories && category.subcategories.length > 0 && ' (tiene subcategorías)'}
-                          </option>
-                        ))}
-                      </select>
-                      {selectedCategory && availableSubcategories.length === 0 && (
-                        <div className="form-text text-success">
-                          ✓ Categoría seleccionada: {selectedCategory.name}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  
-                  {/* Subcategory select field for inventory items */}
-                  {type === 'inventario' && selectedCategory && availableSubcategories.length > 0 && (
-                    <div className="mb-3">
-                      <label className="form-label">
-                        Subcategoría de "{selectedCategory.name}"
-                      </label>
-                      <select
-                        className="form-select"
-                        value={formData.category_id || ''}
-                        onChange={(e) => handleSubcategorySelection(e.target.value)}
-                        required
-                      >
-                        <option value="">Seleccione una subcategoría...</option>
-                        {Array.isArray(availableSubcategories) && availableSubcategories.map((subcategory) => (
-                          <option key={subcategory.id_key} value={subcategory.id_key}>
-                            {subcategory.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                    <InventoryFormFields
+                      formData={formData}
+                      selectedItem={selectedItem}
+                      selectedDetails={selectedDetails}
+                      availableIngredients={availableIngredients}
+                      measurementUnits={measurementUnits}
+                      imagePreview={imagePreview}
+                      onInputChange={handleInputChange}
+                      onProductTypeChange={handleProductTypeChange}
+                      onImageChange={handleImageChange}
+                      onRemoveImage={removeImage}
+                      onAddIngredient={addIngredient}
+                      onRemoveIngredient={removeIngredient}
+                      onUpdateIngredientDetail={updateIngredientDetail}
+                    />
                   )}
 
-                  {/* Subcategory select field for ingredients */}
-                  {type === 'ingrediente' && selectedCategory && availableSubcategories.length > 0 && (
-                    <div className="mb-3">
-                      <label className="form-label">
-                        Subcategoría de "{selectedCategory.name}"
-                      </label>
-                      <select
-                        className="form-select"
-                        value={formData.category_id || ''}
-                        onChange={(e) => handleSubcategorySelection(e.target.value)}
-                        required
-                      >
-                        <option value="">Seleccione una subcategoría...</option>
-                        {Array.isArray(availableSubcategories) && availableSubcategories.map((subcategory) => (
-                          <option key={subcategory.id_key} value={subcategory.id_key}>
-                            {subcategory.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-                  
-                  {/* Ingredients management for inventory items - only for manufactured products */}
-                  {type === 'inventario' && (selectedItem?.product_type === 'manufactured' || (!selectedItem && formData.product_type === 'manufactured')) && (
-                    <div className="mb-4">
-                      <div className="d-flex justify-content-between align-items-center mb-3">
-                        <label className="form-label mb-0">
-                          <strong>Ingredientes del Producto</strong>
-                        </label>
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-success"
-                          onClick={addIngredient}
-                        >
-                          <i className="bi bi-plus"></i> Agregar Ingrediente
-                        </button>
-                      </div>
-                      
-                      {selectedDetails.length === 0 ? (
-                        <div className="alert alert-info">
-                          <i className="bi bi-info-circle"></i> No hay ingredientes agregados. 
-                          Haga clic en "Agregar Ingrediente" para comenzar.
-                        </div>
-                      ) : (
-                        <div className="border rounded p-3">
-                          {Array.isArray(selectedDetails) && selectedDetails.map((detail, index) => (
-                            <div key={detail.temp_id || detail.id_key || index} className="row g-2 mb-3 align-items-end">
-                              <div className="col-6">
-                                <label className="form-label small">Ingrediente</label>
-                                <select
-                                  className="form-select form-select-sm"
-                                  value={detail.inventory_item_id || ''}
-                                  onChange={(e) => 
-                                    updateIngredientDetail(index, 'inventory_item_id', parseInt(e.target.value))
-                                  }
-                                  required
-                                >
-                                  <option value="">Seleccione un ingrediente...</option>
-                                  {Array.isArray(availableIngredients) && availableIngredients.map((ingredient) => (
-                                    <option key={ingredient.id_key} value={ingredient.id_key}>
-                                      {ingredient.name} ({ingredient.measurement_unit?.name || 'unidad'})
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
-                              <div className="col-4">
-                                <label className="form-label small">Cantidad</label>
-                                <input
-                                  type="number"
-                                  className="form-control form-control-sm"
-                                  min="0"
-                                  step="0.1"
-                                  value={detail.quantity || ''}
-                                  onChange={(e) => 
-                                    updateIngredientDetail(index, 'quantity', parseFloat(e.target.value) || 0)
-                                  }
-                                  placeholder="0"
-                                  required
-                                />
-                              </div>
-                              <div className="col-2">
-                                <button
-                                  type="button"
-                                  className="btn btn-outline-danger btn-sm w-100"
-                                  onClick={() => removeIngredient(index)}
-                                >
-                                  <i className="bi bi-trash"></i>
-                                </button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  
-                  {/* Category type select field for new rubro items */}
-                  {type === 'rubro' && !selectedItem && (
-                    <div className="mb-3">
-                      <label className="form-label">Tipo de Categoría</label>
-                      <select
-                        className="form-select"
-                        value={formData.category_type || ''}
-                        onChange={(e) => handleInputChange('category_type', e.target.value)}
-                        required
-                      >
-                        <option value="">Seleccione el tipo...</option>
-                        <option value="manufactured">Producto Manufacturado</option>
-                        <option value="inventory">Ingrediente</option>
-                      </select>
-                      <div className="form-text">
-                        Seleccione si esta categoría será para productos manufacturados o ingredientes
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Parent category select field for rubro items */}
-                  {type === 'rubro' && (
-                    <div className="mb-3">
-                      <label className="form-label">Categoría Padre (opcional)</label>
-                      <select
-                        className="form-select"
-                        value={formData.parent_id || ''}
-                        onChange={(e) =>
-                          handleInputChange('parent_id', e.target.value ? parseInt(e.target.value) : null)
-                        }
-                      >
-                        <option value="">Sin categoría padre</option>
-                        {parentCategories
-                          .filter(cat => {
-                            if (cat.id_key === formData.id_key) return false;
-                            
-                            if (selectedItem && selectedItem.category_type) {
-                              return cat.category_type === selectedItem.category_type;
-                            }
-                            
-                            if (!selectedItem && formData.category_type) {
-                              return cat.category_type === formData.category_type;
-                            }
-                            
-                            if (!selectedItem && !formData.category_type) {
-                              return false;
-                            }
-                            
-                            return true;
-                          })
-                          .map((category) => (
-                          <option key={category.id_key} value={category.id_key}>
-                            {category.name} ({category.category_type === 'manufactured' ? 'Producto' : 'Ingrediente'})
-                          </option>
-                        ))}
-                      </select>
-                      <div className="form-text">
-                        Seleccione una categoría padre si esta es una subcategoría
-                        {selectedItem && selectedItem.category_type && (
-                          <span className="text-info">
-                            <br />Mostrando solo categorías de tipo: {selectedItem.category_type === 'manufactured' ? 'Producto' : 'Ingrediente'}
-                          </span>
-                        )}
-                        {!selectedItem && formData.category_type && (
-                          <span className="text-info">
-                            <br />Mostrando solo categorías de tipo: {formData.category_type === 'manufactured' ? 'Producto' : 'Ingrediente'}
-                          </span>
-                        )}
-                        {!selectedItem && !formData.category_type && (
-                          <span className="text-warning">
-                            <br />Primero seleccione el tipo de categoría para ver las opciones de categoría padre
-                          </span>
-                        )}
-                      </div>
-                    </div>
+                  {/* Category Related Fields */}
+                  {(type === 'inventario' || type === 'ingrediente' || type === 'rubro') && (
+                    <CategoryFormFields
+                      type={type}
+                      formData={formData}
+                      selectedItem={selectedItem}
+                      categories={categories}
+                      selectedCategory={selectedCategory}
+                      availableSubcategories={availableSubcategories}
+                      parentCategories={parentCategories}
+                      measurementUnits={measurementUnits}
+                      imagePreview={imagePreview}
+                      onInputChange={handleInputChange}
+                      onCategorySelection={handleCategorySelectionWithForm}
+                      onSubcategorySelection={handleSubcategorySelectionWithForm}
+                      onImageChange={handleImageChange}
+                      onRemoveImage={removeImage}
+                    />
                   )}
                   
                   <div className="text-end">
@@ -1428,344 +302,13 @@ const GenericABM: React.FC<GenericABMProps> = ({
       
       {/* View Modal */}
       {isViewModalOpen && viewItem && (
-        <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog modal-dialog-centered modal-lg">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">
-                  <i className="bi bi-eye me-2"></i>
-                  Detalles de {title}
-                </h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={handleCloseViewModal}
-                ></button>
-              </div>
-              <div className="modal-body">
-                <div className="row">
-                  <div className="col-12">
-                    {/* Basic Information */}
-                    <div className="card mb-3">
-                      <div className="card-header">
-                        <h6 className="mb-0">
-                          <i className="bi bi-info-circle me-2"></i>
-                          Información Básica
-                        </h6>
-                      </div>
-                      <div className="card-body">
-                        <div className="row">
-                          {columns
-                            .filter(column => 
-                              column.field !== 'category.name' && 
-                              column.field !== 'parent_category_name' &&
-                              column.field !== 'measurement_unit.name' &&
-                              column.field !== 'type_label' &&
-                              (type !== 'inventario' || (
-                                column.field !== 'description' && 
-                                column.field !== 'recipe' && 
-                                column.field !== 'image_url' &&
-                                column.field !== 'preparation_time' &&
-                                column.field !== 'current_stock' &&
-                                column.field !== 'minimum_stock' &&
-                                column.field !== 'purchase_cost'
-                              )) &&
-                              (type !== 'ingrediente' || (
-                                column.field !== 'image_url'
-                              ))
-                            )
-                            .map((column) => (
-                            <div key={column.field} className="col-md-6 mb-3">
-                              <label className="fw-bold text-muted small">{column.headerName}:</label>
-                              <div className="ms-2">
-                                {column.type === 'select' && column.field === 'active' 
-                                  ? (
-                                    <span className={`badge ${viewItem[column.field] ? 'bg-success' : 'bg-danger'}`}>
-                                      {viewItem[column.field] ? 'Activo' : 'Inactivo'}
-                                    </span>
-                                  )
-                                  : column.field === 'description' || column.field === 'recipe'
-                                    ? (
-                                      <div className="p-2 bg-light rounded">
-                                        {viewItem[column.field] || 'No especificado'}
-                                      </div>
-                                    )
-                                    : column.field === 'price'
-                                      ? `$${viewItem[column.field] || 0}`
-                                      : column.field === 'preparation_time'
-                                        ? `${viewItem[column.field] || 0} minutos`
-                                        : column.field.includes('.')
-                                          ? column.field.split('.').reduce((obj, key) => obj?.[key], viewItem) || 'No especificado'
-                                          : viewItem[column.field] || 'No especificado'}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Image section for inventory items and ingredients */}
-                    {(type === 'inventario' || type === 'ingrediente') && viewItem.image_url && (
-                      <div className="card mb-3">
-                        <div className="card-header">
-                          <h6 className="mb-0">
-                            <i className="bi bi-image me-2"></i>
-                            Imagen del {type === 'inventario' ? 'Producto' : 'Ingrediente'}
-                          </h6>
-                        </div>
-                        <div className="card-body text-center">
-                          <img 
-                            src={viewItem.image_url} 
-                            alt={viewItem.name} 
-                            style={{ maxWidth: '300px', maxHeight: '300px', objectFit: 'cover' }}
-                            className="img-thumbnail"
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Category information */}
-                    {(type === 'inventario' || type === 'rubro' || type === 'ingrediente') && (
-                      <div className="card mb-3">
-                        <div className="card-header">
-                          <h6 className="mb-0">
-                            <i className="bi bi-bookmark me-2"></i>
-                            Información de Categoría
-                          </h6>
-                        </div>
-                        <div className="card-body">
-                          {(type === 'inventario' || type === 'ingrediente') && viewItem.category && (
-                            <div>
-                              {type === 'inventario' && viewItem.product_type && (
-                                <div className="mb-3">
-                                  <label className="fw-bold text-muted small">Tipo de Producto:</label>
-                                  <div className="ms-2">
-                                    <span className={`badge ${viewItem.product_type === 'manufactured' ? 'bg-primary' : 'bg-success'}`}>
-                                      {viewItem.type_label}
-                                    </span>
-                                  </div>
-                                </div>
-                              )}
-                              
-                              <label className="fw-bold text-muted small">Categoría:</label>
-                              <div className="ms-2">
-                                <span className="badge bg-primary">{viewItem.category.name}</span>
-                              </div>
-                              {type === 'ingrediente' && viewItem.measurement_unit && (
-                                <div className="mt-2">
-                                  <label className="fw-bold text-muted small">Unidad de Medida:</label>
-                                  <div className="ms-2">
-                                    <span className="badge bg-info">{viewItem.measurement_unit.name}</span>
-                                  </div>
-                                </div>
-                              )}
-                              {type === 'inventario' && viewItem.product_type === 'inventory' && viewItem.measurement_unit && (
-                                <div className="mt-2">
-                                  <label className="fw-bold text-muted small">Unidad de Medida:</label>
-                                  <div className="ms-2">
-                                    <span className="badge bg-info">{viewItem.measurement_unit.name}</span>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                          {type === 'rubro' && (
-                            <div>
-                              <label className="fw-bold text-muted small">Tipo de Categoría:</label>
-                              <div className="ms-2 mb-3">
-                                <span className={`badge ${viewItem.category_type === 'manufactured' ? 'bg-primary' : 'bg-success'}`}>
-                                  {viewItem.type_label}
-                                </span>
-                              </div>
-                              
-                              <label className="fw-bold text-muted small">Categoría Padre:</label>
-                              <div className="ms-2">
-                                {viewItem.parent_category_name === 'Sin categoría padre' ? (
-                                  <span className="badge bg-secondary">Sin categoría padre</span>
-                                ) : (
-                                  <span className="badge bg-info">{viewItem.parent_category_name}</span>
-                                )}
-                              </div>
-                              {viewItem.subcategories && viewItem.subcategories.length > 0 && (
-                                <div className="mt-3">
-                                  <label className="fw-bold text-muted small">Subcategorías:</label>
-                                  <div className="ms-2 mt-1">
-                                    {viewItem.subcategories.map((subcategory: any, index: number) => (
-                                      <span key={index} className="badge bg-light text-dark me-1 mb-1">
-                                        {subcategory.name}
-                                      </span>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Inventory information section for inventory products */}
-                    {type === 'inventario' && viewItem.product_type === 'inventory' && (
-                      <div className="card mb-3">
-                        <div className="card-header">
-                          <h6 className="mb-0">
-                            <i className="bi bi-box-seam me-2"></i>
-                            Información de Inventario
-                          </h6>
-                        </div>
-                        <div className="card-body">
-                          <div className="row">
-                            <div className="col-md-6 mb-3">
-                              <label className="fw-bold text-muted small">Stock Actual:</label>
-                              <div className="ms-2">
-                                <span className={`badge ${(viewItem.current_stock || 0) > (viewItem.minimum_stock || 0) ? 'bg-success' : 'bg-warning'}`}>
-                                  {viewItem.current_stock || 0} {viewItem.measurement_unit?.name || 'unidades'}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="col-md-6 mb-3">
-                              <label className="fw-bold text-muted small">Stock Mínimo:</label>
-                              <div className="ms-2">
-                                <span className="badge bg-info">
-                                  {viewItem.minimum_stock || 0} {viewItem.measurement_unit?.name || 'unidades'}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="col-md-6 mb-3">
-                              <label className="fw-bold text-muted small">Costo de Compra:</label>
-                              <div className="ms-2">
-                                <span className="badge bg-secondary">
-                                  ${viewItem.purchase_cost || 0}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="col-md-6 mb-3">
-                              <label className="fw-bold text-muted small">Precio de Venta:</label>
-                              <div className="ms-2">
-                                <span className="badge bg-primary">
-                                  ${viewItem.price || 0}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Description and Recipe information for inventory items */}
-                    {type === 'inventario' && (viewItem.description || viewItem.recipe) && (
-                      <div className="card mb-3">
-                        <div className="card-header">
-                          <h6 className="mb-0">
-                            <i className="bi bi-file-text me-2"></i>
-                            Información Adicional
-                          </h6>
-                        </div>
-                        <div className="card-body">
-                          {viewItem.description && (
-                            <div className="mb-3">
-                              <label className="fw-bold text-muted small">Descripción:</label>
-                              <div className="ms-2 p-2 bg-light rounded">
-                                {viewItem.description}
-                              </div>
-                            </div>
-                          )}
-                          {viewItem.recipe && viewItem.product_type === 'manufactured' && (
-                            <div className="mb-3">
-                              <label className="fw-bold text-muted small">Receta:</label>
-                              <div className="ms-2 p-2 bg-light rounded">
-                                {viewItem.recipe}
-                              </div>
-                            </div>
-                          )}
-                          {viewItem.preparation_time && viewItem.product_type === 'manufactured' && (
-                            <div className="mb-3">
-                              <label className="fw-bold text-muted small">Tiempo de Preparación:</label>
-                              <div className="ms-2">
-                                <span className="badge bg-info">
-                                  {viewItem.preparation_time} minutos
-                                </span>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Ingredients section for inventory items - only for manufactured products */}
-                    {type === 'inventario' && viewItem.product_type === 'manufactured' && viewItem.details && viewItem.details.length > 0 && (
-                      <div className="card mb-3">
-                        <div className="card-header">
-                          <h6 className="mb-0">
-                            <i className="bi bi-list-ul me-2"></i>
-                            Ingredientes
-                          </h6>
-                        </div>
-                        <div className="card-body">
-                          <div className="table-responsive">
-                            <table className="table table-sm">
-                              <thead>
-                                <tr>
-                                  <th>Ingrediente</th>
-                                  <th>Cantidad</th>
-                                  <th>Unidad</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {viewItem.details.map((detail: any, index: number) => (
-                                  <tr key={index}>
-                                    <td>{detail.inventory_item?.name || 'Ingrediente no especificado'}</td>
-                                    <td>{detail.quantity}</td>
-                                    <td>{detail.inventory_item?.measurement_unit?.name || 'unidad'}</td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Addresses for employees and clients */}
-                    {(type === 'employee' || type === 'client') && viewItem.addresses && viewItem.addresses.length > 0 && (
-                      <div className="card mb-3">
-                        <div className="card-header">
-                          <h6 className="mb-0">
-                            <i className="bi bi-geo-alt me-2"></i>
-                            Direcciones
-                          </h6>
-                        </div>
-                        <div className="card-body">
-                          {viewItem.addresses.map((address: any, index: number) => (
-                            <div key={index} className="mb-2 p-2 bg-light rounded">
-                              <div className="fw-bold">{address.name || 'Dirección'}</div>
-                              <div className="text-muted">
-                                {address.street} {address.street_number}
-                                {address.city && `, ${address.city}`}
-                                {address.state && `, ${address.state}`}
-                                {address.zip_code && ` - ${address.zip_code}`}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={handleCloseViewModal}
-                >
-                  <i className="bi bi-x-lg me-2"></i>
-                  Cerrar
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <ViewModal
+          title={title}
+          type={type}
+          columns={columns}
+          viewItem={viewItem}
+          onClose={handleCloseViewModal}
+        />
       )}
     </div>
   );
