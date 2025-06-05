@@ -50,8 +50,15 @@ const AddressModal: React.FC<AddressModalProps> = ({
 
   useEffect(() => {
     api.get('/country/')
-      .then(res => setCountries(res.data))
-      .catch(err => console.error('Error fetching countries:', err));
+      .then(res => {
+        // Ensure response data is an array
+        const countriesData = Array.isArray(res.data) ? res.data : [];
+        setCountries(countriesData);
+      })
+      .catch(err => {
+        console.error('Error fetching countries:', err);
+        setCountries([]); // Set empty array on error
+      });
   }, []);
 
   const provinces = selectedCountry
@@ -206,7 +213,7 @@ const AddressModal: React.FC<AddressModalProps> = ({
                     required
                   >
                     <option value="">Selecciona un país</option>
-                    {countries.map(c => (
+                    {Array.isArray(countries) && countries.map(c => (
                       <option key={c.id_key} value={c.id_key}>{c.name}</option>
                     ))}
                   </select>
@@ -222,7 +229,7 @@ const AddressModal: React.FC<AddressModalProps> = ({
                     required
                   >
                     <option value="">Selecciona una provincia</option>
-                    {provinces.map(p => (
+                    {Array.isArray(provinces) && provinces.map(p => (
                       <option key={p.id_key} value={p.id_key}>{p.name}</option>
                     ))}
                   </select>
@@ -235,7 +242,7 @@ const AddressModal: React.FC<AddressModalProps> = ({
                     required
                   >
                     <option value="">Selecciona una localidad</option>
-                    {localities.map(l => (
+                    {Array.isArray(localities) && localities.map(l => (
                       <option key={l.id_key} value={l.id_key}>{l.name}</option>
                     ))}
                   </select>

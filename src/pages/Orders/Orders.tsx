@@ -69,6 +69,13 @@ const Orders = () => {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
+  const [hasNext, setHasNext] = useState(false);
+  
   const [statusFilters, setStatusFilters] = useState({
     a_confirmar: false,
     en_preparacion: false,
@@ -78,21 +85,37 @@ const Orders = () => {
   });
   
   useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        setLoading(true);
-        const response = await api.get('/order/user/token');
-        setOrders(response.data);
-      } catch (err) {
-        console.error('Error fetching orders:', err);
-        setError('Error al cargar los pedidos. Por favor, intente nuevamente.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchOrders();
-  }, []);
+  }, [currentPage, itemsPerPage]);
+
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const offset = (currentPage - 1) * itemsPerPage;
+      const response = await api.get(`/order/user/token?offset=${offset}&limit=${itemsPerPage}`);
+      
+      // Handle both old and new response formats
+      if (response.data && response.data.items !== undefined) {
+        // New format with pagination
+        setOrders(response.data.items);
+        setTotalItems(response.data.total);
+        setHasNext((response.data.offset + response.data.limit) < response.data.total);
+      } else {
+        // Old format - direct array (backward compatibility)
+        console.warn('API returned old format, converting to new format');
+        setOrders(response.data);
+        setTotalItems(response.data.length);
+        setHasNext(false);
+      }
+    } catch (err) {
+      console.error('Error fetching orders:', err);
+      setError('Error al cargar los pedidos. Por favor, intente nuevamente.');
+      setOrders([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleGoBack = () => {
     navigate(-1);
@@ -211,6 +234,30 @@ const Orders = () => {
     }
   };
 
+  // Pagination functions
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleItemsPerPageChange = (newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1);
+  };
+
+  const handleNextPage = () => {
+    if (hasNext) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
   return (
     <div className="orders-container">
       <header className="orders-header">
@@ -319,6 +366,26 @@ const Orders = () => {
           </div>
         </div>
 
+        {/* Pagination Info and Controls */}
+        <div className="orders-pagination-header">
+          <div className="orders-count">
+            <span>Mostrando {orders.length} de {totalItems} pedidos</span>
+          </div>
+          <div className="items-per-page">
+            <label>Mostrar: </label>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
+              className="items-select"
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+            </select>
+          </div>
+        </div>
+
         <div className="orders-list">
           {loading ? (
             <div className="loading-message">Cargando pedidos...</div>
@@ -372,6 +439,85 @@ const Orders = () => {
             ))
           )}
         </div>
+
+        {/* Pagination Controls */}
+        {totalItems > 0 && (
+          <div className="orders-pagination">
+            <div className="pagination-info">
+              <span>
+                Página {currentPage} de {totalPages} - Mostrando {orders.length} de {totalItems} elementos
+              </span>
+            </div>
+            <nav aria-label="Page navigation">
+              <ul className="pagination">
+                <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+                  <button 
+                    className="page-link" 
+                    onClick={handlePrevPage}
+                    disabled={currentPage === 1}
+                  >
+                    Anterior
+                  </button>
+                </li>
+                
+                {totalPages > 1 && (
+                  <>
+                    {currentPage > 2 && (
+                      <>
+                        <li className="page-item">
+                          <button className="page-link" onClick={() => handlePageChange(1)}>1</button>
+                        </li>
+                        {currentPage > 3 && <li className="page-item disabled"><span className="page-link">...</span></li>}
+                      </>
+                    )}
+                    
+                    {currentPage > 1 && (
+                      <li className="page-item">
+                        <button className="page-link" onClick={() => handlePageChange(currentPage - 1)}>
+                          {currentPage - 1}
+                        </button>
+                      </li>
+                    )}
+                    
+                    <li className="page-item active">
+                      <span className="page-link">{currentPage}</span>
+                    </li>
+                    
+                    {hasNext && (
+                      <li className="page-item">
+                        <button className="page-link" onClick={() => handlePageChange(currentPage + 1)}>
+                          {currentPage + 1}
+                        </button>
+                      </li>
+                    )}
+                    
+                    {hasNext && currentPage < totalPages - 1 && (
+                      <>
+                        {currentPage < totalPages - 2 && <li className="page-item disabled"><span className="page-link">...</span></li>}
+                        <li className="page-item">
+                          <button className="page-link" onClick={() => handlePageChange(totalPages)}>
+                            {totalPages}
+                          </button>
+                        </li>
+                      </>
+                    )}
+                  </>
+                )}
+                
+                {hasNext && (
+                  <li className="page-item">
+                    <button 
+                      className="page-link" 
+                      onClick={handleNextPage}
+                    >
+                      Siguiente
+                    </button>
+                  </li>
+                )}
+              </ul>
+            </nav>
+          </div>
+        )}
       </div>
 
       {/* Order Detail Modal */}

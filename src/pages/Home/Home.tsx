@@ -36,29 +36,47 @@ const Home = () => {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  
+  // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
-  const [hasMorePages, setHasMorePages] = useState(false);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
+  const [hasNext, setHasNext] = useState(false);
+  
   const profileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setLoading(true);
-        const offset = (currentPage - 1) * PRODUCTS_PER_PAGE;
-        const response = await api.get(`/manufactured_item/?offset=${offset}&limit=${PRODUCTS_PER_PAGE}`);
-        setProducts(response.data);
-        // Check if there are more pages by seeing if we got a full page of results
-        setHasMorePages(response.data.length === PRODUCTS_PER_PAGE);
-      } catch (err: any) {
-        console.error('Error fetching products:', err);
-        setError('Error al cargar los productos. Por favor, intente nuevamente.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchProducts();
-  }, [currentPage]);
+  }, [currentPage, itemsPerPage]);
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const offset = (currentPage - 1) * itemsPerPage;
+      const response = await api.get(`/manufactured_item/?offset=${offset}&limit=${itemsPerPage}`);
+      
+      // Handle both old and new response formats
+      if (response.data && response.data.items !== undefined) {
+        // New format with pagination
+        setProducts(response.data.items);
+        setTotalItems(response.data.total);
+        setHasNext((response.data.offset + response.data.limit) < response.data.total);
+      } else {
+        // Old format - direct array (backward compatibility)
+        console.warn('API returned old format, converting to new format');
+        setProducts(response.data);
+        setTotalItems(response.data.length);
+        setHasNext(false);
+      }
+    } catch (err: any) {
+      console.error('Error fetching products:', err);
+      setError('Error al cargar los productos. Por favor, intente nuevamente.');
+      setProducts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -79,17 +97,35 @@ const Home = () => {
     addItem({ id_key: product.id_key, name: product.name, price: product.price });
   };
 
-  const handlePrevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(prev => prev - 1);
-    }
+  // Pagination functions
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleItemsPerPageChange = (newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1);
   };
 
   const handleNextPage = () => {
-    if (hasMorePages) {
-      setCurrentPage(prev => prev + 1);
+    if (hasNext) {
+      setCurrentPage(currentPage + 1);
     }
   };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  // Filter products based on search term
+  const filteredProducts = products.filter(product =>
+    product.name.toLowerCase().includes(search.toLowerCase()) ||
+    product.description.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <div className="home-container">
@@ -102,7 +138,7 @@ const Home = () => {
         <div className="search-bar">
           <input
             type="text"
-            placeholder="Buscar"
+            placeholder="Buscar productos..."
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
@@ -146,58 +182,143 @@ const Home = () => {
         </div>
       </header>
 
-      <div className="products-grid">
-        {loading ? (
-          <div className="loading-message">Cargando productos...</div>
-        ) : error ? (
-          <div className="error-message">{error}</div>
-        ) : products.length === 0 ? (
-          <div className="no-products-message">No hay productos disponibles</div>
-        ) : (
-          products.map(product => (
-            <div 
-              className="product-card" 
-              key={product.id_key}
-              onClick={() => handleProductClick(product.id_key)}
+      <div className="home-content">
+        {/* Pagination Info and Controls */}
+        <div className="products-pagination-header">
+          <div className="products-count">
+            <span>Mostrando {filteredProducts.length} de {totalItems} productos</span>
+          </div>
+          <div className="items-per-page">
+            <label>Mostrar: </label>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
+              className="items-select"
             >
-              <img 
-                src={product.image_url || 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=400&q=80'} 
-                alt={product.name} 
-                className="product-image" 
-              />
-              <div className="product-info">
-                <h3 className="product-title">{product.name}</h3>
-                <p className="product-description">{product.description}</p>
-                <span className="product-price">${product.price}</span>
-                <button 
-                  className="add-button" 
-                  onClick={(e) => handleAddToCart(e, product)}
-                >
-                  Agregar al carrito
-                </button>
-              </div>
+              <option value={6}>6</option>
+              <option value={12}>12</option>
+              <option value={24}>24</option>
+              <option value={48}>48</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="products-grid">
+          {loading ? (
+            <div className="loading-message">Cargando productos...</div>
+          ) : error ? (
+            <div className="error-message">{error}</div>
+          ) : filteredProducts.length === 0 ? (
+            <div className="no-products-message">
+              {search ? 'No se encontraron productos que coincidan con la búsqueda' : 'No hay productos disponibles'}
             </div>
-          ))
+          ) : (
+            filteredProducts.map(product => (
+              <div 
+                className="product-card" 
+                key={product.id_key}
+                onClick={() => handleProductClick(product.id_key)}
+              >
+                <img 
+                  src={product.image_url || 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=400&q=80'} 
+                  alt={product.name} 
+                  className="product-image" 
+                />
+                <div className="product-info">
+                  <h3 className="product-title">{product.name}</h3>
+                  <p className="product-description">{product.description}</p>
+                  <span className="product-price">${product.price.toFixed(2)}</span>
+                  <button 
+                    className="add-button" 
+                    onClick={(e) => handleAddToCart(e, product)}
+                  >
+                    Agregar al carrito
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Pagination Controls */}
+        {totalItems > 0 && (
+          <div className="products-pagination">
+            <div className="pagination-info">
+              <span>
+                Página {currentPage} de {totalPages} - Mostrando {products.length} de {totalItems} elementos
+              </span>
+            </div>
+            <nav aria-label="Page navigation">
+              <ul className="pagination">
+                <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+                  <button 
+                    className="page-link" 
+                    onClick={handlePrevPage}
+                    disabled={currentPage === 1}
+                  >
+                    Anterior
+                  </button>
+                </li>
+                
+                {totalPages > 1 && (
+                  <>
+                    {currentPage > 2 && (
+                      <>
+                        <li className="page-item">
+                          <button className="page-link" onClick={() => handlePageChange(1)}>1</button>
+                        </li>
+                        {currentPage > 3 && <li className="page-item disabled"><span className="page-link">...</span></li>}
+                      </>
+                    )}
+                    
+                    {currentPage > 1 && (
+                      <li className="page-item">
+                        <button className="page-link" onClick={() => handlePageChange(currentPage - 1)}>
+                          {currentPage - 1}
+                        </button>
+                      </li>
+                    )}
+                    
+                    <li className="page-item active">
+                      <span className="page-link">{currentPage}</span>
+                    </li>
+                    
+                    {hasNext && (
+                      <li className="page-item">
+                        <button className="page-link" onClick={() => handlePageChange(currentPage + 1)}>
+                          {currentPage + 1}
+                        </button>
+                      </li>
+                    )}
+                    
+                    {hasNext && currentPage < totalPages - 1 && (
+                      <>
+                        {currentPage < totalPages - 2 && <li className="page-item disabled"><span className="page-link">...</span></li>}
+                        <li className="page-item">
+                          <button className="page-link" onClick={() => handlePageChange(totalPages)}>
+                            {totalPages}
+                          </button>
+                        </li>
+                      </>
+                    )}
+                  </>
+                )}
+                
+                {hasNext && (
+                  <li className="page-item">
+                    <button 
+                      className="page-link" 
+                      onClick={handleNextPage}
+                    >
+                      Siguiente
+                    </button>
+                  </li>
+                )}
+              </ul>
+            </nav>
+          </div>
         )}
       </div>
-
-      {!loading && !error && (currentPage > 1 || hasMorePages) && (
-        <div className="pagination">
-          <button 
-            onClick={handlePrevPage} 
-            disabled={currentPage === 1}
-          >
-            Anterior
-          </button>
-          <span>Página {currentPage}</span>
-          <button 
-            onClick={handleNextPage} 
-            disabled={!hasMorePages}
-          >
-            Siguiente
-          </button>
-        </div>
-      )}
     </div>
   );
 };
