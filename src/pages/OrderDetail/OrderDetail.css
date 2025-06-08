@@ -1,0 +1,240 @@
+/* Custom button styles to maintain brand colors */
+.btn-primary,
+.btn-primary:not(:disabled):not(.disabled) {
+  background-color: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+}
+
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:not(:disabled):not(.disabled):hover,
+.btn-primary:not(:disabled):not(.disabled):focus {
+  background-color: var(--color-primary-dark) !important;
+  border-color: var(--color-primary-dark) !important;
+}
+
+.btn-outline-primary,
+.btn-outline-primary:not(:disabled):not(.disabled) {
+  color: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-primary:focus,
+.btn-outline-primary:not(:disabled):not(.disabled):hover,
+.btn-outline-primary:not(:disabled):not(.disabled):focus {
+  background-color: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+  color: white !important;
+}
+
+/* Text primary color override */
+.text-primary {
+  color: var(--color-primary) !important;
+}
+
+/* Badge primary color override */
+.badge.bg-primary {
+  background-color: var(--color-primary) !important;
+}
+
+/* Override Bootstrap primary color globally in this component */
+:root {
+  --bs-primary: #D87D4D;
+  --bs-primary-rgb: 216, 125, 77;
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 768px) {
+  .card-body {
+    padding: 1.5rem !important;
+  }
+  
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .card-body {
+    padding: 1rem !important;
+  }
+  
+  .container-fluid {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+}
+
+/* Product Cards */
+.product-card {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  background-color: #fff;
+}
+
+.product-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+.product-card .card-body {
+  padding: 1rem 1.5rem;
+}
+
+/* Summary Card */
+.summary-card {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  background-color: #fff;
+}
+
+.summary-card .total-section {
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+/* Form Checks (Radio Buttons) */
+.form-check-input:checked {
+  background-color: var(--bs-primary) !important;
+  border-color: var(--bs-primary) !important;
+}
+
+.form-check-input:focus {
+  border-color: var(--bs-primary) !important;
+  box-shadow: 0 0 0 0.25rem rgba(216, 125, 77, 0.25) !important;
+}
+
+.form-check-label {
+  font-weight: 500;
+  cursor: pointer;
+}
+
+/* Status Card */
+.status-card {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  background-color: #fff;
+}
+
+/* Status buttons */
+.btn-lg {
+  padding: 0.75rem 2rem;
+  font-weight: 600;
+  border-radius: 25px;
+}
+
+/* Sticky positioning adjustment */
+.sticky-top {
+  z-index: 1020;
+}
+
+/* Enhanced spacing and typography */
+.fw-bold {
+  font-weight: 600 !important;
+}
+
+.card-body h5,
+.card-body h6 {
+  color: #2c3e50;
+}
+
+/* Responsive improvements */
+@media (max-width: 991.98px) {
+  .summary-card {
+    position: relative !important;
+    top: auto !important;
+  }
+  
+  .product-card .card-body {
+    padding: 0.75rem 1rem;
+  }
+  
+  .summary-card .card-body {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .container-fluid {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .product-card .card-body {
+    padding: 1rem;
+  }
+  
+  .summary-card .card-body {
+    padding: 1.25rem;
+  }
+  
+  .btn-lg {
+    padding: 0.625rem 1.5rem;
+    font-size: 1rem;
+  }
+  
+  .status-card .card-body {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .container-fluid {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+  
+  .product-card {
+    margin-bottom: 0.75rem;
+  }
+  
+  .summary-card .card-body,
+  .status-card .card-body {
+    padding: 1rem;
+  }
+  
+  .btn-lg {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+  }
+}
+
+/* Animation for smooth transitions */
+.card {
+  transition: all 0.3s ease;
+}
+
+/* Focus states for accessibility */
+.btn:focus,
+.form-check-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 0.2rem rgba(216, 125, 77, 0.25);
+}
+
+/* Custom radio button styling to match the design */
+.form-check-input[type="radio"] {
+  border-radius: 50%;
+}
+
+/* Enhance the total section visual hierarchy */
+.total-section hr {
+  border-color: rgba(0, 0, 0, 0.1);
+  margin: 0.75rem 0;
+}
+
+/* Status section enhancements */
+.status-card .border-top {
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Badge secondary override */
+.badge.bg-secondary {
+  background-color: #6c757d !important;
+} 

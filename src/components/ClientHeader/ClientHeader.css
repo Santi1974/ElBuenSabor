@@ -1,0 +1,55 @@
+/* Solo estilos esenciales para colores de marca */
+.client-header {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark)) !important;
+  z-index: 1020;
+}
+
+/* Asegurar que el gradiente se aplique correctamente */
+.client-header,
+.client-header.sticky-top {
+  background: linear-gradient(135deg, #D87D4D, #C06A3D) !important;
+}
+
+/* Estilos específicos para el input de búsqueda con focus */
+.client-header .form-control:focus {
+  background-color: white !important;
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 0.25rem rgba(216, 125, 77, 0.25) !important;
+}
+
+/* Dropdown personalizado */
+.client-header .dropdown-menu {
+  --bs-dropdown-border-width: 0;
+  --bs-dropdown-box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  z-index: 1050;
+}
+
+/* Responsive: altura mínima en móviles */
+@media (max-width: 768px) {
+  .client-header .navbar {
+    min-height: 70px;
+  }
+  
+  /* Ajustar dropdown en tablets */
+  .client-header .dropdown-menu {
+    transform: translateX(-20px) !important;
+    min-width: 150px !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .client-header .navbar {
+    min-height: 65px;
+  }
+  
+  .client-header .navbar-brand {
+    font-size: 1.1rem !important;
+  }
+  
+  /* Ajustar dropdown en móviles */
+  .client-header .dropdown-menu {
+    transform: translateX(-30px) !important;
+    min-width: 140px !important;
+    right: 10px !important;
+  }
+} 

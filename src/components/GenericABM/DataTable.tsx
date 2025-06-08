@@ -4,7 +4,7 @@ interface Column {
   field: string;
   headerName: string;
   width?: number;
-  type?: 'text' | 'number' | 'date' | 'select';
+  type?: 'text' | 'number' | 'date' | 'select' | 'password';
   options?: { value: string; label: string }[];
 }
 
@@ -24,6 +24,10 @@ const DataTable: React.FC<DataTableProps> = ({
   onView
 }) => {
   const renderCellValue = (column: Column, item: any) => {
+    if (column.type === 'password') {
+      return '••••••••';
+    }
+    
     if (column.type === 'select' && column.field === 'active') {
       return item[column.field] ? 'Sí' : 'No';
     }

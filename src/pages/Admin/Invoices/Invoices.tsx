@@ -8,6 +8,7 @@ const Invoices: React.FC = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [showModal, setShowModal] = useState(false);
   
@@ -31,6 +32,7 @@ const Invoices: React.FC = () => {
   const loadData = async () => {
     setLoading(true);
     setError(null);
+    setSuccess(null);
     
     try {
       const offset = (currentPage - 1) * itemsPerPage;
@@ -89,6 +91,38 @@ const Invoices: React.FC = () => {
     } catch (error) {
       console.error('Error downloading PDF:', error);
       alert('Error al descargar el PDF');
+    }
+  };
+
+  const handleCancelInvoice = async (invoice: Invoice) => {
+    if (invoice.type !== 'factura') {
+      setError('Solo se pueden anular facturas, no notas de crédito');
+      return;
+    }
+
+    const confirmCancel = window.confirm(
+      `¿Está seguro que desea anular la factura ${invoice.number}?\n\n` +
+      `Esta acción generará automáticamente una nota de crédito y no se puede deshacer.`
+    );
+
+    if (!confirmCancel) return;
+
+    try {
+      setLoading(true);
+      setError(null);
+      const creditNote = await invoiceService.cancelInvoice(invoice.id_key);
+      
+      // Reload data to show the new credit note
+      await loadData();
+      
+      // Show success message
+      setSuccess(`Factura anulada correctamente. Se generó la nota de crédito: ${creditNote.number}`);
+    } catch (error: any) {
+      console.error('Error canceling invoice:', error);
+      const errorMessage = error.response?.data?.message || 'Error al anular la factura. Inténtelo nuevamente.';
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -221,6 +255,10 @@ const Invoices: React.FC = () => {
                 onChange={(e) => setFilterStatus(e.target.value)}
               >
                 <option value="">Todos</option>
+                <option value="a_confirmar">A confirmar</option>
+                <option value="en_preparacion">En preparación</option>
+                <option value="en_delivery">En delivery</option>
+                <option value="entregado">Entregado</option>
                 <option value="facturado">Facturado</option>
                 <option value="pendiente">Pendiente</option>
                 <option value="cancelado">Cancelado</option>
@@ -258,9 +296,28 @@ const Invoices: React.FC = () => {
       </div>
 
       {error && (
-        <div className="alert alert-danger" role="alert">
+        <div className="alert alert-danger alert-dismissible" role="alert">
           <i className="bi bi-exclamation-triangle me-2"></i>
           {error}
+          <button 
+            type="button" 
+            className="btn-close" 
+            onClick={() => setError(null)}
+            aria-label="Close"
+          ></button>
+        </div>
+      )}
+
+      {success && (
+        <div className="alert alert-success alert-dismissible" role="alert">
+          <i className="bi bi-check-circle me-2"></i>
+          {success}
+          <button 
+            type="button" 
+            className="btn-close" 
+            onClick={() => setSuccess(null)}
+            aria-label="Close"
+          ></button>
         </div>
       )}
 
@@ -335,7 +392,7 @@ const Invoices: React.FC = () => {
                         </td>
                         <td>
                           <span className={`badge ${invoice.type === 'factura' ? 'bg-primary' : 'bg-warning'}`}>
-                            {invoice.type === 'factura' ? 'Factura' : 'Nota de Crédito'}
+                            {invoiceService.getInvoiceTypeDisplay(invoice.type)}
                           </span>
                         </td>
                         <td>
@@ -360,10 +417,19 @@ const Invoices: React.FC = () => {
                             <button
                               className="btn btn-outline-success"
                               onClick={() => handleDownloadPDF(invoice)}
-                              title="Descargar PDF"
+                              title={`Descargar ${invoice.type === 'factura' ? 'factura' : 'nota de crédito'} PDF`}
                             >
                               <i className="bi bi-file-pdf"></i>
                             </button>
+                            {invoice.type === 'factura' && (
+                              <button
+                                className="btn btn-outline-danger"
+                                onClick={() => handleCancelInvoice(invoice)}
+                                title="Anular factura"
+                              >
+                                <i className="bi bi-x-circle"></i>
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -385,7 +451,7 @@ const Invoices: React.FC = () => {
               <div className="modal-header">
                 <h5 className="modal-title">
                   <i className="bi bi-receipt me-2"></i>
-                  Detalles de Factura: {selectedInvoice.number}
+                  Detalles de {invoiceService.getInvoiceTypeDisplay(selectedInvoice.type)}: {selectedInvoice.number}
                 </h5>
                 <button
                   type="button"
@@ -412,7 +478,7 @@ const Invoices: React.FC = () => {
                           <td><strong>Tipo:</strong></td>
                           <td>
                             <span className={`badge ${selectedInvoice.type === 'factura' ? 'bg-primary' : 'bg-warning'}`}>
-                              {selectedInvoice.type === 'factura' ? 'Factura' : 'Nota de Crédito'}
+                              {invoiceService.getInvoiceTypeDisplay(selectedInvoice.type)}
                             </span>
                           </td>
                         </tr>
@@ -420,6 +486,12 @@ const Invoices: React.FC = () => {
                           <td><strong>Total:</strong></td>
                           <td><strong className="text-success fs-5">{invoiceService.formatCurrency(selectedInvoice.total)}</strong></td>
                         </tr>
+                        {selectedInvoice.original_invoice_id && (
+                          <tr>
+                            <td><strong>Factura Original:</strong></td>
+                            <td><code className="text-info">#{selectedInvoice.original_invoice_id}</code></td>
+                          </tr>
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -512,7 +584,8 @@ const Invoices: React.FC = () => {
                 </div>
 
                 {/* Order Details */}
-                {selectedInvoice.order?.details && selectedInvoice.order.details.length > 0 && (
+                {((selectedInvoice.order?.details && selectedInvoice.order.details.length > 0) || 
+                  (selectedInvoice.order?.inventory_details && selectedInvoice.order.inventory_details.length > 0)) && (
                   <div className="row mt-4">
                     <div className="col-12">
                       <h6 className="text-primary">Detalles del Pedido</h6>
@@ -528,8 +601,8 @@ const Invoices: React.FC = () => {
                             </tr>
                           </thead>
                           <tbody>
-                            {selectedInvoice.order.details.map((detail, index) => (
-                              <tr key={detail.id_key || index}>
+                            {selectedInvoice.order?.details?.map((detail, index) => (
+                              <tr key={`manufactured-${detail.id_key || index}`}>
                                 <td>
                                   <div>
                                     <strong>{detail.manufactured_item?.name || 'N/A'}</strong>
@@ -544,6 +617,27 @@ const Invoices: React.FC = () => {
                                 <td>
                                   <span className="badge bg-secondary">
                                     {detail.manufactured_item?.category?.name || 'N/A'}
+                                  </span>
+                                </td>
+                                <td>
+                                  <span className="badge bg-info">{detail.quantity}</span>
+                                </td>
+                                <td>{invoiceService.formatCurrency(detail.unit_price)}</td>
+                                <td>
+                                  <strong>{invoiceService.formatCurrency(detail.subtotal)}</strong>
+                                </td>
+                              </tr>
+                            ))}
+                            {selectedInvoice.order?.inventory_details?.map((detail, index) => (
+                              <tr key={`inventory-${detail.id_key || index}`}>
+                                <td>
+                                  <div>
+                                    <strong>{detail.inventory_item?.name || 'N/A'}</strong>
+                                  </div>
+                                </td>
+                                <td>
+                                  <span className="badge bg-info">
+                                    Inventario
                                   </span>
                                 </td>
                                 <td>
@@ -598,6 +692,19 @@ const Invoices: React.FC = () => {
                   <i className="bi bi-file-pdf me-2"></i>
                   Descargar PDF
                 </button>
+                {selectedInvoice.type === 'factura' && (
+                  <button
+                    type="button"
+                    className="btn btn-danger"
+                    onClick={() => {
+                      handleCancelInvoice(selectedInvoice);
+                      setShowModal(false);
+                    }}
+                  >
+                    <i className="bi bi-x-circle me-2"></i>
+                    Anular Factura
+                  </button>
+                )}
                 <button
                   type="button"
                   className="btn btn-secondary"

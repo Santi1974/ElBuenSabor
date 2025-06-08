@@ -5,7 +5,7 @@ interface Column {
   field: string;
   headerName: string;
   width?: number;
-  type?: 'text' | 'number' | 'date' | 'select';
+  type?: 'text' | 'number' | 'date' | 'select' | 'password';
   options?: { value: string; label: string }[];
 }
 
@@ -14,19 +14,23 @@ interface FormFieldsProps {
   formData: any;
   type: ABMType;
   onInputChange: (field: string, value: any) => void;
+  selectedItem?: any;
 }
 
 const FormFields: React.FC<FormFieldsProps> = ({
   columns,
   formData,
   type,
-  onInputChange
+  onInputChange,
+  selectedItem
 }) => {
   const filteredColumns = columns.filter(column => 
     column.field !== 'category.name' && 
     column.field !== 'parent_category_name' &&
     column.field !== 'measurement_unit.name' &&
     column.field !== 'type_label' &&
+    // Solo mostrar campo password si estamos creando un nuevo empleado
+    (column.field !== 'password' || (type === 'employee' && !selectedItem)) &&
     (type !== 'inventario' || (
       column.field !== 'description' && 
       column.field !== 'recipe' && 
@@ -70,12 +74,14 @@ const FormFields: React.FC<FormFieldsProps> = ({
             </select>
           ) : (
             <input
-              type={column.type || 'text'}
+              type={column.type === 'password' ? 'password' : column.type || 'text'}
               className="form-control"
               value={formData[column.field] || ''}
               onChange={(e) =>
                 onInputChange(column.field, e.target.value)
               }
+              placeholder={column.type === 'password' ? 'Contraseña temporal que el empleado deberá cambiar' : ''}
+              required={column.type === 'password'}
             />
           )}
         </div>

@@ -5,7 +5,7 @@ interface Column {
   field: string;
   headerName: string;
   width?: number;
-  type?: 'text' | 'number' | 'date' | 'select';
+  type?: 'text' | 'number' | 'date' | 'select' | 'password';
   options?: { value: string; label: string }[];
 }
 
@@ -29,6 +29,7 @@ const ViewModal: React.FC<ViewModalProps> = ({
     column.field !== 'parent_category_name' &&
     column.field !== 'measurement_unit.name' &&
     column.field !== 'type_label' &&
+    column.field !== 'password' && // Nunca mostrar contraseñas
     (type !== 'inventario' || (
       column.field !== 'description' && 
       column.field !== 'recipe' && 

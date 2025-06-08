@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../../services/api';
+import { useCart } from '../../context/CartContext';
+import ClientLayout from '../../components/ClientLayout/ClientLayout';
 import './ProductDetail.css';
 
 interface Category {
@@ -23,19 +25,41 @@ interface ManufacturedItem {
   id_key: number;
 }
 
+interface InventoryItem {
+  name: string;
+  description: string;
+  price: number;
+  image_url: string;
+  active: boolean;
+  current_stock: number;
+  minimum_stock: number;
+  purchase_cost: number;
+  category: Category;
+  id_key: number;
+}
+
+type Product = ManufacturedItem | InventoryItem;
+
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [product, setProduct] = useState<ManufacturedItem | null>(null);
+  const { addItem } = useCart();
+  const [searchParams] = useSearchParams();
+  const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [quantity, setQuantity] = useState(1);
+  
+  const productType = searchParams.get('type') || 'manufactured';
 
   useEffect(() => {
     const fetchProduct = async () => {
       try {
         setLoading(true);
-        const response = await api.get(`/manufactured_item/${id}`);
+        const endpoint = productType === 'inventory' 
+          ? `/inventory_item/${id}` 
+          : `/manufactured_item/${id}`;
+        const response = await api.get(endpoint);
         setProduct(response.data);
       } catch (err: any) {
         console.error('Error fetching product:', err);
@@ -46,7 +70,7 @@ const ProductDetail = () => {
     };
 
     fetchProduct();
-  }, [id]);
+  }, [id, productType]);
 
   const handleBack = () => {
     navigate(-1);
@@ -56,29 +80,41 @@ const ProductDetail = () => {
     setQuantity(prev => Math.max(1, prev + delta));
   };
 
+  const handleAddToCart = () => {
+    if (product) {
+      for (let i = 0; i < quantity; i++) {
+        addItem({ id_key: product.id_key, name: product.name, price: product.price, type: productType as 'manufactured' | 'inventory' });
+      }
+      // Reset quantity after adding to cart
+      setQuantity(1);
+    }
+  };
+
+  // Helper function to check if product is manufactured
+  const isManufacturedItem = (product: Product): product is ManufacturedItem => {
+    return 'preparation_time' in product;
+  };
+
   if (loading) {
-    return <div className="product-detail-loading">Cargando producto...</div>;
+    return (
+      <ClientLayout title="El Buen Sabor" showSearchBar={false}>
+        <div className="product-detail-loading">Cargando producto...</div>
+      </ClientLayout>
+    );
   }
 
   if (error || !product) {
     return (
+      <ClientLayout title="El Buen Sabor" showSearchBar={false}>
       <div className="product-detail-error">
         {error || 'No se encontró el producto'}
-        <button onClick={handleBack} className="back-button">Volver</button>
       </div>
+      </ClientLayout>
     );
   }
 
   return (
-    <div className="product-detail-container">
-      <header className="product-detail-header">
-        <button onClick={handleBack} className="back-button">
-          <span className="back-arrow">←</span>
-          Volver
-        </button>
-        <h1>El Buen Sabor</h1>
-      </header>
-
+    <ClientLayout title="El Buen Sabor" showSearchBar={false}>
       <div className="product-detail-content">
         <div className="product-detail-image">
           <img 
@@ -89,17 +125,21 @@ const ProductDetail = () => {
 
         <div className="product-detail-info">
           <h2>{product.name}</h2>
-          <p className="product-detail-description">{product.description}</p>
+          {isManufacturedItem(product) && (
+            <p className="product-detail-description">{product.description}</p>
+          )}
           
           <div className="product-detail-metadata">
             <div className="metadata-item">
-              <span className="metadata-label">Categoría:</span>
+              <span className="metadata-label">Categoría: </span>
               <span>{product.category.name}</span>
             </div>
-            <div className="metadata-item">
-              <span className="metadata-label">Tiempo de preparación:</span>
-              <span>{product.preparation_time} minutos</span>
-            </div>
+            {isManufacturedItem(product) && (
+              <div className="metadata-item">
+                <span className="metadata-label">Tiempo de preparación:</span>
+                <span>{product.preparation_time} minutos</span>
+              </div>
+            )}
           </div>
 
           <div className="product-detail-price">
@@ -118,13 +158,20 @@ const ProductDetail = () => {
               <span>{quantity}</span>
               <button onClick={() => handleQuantityChange(1)}>+</button>
             </div>
-            <button className="add-to-cart-button">
-              Agregar al carrito - ${(product.price * quantity).toFixed(2)}
+            <button 
+              className="add-to-cart-button" 
+              onClick={handleAddToCart}
+              disabled={!isManufacturedItem(product) && product.current_stock <= 0}
+            >
+              {!isManufacturedItem(product) && product.current_stock <= 0 ? 
+                'Sin stock' : 
+                `Agregar al carrito - $${(product.price * quantity).toFixed(2)}`
+              }
             </button>
           </div>
         </div>
       </div>
-    </div>
+    </ClientLayout>
   );
 };
 

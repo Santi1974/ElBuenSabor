@@ -1,8 +1,8 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api, { authService } from '../../services/api';
+import api from '../../services/api';
 import { useCart } from '../../context/CartContext';
-import CartPreview from '../../components/CartPreview/CartPreview';
+import ClientLayout from '../../components/ClientLayout/ClientLayout';
 import './Home.css';
 //import logo from '../../assets/logo.svg'; // Cambia por tu logo real si lo tienes
 
@@ -24,15 +24,32 @@ interface ManufacturedItem {
   category: Category;
   details: any[];
   id_key: number;
+  type?: 'manufactured';
 }
+
+interface InventoryItem {
+  name: string;
+  description: string;
+  price: number;
+  image_url: string;
+  active: boolean;
+  current_stock: number;
+  minimum_stock: number;
+  purchase_cost: number;
+  category: Category;
+  id_key: number;
+  type?: 'inventory';
+}
+
+// Union type for all products
+type Product = ManufacturedItem | InventoryItem;
 
 const PRODUCTS_PER_PAGE = 10;
 
 const Home = () => {
   const navigate = useNavigate();
   const { addItem } = useCart();
-  const [products, setProducts] = useState<ManufacturedItem[]>([]);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -42,8 +59,6 @@ const Home = () => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
   const [hasNext, setHasNext] = useState(false);
-  
-  const profileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchProducts();
@@ -54,21 +69,41 @@ const Home = () => {
       setLoading(true);
       setError('');
       const offset = (currentPage - 1) * itemsPerPage;
-      const response = await api.get(`/manufactured_item/?offset=${offset}&limit=${itemsPerPage}`);
       
-      // Handle both old and new response formats
-      if (response.data && response.data.items !== undefined) {
-        // New format with pagination
-        setProducts(response.data.items);
-        setTotalItems(response.data.total);
-        setHasNext((response.data.offset + response.data.limit) < response.data.total);
-      } else {
-        // Old format - direct array (backward compatibility)
-        console.warn('API returned old format, converting to new format');
-        setProducts(response.data);
-        setTotalItems(response.data.length);
-        setHasNext(false);
+      // Fetch both manufactured items and inventory products
+      const [manufacturedResponse, inventoryResponse] = await Promise.all([
+        api.get(`/manufactured_item/?offset=${offset}&limit=${itemsPerPage}`).catch(() => ({ data: { items: [], total: 0 } })),
+        api.get(`/inventory_item/products/all?offset=${offset}&limit=${itemsPerPage}`).catch(() => ({ data: { items: [], total: 0 } }))
+      ]);
+      
+      let allProducts: Product[] = [];
+      let totalCount = 0;
+      
+      // Process manufactured items
+      if (manufacturedResponse.data) {
+        let manufacturedItems: ManufacturedItem[] = [];
+        if (manufacturedResponse.data.items !== undefined) {
+          // New format with pagination
+          manufacturedItems = manufacturedResponse.data.items.map((item: ManufacturedItem) => ({ ...item, type: 'manufactured' as const }));
+        } else if (Array.isArray(manufacturedResponse.data)) {
+          // Old format - direct array (backward compatibility)
+          manufacturedItems = manufacturedResponse.data.map((item: ManufacturedItem) => ({ ...item, type: 'manufactured' as const }));
+        }
+        allProducts = [...allProducts, ...manufacturedItems];
+        totalCount += manufacturedResponse.data.total || manufacturedItems.length;
       }
+      
+      // Process inventory products
+      if (inventoryResponse.data && inventoryResponse.data.items) {
+        const inventoryItems: InventoryItem[] = inventoryResponse.data.items.map((item: InventoryItem) => ({ ...item, type: 'inventory' as const }));
+        allProducts = [...allProducts, ...inventoryItems];
+        totalCount += inventoryResponse.data.total || inventoryItems.length;
+      }
+      
+      setProducts(allProducts);
+      setTotalItems(totalCount);
+      setHasNext(allProducts.length >= itemsPerPage); // Simple check for next page
+      
     } catch (err: any) {
       console.error('Error fetching products:', err);
       setError('Error al cargar los productos. Por favor, intente nuevamente.');
@@ -78,23 +113,18 @@ const Home = () => {
     }
   };
 
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (userMenuOpen && profileRef.current && !profileRef.current.contains(e.target as Node)) {
-        setUserMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [userMenuOpen]);
 
-  const handleProductClick = (productId: number) => {
-    navigate(`/product/${productId}`);
+
+  const handleProductClick = (product: Product) => {
+    const productType = isManufacturedItem(product) ? 'manufactured' : 'inventory';
+    navigate(`/product/${product.id_key}?type=${productType}`);
   };
 
-  const handleAddToCart = (e: React.MouseEvent, product: ManufacturedItem) => {
+  const handleAddToCart = (e: React.MouseEvent, product: Product) => {
     e.stopPropagation();
-    addItem({ id_key: product.id_key, name: product.name, price: product.price });
+    const productType = 'type' in product && product.type ? product.type : 
+                       ('preparation_time' in product ? 'manufactured' : 'inventory');
+    addItem({ id_key: product.id_key, name: product.name, price: product.price, type: productType });
   };
 
   // Pagination functions
@@ -121,6 +151,11 @@ const Home = () => {
     }
   };
 
+  // Helper function to check if product is manufactured
+  const isManufacturedItem = (product: Product): product is ManufacturedItem => {
+    return 'preparation_time' in product;
+  };
+
   // Filter products based on search term
   const filteredProducts = products.filter(product =>
     product.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -128,60 +163,14 @@ const Home = () => {
   );
 
   return (
-    <div className="home-container">
-      <header className="home-header">
-        <button onClick={() => navigate(-1)} className="back-button">
-          <span className="back-arrow">←</span>
-          Volver
-        </button>
-        <h1 className="home-title">El Buen Sabor</h1>
-        <div className="search-bar">
-          <input
-            type="text"
-            placeholder="Buscar productos..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
-        </div>
-        <div className="header-icons">
-          <CartPreview />
-          <div ref={profileRef} style={{ position: 'relative', display: 'inline-block' }}>
-            <button
-              className="btn btn-outline-secondary rounded-circle header-icon"
-              style={{ width: 40, height: 40, padding: 0 }}
-              onClick={() => setUserMenuOpen((open) => !open)}
-            >
-              <i className="bi bi-person fs-4 text-dark"></i>
-            </button>
-            {userMenuOpen && (
-              <div
-                className="position-absolute end-0 mt-2 p-2 bg-white rounded shadow"
-                style={{ minWidth: 160, zIndex: 2000 }}
-              >
-                <button
-                  className="dropdown-item text-dark"
-                  onClick={() => {
-                    setUserMenuOpen(false);
-                    navigate('/orders');
-                  }}
-                >
-                  Mis Pedidos
-                </button>
-                <button
-                  className="dropdown-item text-danger"
-                  onClick={() => {
-                    localStorage.removeItem('token');
-                    window.location.href = '/login';
-                  }}
-                >
-                  Cerrar Sesión
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </header>
-
+    <ClientLayout
+      title="El Buen Sabor"
+      showBackButton={true}
+      showSearchBar={true}
+      searchValue={search}
+      onSearchChange={setSearch}
+      searchPlaceholder="Buscar productos..."
+    >
       <div className="home-content">
         {/* Pagination Info and Controls */}
         <div className="products-pagination-header">
@@ -194,6 +183,7 @@ const Home = () => {
               value={itemsPerPage}
               onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
               className="items-select"
+              style={{color: 'black'}}
             >
               <option value={6}>6</option>
               <option value={12}>12</option>
@@ -217,7 +207,7 @@ const Home = () => {
               <div 
                 className="product-card" 
                 key={product.id_key}
-                onClick={() => handleProductClick(product.id_key)}
+                onClick={() => handleProductClick(product)}
               >
                 <img 
                   src={product.image_url || 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=400&q=80'} 
@@ -231,8 +221,11 @@ const Home = () => {
                   <button 
                     className="add-button" 
                     onClick={(e) => handleAddToCart(e, product)}
+                    disabled={!isManufacturedItem(product) && product.current_stock <= 0}
                   >
-                    Agregar al carrito
+                    {!isManufacturedItem(product) && product.current_stock <= 0 ? 
+                      'Sin stock' : 'Agregar al carrito'
+                    }
                   </button>
                 </div>
               </div>
@@ -319,7 +312,7 @@ const Home = () => {
           </div>
         )}
       </div>
-    </div>
+    </ClientLayout>
   );
 };
 

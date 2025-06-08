@@ -44,6 +44,18 @@ export interface OrderDetail {
   id_key: number;
 }
 
+export interface InventoryDetail {
+  id_key: number;
+  quantity: number;
+  subtotal: number;
+  unit_price: number;
+  inventory_item: {
+    id_key: number;
+    name: string;
+    price: number;
+  };
+}
+
 export interface Order {
   delivery_method: string;
   payment_method: string;
@@ -59,7 +71,7 @@ export interface Order {
   user: User;
   address: any | null;
   details: OrderDetail[];
-  inventory_details: any[];
+  inventory_details: InventoryDetail[];
   id_key: number;
 }
 
@@ -134,7 +146,7 @@ class InvoiceService {
       // Create temporary download link
       const link = document.createElement('a');
       link.href = url;
-      link.download = `factura-${invoice.number}.pdf`;
+      link.download = `${invoice.type === 'factura' ? 'factura' : 'nota-credito'}-${invoice.number}.pdf`;
       document.body.appendChild(link);
       link.click();
       
@@ -143,6 +155,17 @@ class InvoiceService {
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Error downloading PDF:', error);
+      throw error;
+    }
+  }
+
+  // Method to cancel invoice (create credit note)
+  async cancelInvoice(invoiceId: number): Promise<Invoice> {
+    try {
+      const response = await api.post<Invoice>(`/invoice/credit-note/${invoiceId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error canceling invoice:', error);
       throw error;
     }
   }
@@ -190,16 +213,32 @@ class InvoiceService {
     const statuses: Record<string, string> = {
       'facturado': 'Facturado',
       'pendiente': 'Pendiente',
-      'cancelado': 'Cancelado'
+      'cancelado': 'Cancelado',
+      'a_confirmar': 'A confirmar',
+      'en_preparacion': 'En preparación',
+      'en_delivery': 'En delivery',
+      'entregado': 'Entregado'
     };
     return statuses[status] || status;
+  }
+
+  getInvoiceTypeDisplay(type: string): string {
+    const types: Record<string, string> = {
+      'factura': 'Factura',
+      'nota_credito': 'Nota de Crédito'
+    };
+    return types[type] || type;
   }
 
   getStatusColor(status: string): string {
     const colors: Record<string, string> = {
       'facturado': 'success',
       'pendiente': 'warning',
-      'cancelado': 'danger'
+      'cancelado': 'danger',
+      'a_confirmar': 'secondary',
+      'en_preparacion': 'info',
+      'en_delivery': 'primary',
+      'entregado': 'success'
     };
     return colors[status] || 'secondary';
   }

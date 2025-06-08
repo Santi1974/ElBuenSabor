@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../../services/api';
 import googleIcon from '../../assets/google-icon.svg';
+import ChangePasswordModal from '../../components/ChangePasswordModal/ChangePasswordModal';
 
 // Note: You will need to add a real food image to replace this
 const placeholderImage = 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80';
@@ -12,6 +13,7 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
 
   useEffect(() => {
     // Check for token in URL when component mounts
@@ -26,8 +28,14 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      await authService.login({ email, password });
-      navigate('/', { replace: true });
+      const response = await authService.login({ email, password });
+      
+      // Verificar si es el primer login
+      if (response.first_login) {
+        setShowPasswordModal(true);
+      } else {
+        navigate('/', { replace: true });
+      }
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Error al iniciar sesión. Por favor, intente nuevamente.');
     } finally {
@@ -42,6 +50,15 @@ const Login = () => {
       setError('Error al iniciar sesión con Google. Por favor, intente nuevamente.');
     }
   };
+
+  const handlePasswordChanged = () => {
+    setShowPasswordModal(false);
+    navigate('/', { replace: true });
+  };
+
+  if (showPasswordModal) {
+    return <ChangePasswordModal onPasswordChanged={handlePasswordChanged} />;
+  }
 
   return (
     <div className="container-fluid vh-100">

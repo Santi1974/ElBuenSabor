@@ -185,6 +185,8 @@ export const useFormData = (type: ABMType, onSuccess: () => void) => {
         switch (type) {
           case 'employee':
             await employeeService.create(formData);
+            // Mostrar mensaje con las credenciales
+            alert(`Empleado creado exitosamente!\n\nCredenciales de acceso:\nEmail: ${formData.email}\nContraseña: ${formData.password}\n\nEl empleado deberá cambiar su contraseña en el primer login.`);
             break;
           case 'client':
             await clientService.create(formData);

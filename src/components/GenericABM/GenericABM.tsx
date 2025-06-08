@@ -17,7 +17,7 @@ interface GenericABMProps {
     field: string;
     headerName: string;
     width?: number;
-    type?: 'text' | 'number' | 'date' | 'select';
+    type?: 'text' | 'number' | 'date' | 'select' | 'password';
     options?: { value: string; label: string }[];
   }[];
   type?: ABMType;
@@ -240,6 +240,7 @@ const GenericABM: React.FC<GenericABMProps> = ({
                     formData={formData}
                     type={type}
                     onInputChange={handleInputChange}
+                    selectedItem={selectedItem}
                   />
 
                   {/* Inventory Specific Fields */}

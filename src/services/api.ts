@@ -18,6 +18,7 @@ export interface RegisterData {
 
 export interface AuthResponse {
   access_token: string;
+  first_login?: boolean;
   user: {
     id: string;
     email: string;
@@ -109,7 +110,8 @@ export const authService = {
     if (!token) return null;
     
     try {
-      return JSON.parse(atob(token.split('.')[1]));
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload;
     } catch {
       localStorage.removeItem('token');
       return null;
@@ -118,6 +120,14 @@ export const authService = {
 
   isAuthenticated() {
     return !!this.getCurrentUser();
+  },
+
+  async changeEmployeePassword(newPassword: string): Promise<void> {
+    try {
+      await api.put('/user/employee/password', { password: newPassword });
+    } catch (error: any) {
+      throw error;
+    }
   },
 
   // Helper function to check for token in URL

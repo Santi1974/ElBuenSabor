@@ -4,11 +4,12 @@ import { useCart } from '../../context/CartContext';
 import type { DeliveryMethod, PaymentMethod } from '../../types/order';
 import type { Address, AddressFormData } from '../../types/address';
 import AddressModal from '../../components/AddressModal/AddressModal';
+import ClientLayout from '../../components/ClientLayout/ClientLayout';
 import api from '../../services/api';
 
 const Cart = () => {
   const navigate = useNavigate();
-  const { items, updateQuantity, removeItem } = useCart();
+  const { items, updateQuantity, removeItem, clearCart } = useCart();
   const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>('pickup');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
   const [showAddressModal, setShowAddressModal] = useState(false);
@@ -86,32 +87,32 @@ const Cart = () => {
   };
 
   const buildOrderPayload = () => {
-    const userId = parseInt(getUserId() || '0');
     const now = new Date().toISOString();
     const isDelivery = deliveryMethod === 'delivery';
+    
+    // Separar productos manufacturados de inventario
+    const manufacturedItems = items.filter(item => item.product.type === 'manufactured');
+    const inventoryItems = items.filter(item => item.product.type === 'inventory');
+    
     const payload: any = {
       date: now,
-      total: subtotal,
-      discount: cashDiscount,
-      final_total: total,
-      status: 'a_confirmar',
-      estimated_time: 0,
       delivery_method: deliveryMethod,
       payment_method: paymentMethod,
-      payment_id: '',
-      is_paid: false,
       notes: '',
-      user_id: userId,
-      details: items.map(item => ({
-        manufactured_item_id: item.product.id_key,
+      details: manufacturedItems.map(item => ({
         quantity: item.quantity,
-        unit_price: item.product.price,
-        subtotal: item.product.price * item.quantity
+        manufactured_item_id: item.product.id_key
+      })),
+      inventory_details: inventoryItems.map(item => ({
+        quantity: item.quantity,
+        inventory_item_id: item.product.id_key
       }))
     };
-    if (isDelivery) {
-      payload.address_id = selectedAddress?.id || null;
+    
+    if (isDelivery && selectedAddress) {
+      payload.address_id = selectedAddress.id;
     }
+    
     return payload;
   };
 
@@ -127,12 +128,15 @@ const Cart = () => {
       const response = await api.post('/order/generate', orderPayload);
       const order = response.data;
       
+      // Clear the cart after successful order creation
+      clearCart();
+      
       if (paymentMethod === 'mercado_pago') {
         const mpResponse = await api.put(`/order/${order.id_key}/mp-payment`);
         window.location.href = mpResponse.data.payment_url;
-        console.log('Mercado Pago:', mpResponse.data);
       } else {
-        console.log('Orden creada:', order);
+        // Navigate to order detail page for cash payments
+        navigate(`/order/${order.id_key}`);
       }
     } catch (err: any) {
       setOrderError(err.message || 'Error al crear la orden');
@@ -142,27 +146,7 @@ const Cart = () => {
   };
 
   return (
-    <div className="w-100 bg-light min-vh-100 overflow-scroll">
-      {/* Header */}
-      <header className="bg-primary text-white py-3 w-100">
-        <div className="container-fluid px-4">
-          <div className="row align-items-center">
-            <div className="col">
-              <button 
-                className="btn text-white p-0"
-                onClick={() => navigate(-1)}
-              >
-                <i className="bi bi-arrow-left fs-4"></i>
-              </button>
-            </div>
-            <div className="col text-center">
-              <h1 className="h4 mb-0">Carrito de compras</h1>
-            </div>
-            <div className="col"></div>
-          </div>
-        </div>
-      </header>
-
+    <ClientLayout title="Carrito de compras" showSearchBar={false}>
       <div className="container-fluid px-4 py-4 overflow-auto">
         <div className="row g-4">
           {/* Lista de productos */}
@@ -349,7 +333,7 @@ const Cart = () => {
         addresses={addresses}
         onSelectAddress={handleAddressSelect}
       />
-    </div>
+    </ClientLayout>
   );
 };
 

@@ -2,6 +2,7 @@ export interface CartProduct {
   id_key: number;
   name: string;
   price: number;
+  type: 'manufactured' | 'inventory'; // Distinguir entre productos manufacturados e inventario
 }
 
 export interface CartItem {
@@ -15,5 +16,6 @@ export interface CartContextType {
   removeItem: (id: number) => void;
   updateQuantity: (id: number, quantity: number) => void;
   getItemQuantity: (id: number) => number;
+  clearCart: () => void;
   totalItems: number;
 } 

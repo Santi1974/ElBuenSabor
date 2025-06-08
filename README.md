@@ -36,7 +36,7 @@ La aplicación utiliza un sistema de colores consistente basado en la siguiente 
 - **Blanco Primario**: #F9F9F9 (Gris claro) - Fondo principal
 - **Blanco Secundario**: #EEEEEE (Gris medio) - Fondo secundario
 - **Éxito**: #6DBC62 (Verde) - Para confirmaciones
-- **Interfaz**: #747474 (Gris oscuro) - Para interfaces no cliente
+- **Interfaz**: #747474 (Gris oscuro) - Para interfaces no clientes
 
 El sistema de colores se implementa a través de variables CSS en `src/styles/theme.css`.
 

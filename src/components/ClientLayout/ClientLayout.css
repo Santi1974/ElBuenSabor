@@ -1,0 +1,12 @@
+.client-layout {
+  background-color: var(--color-background);
+  overflow-x: hidden;
+  width: 100%;
+}
+
+/* Ensure main content takes remaining space and allows scrolling */
+.client-layout main {
+  overflow-y: auto;
+  position: relative;
+  width: 100%;
+} 

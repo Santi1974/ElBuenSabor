@@ -1,18 +1,17 @@
-import React from 'react';
 import type { ReactNode } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { Login, Register, Home, Orders, Admin } from './pages';
-import ProductDetail from './pages/ProductDetail/ProductDetail';
-import Cart from './pages/Cart/Cart';
+import { Login, Register, Home, Orders, OrderDetail, Cart, ProductDetail } from './pages';
 import { CartProvider } from './context/CartContext';
 import { authService } from './services/api';
+import './index.css';
 import './App.css';
 import AdminRoutes from './routes/AdminRoutes';
 
-function PrivateRoute({ children }: { children: ReactNode }) {
-  const token = localStorage.getItem('token');
-  return token ? <>{children}</> : <Navigate to="/login" replace />;
-}
+// Keeping for future use
+// function PrivateRoute({ children }: { children: ReactNode }) {
+//   const token = localStorage.getItem('token');
+//   return token ? <>{children}</> : <Navigate to="/login" replace />;
+// }
  
 function RoleRoute({ children, role }: { children: ReactNode; role: string }) {
   const user = authService.getCurrentUser();
@@ -53,6 +52,11 @@ function App() {
           <Route path="/orders" element={
             <RoleRoute role="cliente">
               <Orders />
+            </RoleRoute>
+          } />
+          <Route path="/order/:id" element={
+            <RoleRoute role="cliente">
+              <OrderDetail />
             </RoleRoute>
           } />
         </Routes>

@@ -10,6 +10,7 @@ interface Employee {
   password: string;
   google_sub?: string;
   active: boolean;
+  first_login?: boolean;
 }
 
 const employeeService = {
@@ -48,7 +49,8 @@ const employeeService = {
       phone_number: employee.phone_number,
       password: employee.password,
       google_sub: employee.google_sub || '',
-      active: employee.active
+      active: employee.active,
+      first_login: true  // Siempre true al crear desde admin
     });
     return response.data;
   },

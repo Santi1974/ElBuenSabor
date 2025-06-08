@@ -55,6 +55,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return items.find(item => item.product.id_key === id)?.quantity || 0;
   };
 
+  const clearCart = () => {
+    setItems([]);
+  };
+
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
 
   const value = {
@@ -63,6 +67,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     removeItem,
     updateQuantity,
     getItemQuantity,
+    clearCart,
     totalItems,
   };
 
