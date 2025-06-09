@@ -275,7 +275,7 @@ const OrderDetail = () => {
 
           {/* Summary Panel - Right Column */}
           <div className="col-12 col-lg-4">
-            <div className="card summary-card sticky-top" style={{ padding: '16px 32px' }}>
+            <div className="card summary-card" style={{ padding: '16px 32px' }}>
               <div className="card-body p-1">
                 {/* Items Summary */}
                 <div className="text-center mb-4">

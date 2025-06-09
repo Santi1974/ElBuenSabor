@@ -63,6 +63,8 @@ export const authService = {
       const response = await api.post<AuthResponse>('/auth/login', credentials);
       if (response.data.access_token) {
         localStorage.setItem('token', response.data.access_token);
+        // Disparar evento personalizado para notificar el cambio de autenticación
+        window.dispatchEvent(new CustomEvent('auth-change'));
       }
       return response.data;
     } catch (error: any) {
@@ -78,6 +80,8 @@ export const authService = {
     if (token) {
       // If we have a token, store it and clean the URL
       localStorage.setItem('token', token);
+      // Disparar evento personalizado para notificar el cambio de autenticación
+      window.dispatchEvent(new CustomEvent('auth-change'));
       // Clean the URL without reloading the page
       window.history.replaceState({}, document.title, window.location.pathname);
       // Redirect based on user role
@@ -100,6 +104,8 @@ export const authService = {
       const response = await api.post<AuthResponse>('/auth/register', data);
       if (response.data.access_token) {
         localStorage.setItem('token', response.data.access_token);
+        // Disparar evento personalizado para notificar el cambio de autenticación
+        window.dispatchEvent(new CustomEvent('auth-change'));
       }
       return response.data;
     } catch (error: any) {
@@ -109,6 +115,8 @@ export const authService = {
 
   logout() {
     localStorage.removeItem('token');
+    // Disparar evento personalizado para notificar el cambio de autenticación
+    window.dispatchEvent(new CustomEvent('auth-change'));
     window.location.href = '/login';
   },
 
@@ -144,6 +152,8 @@ export const authService = {
     
     if (token) {
       localStorage.setItem('token', token);
+      // Disparar evento personalizado para notificar el cambio de autenticación
+      window.dispatchEvent(new CustomEvent('auth-change'));
       // Clean the URL without reloading the page
       window.history.replaceState({}, document.title, window.location.pathname);
       return true;

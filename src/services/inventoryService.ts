@@ -28,7 +28,7 @@ interface ManufacturedItem {
 const inventoryService = {
   getAll: async (offset: number = 0, limit: number = 10) => {
     try {
-      const response = await api.get(`${API_URL}/manufactured_item/?offset=${offset}&limit=${limit}`);
+      const response = await api.get(`${API_URL}/manufactured_item/products/all?offset=${offset}&limit=${limit}`);
       
       // Handle both old and new response formats
       if (response.data && response.data.items !== undefined) {
@@ -68,55 +68,54 @@ const inventoryService = {
     }
   },
 
-  // Get both manufactured items and inventory products combined with server-side pagination
+  // Get both manufactured items and inventory products combined
   getAllProducts: async (offset: number = 0, limit: number = 10) => {
     try {
+      // Fetch both types of products in parallel
+      const [manufacturedResponse, inventoryResponse] = await Promise.all([
+        api.get(`${API_URL}/manufactured_item/products/all?offset=${offset}&limit=${limit}`).catch(() => ({ data: { items: [], total: 0 } })),
+        api.get(`${API_URL}/inventory_item/products/all?offset=${offset}&limit=${limit}`).catch(() => ({ data: { items: [], total: 0 } }))
+      ]);
       
-      // For now, let's just get manufactured items to avoid complexity
-      // We can improve this later when the backend supports combined pagination
-      try {
-        const manufacturedResponse = await api.get(`${API_URL}/manufactured_item/?offset=${offset}&limit=${limit}`);
-        
+      let allProducts: any[] = [];
+      let totalCount = 0;
+      
+      // Process manufactured items
+      if (manufacturedResponse.data) {
         let manufacturedItems: any[] = [];
-        let total = 0;
-        let hasNext = false;
-        
-        // Handle both old and new response formats
-        if (manufacturedResponse.data && manufacturedResponse.data.items !== undefined) {
+        if (manufacturedResponse.data.items !== undefined) {
           // New format with pagination
           manufacturedItems = manufacturedResponse.data.items.map((item: any) => ({ 
             ...item, 
-            product_type: 'manufactured', 
-            type_label: 'Manufacturado' 
+            type: 'manufactured'
           }));
-          total = manufacturedResponse.data.total;
-          hasNext = (manufacturedResponse.data.offset + manufacturedResponse.data.limit) < manufacturedResponse.data.total;
-        } else {
-          // Old format - direct array
-          console.warn('API returned old format, converting to new format');
+        } else if (Array.isArray(manufacturedResponse.data)) {
+          // Old format - direct array (backward compatibility)
           manufacturedItems = manufacturedResponse.data.map((item: any) => ({ 
             ...item, 
-            product_type: 'manufactured', 
-            type_label: 'Manufacturado' 
+            type: 'manufactured'
           }));
-          total = manufacturedItems.length;
-          hasNext = false;
         }
-                
-        return {
-          data: manufacturedItems,
-          total: total,
-          hasNext: hasNext
-        };
-      } catch (error) {
-        console.error('Error fetching manufactured items:', error);
-        // Return empty result if there's an error
-        return {
-          data: [],
-          total: 0,
-          hasNext: false
-        };
+        allProducts = [...allProducts, ...manufacturedItems];
+        totalCount += manufacturedResponse.data.total || manufacturedItems.length;
       }
+      
+      // Process inventory products
+      if (inventoryResponse.data && inventoryResponse.data.items) {
+        const inventoryItems: any[] = inventoryResponse.data.items.map((item: any) => ({ 
+          ...item, 
+          type: 'inventory'
+        }));
+        allProducts = [...allProducts, ...inventoryItems];
+        totalCount += inventoryResponse.data.total || inventoryItems.length;
+      }
+      
+      return {
+        data: allProducts,
+        total: totalCount,
+        hasNext: allProducts.length >= limit // Simple check for next page
+      };
+      
     } catch (error) {
       console.error('Error fetching combined products:', error);
       return {

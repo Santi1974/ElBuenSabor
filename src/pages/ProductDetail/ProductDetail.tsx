@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../../services/api';
 import { useCart } from '../../context/CartContext';
+import { useAuth } from '../../hooks/useAuth';
 import ClientLayout from '../../components/ClientLayout/ClientLayout';
 import './ProductDetail.css';
 
@@ -44,6 +45,7 @@ const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addItem } = useCart();
+  const { isAuthenticated } = useAuth();
   const [searchParams] = useSearchParams();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -81,6 +83,11 @@ const ProductDetail = () => {
   };
 
   const handleAddToCart = () => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+
     if (product) {
       for (let i = 0; i < quantity; i++) {
         addItem({ id_key: product.id_key, name: product.name, price: product.price, type: productType as 'manufactured' | 'inventory' });
@@ -93,6 +100,18 @@ const ProductDetail = () => {
   // Helper function to check if product is manufactured
   const isManufacturedItem = (product: Product): product is ManufacturedItem => {
     return 'preparation_time' in product;
+  };
+
+  const isOutOfStock = product ? !isManufacturedItem(product) && ('current_stock' in product) && product.current_stock <= 0 : false;
+
+  const getButtonText = () => {
+    if (!isAuthenticated) {
+      return 'No disponible';
+    }
+    if (isOutOfStock) {
+      return 'Sin stock';
+    }
+    return `Agregar al carrito - $${(product!.price * quantity).toFixed(2)}`;
   };
 
   if (loading) {
@@ -147,26 +166,37 @@ const ProductDetail = () => {
             <span className="price-value">${product.price}</span>
           </div>
 
+          {!isAuthenticated && (
+            <div className="auth-notice">
+              <i className="bi bi-info-circle me-2"></i>
+              Inicia sesión para agregar productos al carrito y realizar pedidos
+            </div>
+          )}
+
           <div className="product-detail-actions">
             <div className="quantity-controls">
               <button 
                 onClick={() => handleQuantityChange(-1)}
-                disabled={quantity <= 1}
+                disabled={quantity <= 1 || !isAuthenticated}
+                style={{padding: '0 10px'}}
               >
                 -
               </button>
               <span>{quantity}</span>
-              <button onClick={() => handleQuantityChange(1)}>+</button>
+              <button 
+                onClick={() => handleQuantityChange(1)}
+                disabled={!isAuthenticated}
+                style={{padding: '0 10px'}}
+              >
+                +
+              </button>
             </div>
             <button 
-              className="add-to-cart-button" 
+              className="add-to-cart-button"
               onClick={handleAddToCart}
-              disabled={!isManufacturedItem(product) && product.current_stock <= 0}
+              disabled={isOutOfStock || !isAuthenticated}
             >
-              {!isManufacturedItem(product) && product.current_stock <= 0 ? 
-                'Sin stock' : 
-                `Agregar al carrito - $${(product.price * quantity).toFixed(2)}`
-              }
+              {getButtonText()}
             </button>
           </div>
         </div>

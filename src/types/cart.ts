@@ -12,10 +12,11 @@ export interface CartItem {
 
 export interface CartContextType {
   items: CartItem[];
-  addItem: (product: CartProduct) => void;
+  addItem: (product: CartProduct, showLoginPrompt?: boolean) => boolean;
   removeItem: (id: number) => void;
   updateQuantity: (id: number, quantity: number) => void;
   getItemQuantity: (id: number) => number;
   clearCart: () => void;
   totalItems: number;
+  isAuthenticated: boolean;
 } 

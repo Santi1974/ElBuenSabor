@@ -22,6 +22,25 @@ function RoleRoute({ children, role }: { children: ReactNode; role: string }) {
   return <>{children}</>;
 }
 
+// Nueva función para rutas públicas que requieren autenticación para funcionalidad completa
+function PublicRoute({ children }: { children: ReactNode }) {
+  return <>{children}</>;
+}
+
+// Función para rutas que requieren autenticación obligatoria
+function ProtectedRoute({ children }: { children: ReactNode }) {
+  const user = authService.getCurrentUser();
+  if (!user) return <Navigate to="/login" replace />;
+  if (user.role !== 'cliente') {
+    // Si no es cliente, redirigir según su rol
+    if (user.role === 'administrador') return <Navigate to="/admin" replace />;
+    if (user.role === 'delivery') return <Navigate to="/delivery" replace />;
+    if (user.role === 'cajero') return <Navigate to="/cashier" replace />;
+    return <Navigate to="/login" replace />;
+  }
+  return <>{children}</>;
+}
+
 function App() {
   return (
     <CartProvider>
@@ -33,36 +52,39 @@ function App() {
           <Route path="/admin/*" element={<AdminRoutes />} />
           <Route path="/delivery/*" element={<DeliveryRoutes />} />
           <Route path="/cashier/*" element={<CashierRoutes />} />
-          {/* Rutas solo para clientes */}
+          
+          {/* Rutas públicas - se pueden ver sin autenticación */}
           <Route path="/" element={
-            <RoleRoute role="cliente">
+            <PublicRoute>
               <Home />
-            </RoleRoute>
+            </PublicRoute>
           } />
           <Route path="/product/:id" element={
-            <RoleRoute role="cliente">
+            <PublicRoute>
               <ProductDetail />
-            </RoleRoute>
+            </PublicRoute>
           } />
+          
+          {/* Rutas que requieren autenticación */}
           <Route path="/cart" element={
-            <RoleRoute role="cliente">
+            <ProtectedRoute>
               <Cart />
-            </RoleRoute>
+            </ProtectedRoute>
           } />
           <Route path="/orders" element={
-            <RoleRoute role="cliente">
+            <ProtectedRoute>
               <Orders />
-            </RoleRoute>
+            </ProtectedRoute>
           } />
           <Route path="/order/:id" element={
-            <RoleRoute role="cliente">
+            <ProtectedRoute>
               <OrderDetail />
-            </RoleRoute>
+            </ProtectedRoute>
           } />
           <Route path="/profile" element={
-            <RoleRoute role="cliente">
+            <ProtectedRoute>
               <Profile />
-            </RoleRoute>
+            </ProtectedRoute>
           } />
         </Routes>
       </div>
