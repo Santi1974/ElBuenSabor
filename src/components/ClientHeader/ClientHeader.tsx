@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CartPreview from '../CartPreview/CartPreview';
+import UserProfile from '../UserProfile';
+import { authService } from '../../services/api';
 import './ClientHeader.css';
 
 interface ClientHeaderProps {
@@ -24,7 +26,14 @@ const ClientHeader: React.FC<ClientHeaderProps> = ({
 }) => {
   const navigate = useNavigate();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const profileRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const user = authService.getCurrentUser();
+    setCurrentUser(user);
+  }, []);
 
   const handleGoBack = () => {
     if (backButtonPath) {
@@ -40,7 +49,6 @@ const ClientHeader: React.FC<ClientHeaderProps> = ({
     }
   };
 
-  // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
@@ -123,9 +131,45 @@ const ClientHeader: React.FC<ClientHeaderProps> = ({
                       left: 'auto',
                       top: '100%',
                       marginTop: '0.5rem',
-                      minWidth: '160px',
-                      transform: 'translateX(-10px)' // Mover un poco hacia la izquierda
+                      minWidth: '220px',
+                      transform: 'translateX(-10px)'
                     }}>
+                  {/* User Info Header */}
+                  <li className="px-3 py-2 bg-light border-bottom">
+                    <div className="d-flex align-items-center">
+                      <i className="bi bi-person-circle fs-4 text-primary me-2"></i>
+                      <div className="flex-grow-1">
+                        <div className="fw-bold text-dark small">{currentUser?.full_name || 'Usuario'}</div>
+                        <div className="text-muted" style={{ fontSize: '0.75rem' }}>{currentUser?.email || ''}</div>
+                      </div>
+                    </div>
+                  </li>
+                  
+                  <li>
+                    <button
+                      className="dropdown-item d-flex align-items-center py-2 px-3"
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        setShowProfileModal(true);
+                      }}
+                    >
+                      <i className="bi bi-gear me-2 text-primary"></i>
+                      Editar Perfil
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      className="dropdown-item d-flex align-items-center py-2 px-3"
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        navigate('/profile');
+                      }}
+                    >
+                      <i className="bi bi-person-gear me-2 text-info"></i>
+                      Configuración
+                    </button>
+                  </li>
+                  <li><hr className="dropdown-divider my-1" /></li>
                   <li>
                     <button
                       className="dropdown-item d-flex align-items-center py-2 px-3"
@@ -134,7 +178,7 @@ const ClientHeader: React.FC<ClientHeaderProps> = ({
                         navigate('/orders');
                       }}
                     >
-                      <i className="bi bi-bag me-2 text-primary"></i>
+                      <i className="bi bi-bag me-2 text-success"></i>
                       Mis Pedidos
                     </button>
                   </li>
@@ -176,6 +220,12 @@ const ClientHeader: React.FC<ClientHeaderProps> = ({
           </div>
         )}
       </nav>
+
+      {/* User Profile Modal */}
+      <UserProfile 
+        isOpen={showProfileModal} 
+        onClose={() => setShowProfileModal(false)} 
+      />
     </header>
   );
 };

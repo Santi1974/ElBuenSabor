@@ -51,13 +51,12 @@ const AddressModal: React.FC<AddressModalProps> = ({
   useEffect(() => {
     api.get('/country/')
       .then(res => {
-        // Ensure response data is an array
         const countriesData = Array.isArray(res.data) ? res.data : [];
         setCountries(countriesData);
       })
       .catch(err => {
         console.error('Error fetching countries:', err);
-        setCountries([]); // Set empty array on error
+        setCountries([]);
       });
   }, []);
 

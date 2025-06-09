@@ -18,7 +18,15 @@ const Login = () => {
   useEffect(() => {
     // Check for token in URL when component mounts
     if (authService.checkForTokenInURL()) {
-      navigate('/', { replace: true });
+      // Redirigir basándose en el rol del usuario
+      const user = authService.getCurrentUser();
+      if (user?.role === 'administrador') {
+        navigate('/admin', { replace: true });
+      } else if (user?.role === 'delivery') {
+        navigate('/delivery', { replace: true });
+      } else {
+        navigate('/', { replace: true });
+      }
     }
   }, [navigate]);
 
@@ -34,7 +42,15 @@ const Login = () => {
       if (response.first_login) {
         setShowPasswordModal(true);
       } else {
-        navigate('/', { replace: true });
+        // Redirigir basándose en el rol del usuario
+        const user = authService.getCurrentUser();
+        if (user?.role === 'administrador') {
+          navigate('/admin', { replace: true });
+        } else if (user?.role === 'delivery') {
+          navigate('/delivery', { replace: true });
+        } else {
+          navigate('/', { replace: true });
+        }
       }
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Error al iniciar sesión. Por favor, intente nuevamente.');
@@ -53,7 +69,15 @@ const Login = () => {
 
   const handlePasswordChanged = () => {
     setShowPasswordModal(false);
-    navigate('/', { replace: true });
+    // Redirigir basándose en el rol del usuario
+    const user = authService.getCurrentUser();
+    if (user?.role === 'administrador') {
+      navigate('/admin', { replace: true });
+    } else if (user?.role === 'delivery') {
+      navigate('/delivery', { replace: true });
+    } else {
+      navigate('/', { replace: true });
+    }
   };
 
   if (showPasswordModal) {

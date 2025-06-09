@@ -88,7 +88,6 @@ const GenericABM: React.FC<GenericABMProps> = ({
       findCategoryForItem(item);
     }
     
-    // Load categories for inventory items
     if (type === 'inventario') {
       if (item && item.product_type) {
         await loadCategoriesForProduct(item.product_type);
@@ -132,7 +131,6 @@ const GenericABM: React.FC<GenericABMProps> = ({
     }
   };
 
-  // Ingredient management functions
   const addIngredient = () => {
     const newDetail = {
       inventory_item_id: '',

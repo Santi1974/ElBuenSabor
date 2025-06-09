@@ -28,7 +28,6 @@ interface ManufacturedItem {
 const inventoryService = {
   getAll: async (offset: number = 0, limit: number = 10) => {
     try {
-      console.log(`Requesting manufactured items: offset=${offset}, limit=${limit}`);
       const response = await api.get(`${API_URL}/manufactured_item/?offset=${offset}&limit=${limit}`);
       
       // Handle both old and new response formats
@@ -57,7 +56,6 @@ const inventoryService = {
   // Get inventory items that are products (sellable items like Coca Cola)
   getInventoryProducts: async (offset: number = 0, limit: number = 10) => {
     try {
-      console.log(`Requesting inventory products: offset=${offset}, limit=${limit}`);
       const response = await api.get(`${API_URL}/inventory_item/products/all?offset=${offset}&limit=${limit}`);
       return {
         data: response.data.items,
@@ -73,7 +71,6 @@ const inventoryService = {
   // Get both manufactured items and inventory products combined with server-side pagination
   getAllProducts: async (offset: number = 0, limit: number = 10) => {
     try {
-      console.log(`=== getAllProducts called with offset=${offset}, limit=${limit} ===`);
       
       // For now, let's just get manufactured items to avoid complexity
       // We can improve this later when the backend supports combined pagination
@@ -105,9 +102,7 @@ const inventoryService = {
           total = manufacturedItems.length;
           hasNext = false;
         }
-        
-        console.log(`✓ Fetched ${manufacturedItems.length} manufactured items`);
-        
+                
         return {
           data: manufacturedItems,
           total: total,

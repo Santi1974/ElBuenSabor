@@ -55,12 +55,10 @@ const FormFields: React.FC<FormFieldsProps> = ({
               className="form-select"
               value={formData[column.field]?.toString() || ''}
               onChange={(e) => {
-                // Check if this is a boolean field (like 'active') by looking at options
                 const isBooleanField = column.options?.some(opt => opt.value === 'true' || opt.value === 'false');
                 if (isBooleanField) {
                   onInputChange(column.field, e.target.value === 'true');
                 } else {
-                  // For string fields like 'role', keep the string value
                   onInputChange(column.field, e.target.value);
                 }
               }}

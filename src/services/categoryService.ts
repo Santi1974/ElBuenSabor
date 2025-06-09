@@ -44,9 +44,7 @@ const categoryService = {
       const endpoint = type === 'inventory' 
         ? `${API_URL}/inventory_item_category/top-level/all`
         : `${API_URL}/manufactured_item_category/top-level/all`;
-      console.log(`Fetching top-level categories from: ${endpoint}`);
       const response = await api.get(endpoint);
-      console.log(`Top-level categories response:`, response.data);
       return response.data;
     } catch (error) {
       console.error('Error fetching top-level categories:', error);
@@ -135,7 +133,6 @@ const categoryService = {
   // CRUD methods for inventory item categories
   createInventoryCategory: async (categoryData: Omit<Category, 'id_key' | 'subcategories'>) => {
     try {
-      console.log('Sending inventory category data:', categoryData);
       const response = await api.post(`${API_URL}/inventory_item_category/`, categoryData);
       return response.data;
     } catch (error: any) {

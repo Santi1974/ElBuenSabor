@@ -80,8 +80,15 @@ export const authService = {
       localStorage.setItem('token', token);
       // Clean the URL without reloading the page
       window.history.replaceState({}, document.title, window.location.pathname);
-      // Redirect to home
-      window.location.href = '/';
+      // Redirect based on user role
+      const user = this.getCurrentUser();
+      if (user?.role === 'administrador') {
+        window.location.href = '/admin';
+      } else if (user?.role === 'delivery') {
+        window.location.href = '/delivery';
+      } else {
+        window.location.href = '/';
+      }
     } else {
       // If no token, redirect to Google login
       window.location.href = `${API_URL}/auth/google/login`;

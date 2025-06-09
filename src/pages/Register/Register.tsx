@@ -33,7 +33,15 @@ const Register = () => {
 
     try {
       await authService.register(formData);
-      navigate('/');
+      // Redirigir basándose en el rol del usuario
+      const user = authService.getCurrentUser();
+      if (user?.role === 'administrador') {
+        navigate('/admin');
+      } else if (user?.role === 'delivery') {
+        navigate('/delivery');
+      } else {
+        navigate('/');
+      }
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Error al registrarse. Por favor, intente nuevamente.');
     } finally {
