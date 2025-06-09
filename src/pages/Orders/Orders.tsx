@@ -291,73 +291,73 @@ const Orders = () => {
               <div className="card-body">
                 <div className="d-flex flex-column gap-2">
                   <div className="form-check">
-                    <input 
+              <input 
                       className="form-check-input" 
-                      type="checkbox" 
-                      id="pending" 
-                      checked={statusFilters.a_confirmar}
-                      onChange={() => handleFilterChange('a_confirmar')}
-                    />
+                type="checkbox" 
+                id="pending" 
+                checked={statusFilters.a_confirmar}
+                onChange={() => handleFilterChange('a_confirmar')}
+              />
                     <label className="form-check-label" htmlFor="pending">
                       A confirmar
                     </label>
-                  </div>
+            </div>
                   <div className="form-check">
-                    <input 
+              <input 
                       className="form-check-input" 
-                      type="checkbox" 
-                      id="preparing" 
-                      checked={statusFilters.en_preparacion}
-                      onChange={() => handleFilterChange('en_preparacion')}
-                    />
+                type="checkbox" 
+                id="preparing" 
+                checked={statusFilters.en_preparacion}
+                onChange={() => handleFilterChange('en_preparacion')}
+              />
                     <label className="form-check-label" htmlFor="preparing">
                       En preparación
                     </label>
-                  </div>
+            </div>
                   <div className="form-check">
-                    <input 
+              <input 
                       className="form-check-input" 
-                      type="checkbox" 
-                      id="on-way" 
-                      checked={statusFilters.en_delivery}
-                      onChange={() => handleFilterChange('en_delivery')}
-                    />
+                type="checkbox" 
+                id="on-way" 
+                checked={statusFilters.en_delivery}
+                onChange={() => handleFilterChange('en_delivery')}
+              />
                     <label className="form-check-label" htmlFor="on-way">
                       En camino
                     </label>
-                  </div>
+            </div>
                   <div className="form-check">
-                    <input 
+              <input 
                       className="form-check-input" 
-                      type="checkbox" 
-                      id="delivered" 
-                      checked={statusFilters.entregado}
-                      onChange={() => handleFilterChange('entregado')}
-                    />
+                type="checkbox" 
+                id="delivered" 
+                checked={statusFilters.entregado}
+                onChange={() => handleFilterChange('entregado')}
+              />
                     <label className="form-check-label" htmlFor="delivered">
                       Entregado
                     </label>
-                  </div>
+            </div>
                   <div className="form-check">
-                    <input 
+              <input 
                       className="form-check-input" 
-                      type="checkbox" 
-                      id="cancelled" 
-                      checked={statusFilters.cancelado}
-                      onChange={() => handleFilterChange('cancelado')}
-                    />
+                type="checkbox" 
+                id="cancelled" 
+                checked={statusFilters.cancelado}
+                onChange={() => handleFilterChange('cancelado')}
+              />
                     <label className="form-check-label" htmlFor="cancelled">
                       Cancelado
                     </label>
                   </div>
                 </div>
-              </div>
             </div>
           </div>
+        </div>
 
           {/* Orders List Section */}
           <div className="col-12 col-lg-8">
-            {/* Pagination Info and Controls */}
+        {/* Pagination Info and Controls */}
             <div className="card mb-3" style={{ padding: '5px 10px' }}>
               <div className="card-body p-1">
                 <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -366,25 +366,25 @@ const Orders = () => {
                   </span>
                   <div className="d-flex align-items-center gap-2">
                     <label className="text-muted mb-0">Mostrar:</label>
-                    <select
-                      value={itemsPerPage}
-                      onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
+            <select
+              value={itemsPerPage}
+              onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
                       className="form-select form-select-sm"
                       style={{ width: 'auto' }}
-                    >
-                      <option value={5}>5</option>
-                      <option value={10}>10</option>
-                      <option value={25}>25</option>
-                      <option value={50}>50</option>
-                    </select>
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+            </select>
                   </div>
                 </div>
-              </div>
-            </div>
+          </div>
+        </div>
 
             {/* Orders List */}
             <div className="d-flex flex-column gap-3">
-              {loading ? (
+          {loading ? (
                 <div className="card">
                   <div className="card-body text-center py-5">
                     <div className="spinner-border text-primary mb-3" role="status">
@@ -393,26 +393,26 @@ const Orders = () => {
                     <p className="text-muted mb-0">Cargando pedidos...</p>
                   </div>
                 </div>
-              ) : error ? (
+          ) : error ? (
                 <div className="alert alert-danger" role="alert">
                   <i className="bi bi-exclamation-triangle me-2"></i>
                   {error}
                 </div>
-              ) : filteredOrders.length === 0 ? (
+          ) : filteredOrders.length === 0 ? (
                 <div className="card">
                   <div className="card-body text-center py-5">
                     <i className="bi bi-inbox display-4 text-muted mb-3"></i>
                     <p className="text-muted mb-0">No se encontraron pedidos</p>
                   </div>
                 </div>
-              ) : (
-                filteredOrders.map(order => (
-                  <div 
-                    key={order.id_key} 
+          ) : (
+            filteredOrders.map(order => (
+              <div 
+                key={order.id_key} 
                     className="card order-card-hover"
-                    onClick={() => handleOrderClick(order)}
+                onClick={() => handleOrderClick(order)}
                     style={{ cursor: 'pointer' }}
-                  >
+              >
                     <div className="card-body">
                       <div className="d-flex justify-content-between align-items-start mb-3">
                         <h5 className="card-title mb-0">
@@ -420,7 +420,7 @@ const Orders = () => {
                           Pedido #{order.id_key}
                         </h5>
                         <span className={`badge bg-${getStatusClass(order.status)}`}>
-                          {translateStatus(order.status)}
+                    {translateStatus(order.status)}
                         </span>
                       </div>
                       
@@ -432,14 +432,14 @@ const Orders = () => {
                         <div className="col-sm-6">
                           <small className="text-muted">Método de pago:</small>
                           <div>{translatePaymentMethod(order.payment_method)}</div>
-                        </div>
-                      </div>
+                  </div>
+                </div>
 
                       <div className="d-flex justify-content-between align-items-center">
                         <div>
                           <small className="text-muted">Total:</small>
                           <div className="h5 mb-0 text-success">${order.final_total.toFixed(2)}</div>
-                        </div>
+                  </div>
                         <div className="text-end">
                           <small className="text-muted">
                             {((order.details?.reduce((sum, detail) => sum + detail.quantity, 0) || 0) + 
@@ -447,95 +447,95 @@ const Orders = () => {
                           </small>
                           <div>
                             <i className="bi bi-chevron-right text-muted"></i>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
                   </div>
-                ))
-              )}
-            </div>
+                  </div>
+                </div>
+                  </div>
+              </div>
+            ))
+          )}
+        </div>
 
-            {/* Pagination Controls */}
-            {totalItems > 0 && (
+        {/* Pagination Controls */}
+        {totalItems > 0 && (
               <div className="card mt-3" style={{ padding: '5px 10px' }}>
                 <div className="card-body p-1">
                   <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <small className="text-muted">
-                      Página {currentPage} de {totalPages} - Mostrando {orders.length} de {totalItems} elementos
+                Página {currentPage} de {totalPages} - Mostrando {orders.length} de {totalItems} elementos
                     </small>
-                    <nav aria-label="Page navigation">
+            <nav aria-label="Page navigation">
                       <ul className="pagination pagination-sm mb-0">
-                        <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
-                          <button 
-                            className="page-link" 
-                            onClick={handlePrevPage}
-                            disabled={currentPage === 1}
-                          >
-                            Anterior
+                <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+                  <button 
+                    className="page-link" 
+                    onClick={handlePrevPage}
+                    disabled={currentPage === 1}
+                  >
+                    Anterior
+                  </button>
+                </li>
+                
+                {totalPages > 1 && (
+                  <>
+                    {currentPage > 2 && (
+                      <>
+                        <li className="page-item">
+                          <button className="page-link" onClick={() => handlePageChange(1)}>1</button>
+                        </li>
+                        {currentPage > 3 && <li className="page-item disabled"><span className="page-link">...</span></li>}
+                      </>
+                    )}
+                    
+                    {currentPage > 1 && (
+                      <li className="page-item">
+                        <button className="page-link" onClick={() => handlePageChange(currentPage - 1)}>
+                          {currentPage - 1}
+                        </button>
+                      </li>
+                    )}
+                    
+                    <li className="page-item active">
+                      <span className="page-link">{currentPage}</span>
+                    </li>
+                    
+                    {hasNext && (
+                      <li className="page-item">
+                        <button className="page-link" onClick={() => handlePageChange(currentPage + 1)}>
+                          {currentPage + 1}
+                        </button>
+                      </li>
+                    )}
+                    
+                    {hasNext && currentPage < totalPages - 1 && (
+                      <>
+                        {currentPage < totalPages - 2 && <li className="page-item disabled"><span className="page-link">...</span></li>}
+                        <li className="page-item">
+                          <button className="page-link" onClick={() => handlePageChange(totalPages)}>
+                            {totalPages}
                           </button>
                         </li>
-                        
-                        {totalPages > 1 && (
-                          <>
-                            {currentPage > 2 && (
-                              <>
-                                <li className="page-item">
-                                  <button className="page-link" onClick={() => handlePageChange(1)}>1</button>
-                                </li>
-                                {currentPage > 3 && <li className="page-item disabled"><span className="page-link">...</span></li>}
-                              </>
-                            )}
-                            
-                            {currentPage > 1 && (
-                              <li className="page-item">
-                                <button className="page-link" onClick={() => handlePageChange(currentPage - 1)}>
-                                  {currentPage - 1}
-                                </button>
-                              </li>
-                            )}
-                            
-                            <li className="page-item active">
-                              <span className="page-link">{currentPage}</span>
-                            </li>
-                            
-                            {hasNext && (
-                              <li className="page-item">
-                                <button className="page-link" onClick={() => handlePageChange(currentPage + 1)}>
-                                  {currentPage + 1}
-                                </button>
-                              </li>
-                            )}
-                            
-                            {hasNext && currentPage < totalPages - 1 && (
-                              <>
-                                {currentPage < totalPages - 2 && <li className="page-item disabled"><span className="page-link">...</span></li>}
-                                <li className="page-item">
-                                  <button className="page-link" onClick={() => handlePageChange(totalPages)}>
-                                    {totalPages}
-                                  </button>
-                                </li>
-                              </>
-                            )}
-                          </>
-                        )}
-                        
-                        {hasNext && (
-                          <li className="page-item">
-                            <button 
-                              className="page-link" 
-                              onClick={handleNextPage}
-                            >
-                              Siguiente
-                            </button>
-                          </li>
-                        )}
-                      </ul>
-                    </nav>
+                      </>
+                    )}
+                  </>
+                )}
+                
+                {hasNext && (
+                  <li className="page-item">
+                    <button 
+                      className="page-link" 
+                      onClick={handleNextPage}
+                    >
+                      Siguiente
+                    </button>
+                  </li>
+                )}
+              </ul>
+            </nav>
                   </div>
                 </div>
-              </div>
-            )}
+          </div>
+        )}
           </div>
         </div>
       </div>
@@ -659,13 +659,13 @@ const Orders = () => {
                             {/* Productos Manufacturados */}
                             {selectedOrder.details?.map((detail, index) => (
                               <tr key={`manufactured-${index}`}>
-                                <td>{detail.manufactured_item?.name || 'Producto'}</td>
-                                <td className="text-center">{detail.quantity}</td>
-                                <td className="text-center">
-                                  ${(detail.subtotal / detail.quantity).toFixed(2)}
-                                </td>
-                                <td className="text-end">${detail.subtotal.toFixed(2)}</td>
-                              </tr>
+                                  <td>{detail.manufactured_item?.name || 'Producto'}</td>
+                                  <td className="text-center">{detail.quantity}</td>
+                                  <td className="text-center">
+                                    ${(detail.subtotal / detail.quantity).toFixed(2)}
+                                  </td>
+                                  <td className="text-end">${detail.subtotal.toFixed(2)}</td>
+                                </tr>
                             ))}
                             
                             {/* Productos de Inventario */}

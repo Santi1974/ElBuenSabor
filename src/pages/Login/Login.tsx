@@ -13,21 +13,47 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isProcessingGoogle, setIsProcessingGoogle] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
 
   useEffect(() => {
-    // Check for token in URL when component mounts
-    if (authService.checkForTokenInURL()) {
-      // Redirigir basándose en el rol del usuario
-      const user = authService.getCurrentUser();
-      if (user?.role === 'administrador') {
-        navigate('/admin', { replace: true });
-      } else if (user?.role === 'delivery') {
-        navigate('/delivery', { replace: true });
-      } else {
-        navigate('/', { replace: true });
+    const handleGoogleCallback = async () => {
+      // Check if there's a token in the URL (Google OAuth callback)
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('access_token');
+      
+      if (token && token.trim() !== '') {
+        setIsProcessingGoogle(true);
+        setError('');
+        
+        try {
+          // Check for token in URL when component mounts
+          const hasToken = await authService.checkForTokenInURL();
+          if (hasToken) {
+            // Pequeña pausa para asegurar que el token se procese correctamente
+            setTimeout(() => {
+              // Redirigir basándose en el rol del usuario
+              const user = authService.getCurrentUser();
+              if (user?.role === 'administrador') {
+                navigate('/admin', { replace: true });
+              } else if (user?.role === 'delivery') {
+                navigate('/delivery', { replace: true });
+              } else {
+                navigate('/', { replace: true });
+              }
+            }, 100);
+          } else {
+            setError('Token de Google inválido. Por favor, intente nuevamente.');
+            setIsProcessingGoogle(false);
+          }
+        } catch (error) {
+          setError('Error al procesar el inicio de sesión con Google. Por favor, intente nuevamente.');
+          setIsProcessingGoogle(false);
+        }
       }
-    }
+    };
+
+    handleGoogleCallback();
   }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -84,6 +110,20 @@ const Login = () => {
     return <ChangePasswordModal onPasswordChanged={handlePasswordChanged} />;
   }
 
+  if (isProcessingGoogle) {
+    return (
+      <div className="container-fluid vh-100 d-flex align-items-center justify-content-center">
+        <div className="text-center">
+          <div className="spinner-border text-primary mb-3" role="status">
+            <span className="visually-hidden">Cargando...</span>
+          </div>
+          <h5>Procesando inicio de sesión con Google...</h5>
+          <p className="text-muted">Por favor, espere un momento.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container-fluid vh-100">
       <div className="row h-100">
@@ -112,7 +152,7 @@ const Login = () => {
                 className="btn btn-outline-dark w-100 d-flex align-items-center justify-content-center gap-2"
               onClick={handleGoogleLogin}
               type="button"
-              disabled={isLoading}
+              disabled={isLoading || isProcessingGoogle}
             >
                 <img src={googleIcon} alt="Google" width="24" height="24" />
               <span>Continuar con Google</span>
@@ -132,7 +172,7 @@ const Login = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                disabled={isLoading}
+                disabled={isLoading || isProcessingGoogle}
                 autoComplete="email"
               />
             </div>
@@ -145,7 +185,7 @@ const Login = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                disabled={isLoading}
+                disabled={isLoading || isProcessingGoogle}
                 autoComplete="current-password"
               />
             </div>
@@ -153,7 +193,7 @@ const Login = () => {
               <button 
               type="submit" 
                 className="btn btn-primary w-100"
-              disabled={isLoading}
+              disabled={isLoading || isProcessingGoogle}
             >
               {isLoading ? 'Ingresando...' : 'Ingresar'}
               </button>

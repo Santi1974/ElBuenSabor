@@ -73,30 +73,8 @@ export const authService = {
   },
 
   async loginWithGoogle(): Promise<void> {
-    // First check if we have a token in the URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('access_token');
-    
-    if (token) {
-      // If we have a token, store it and clean the URL
-      localStorage.setItem('token', token);
-      // Disparar evento personalizado para notificar el cambio de autenticación
-      window.dispatchEvent(new CustomEvent('auth-change'));
-      // Clean the URL without reloading the page
-      window.history.replaceState({}, document.title, window.location.pathname);
-      // Redirect based on user role
-      const user = this.getCurrentUser();
-      if (user?.role === 'administrador') {
-        window.location.href = '/admin';
-      } else if (user?.role === 'delivery') {
-        window.location.href = '/delivery';
-      } else {
-        window.location.href = '/';
-      }
-    } else {
-      // If no token, redirect to Google login
-      window.location.href = `${API_URL}/auth/google/login`;
-    }
+    // Redirect to Google login - the callback will be handled by the Login component
+    window.location.href = `${API_URL}/auth/google/login`;
   },
 
   async register(data: RegisterData): Promise<AuthResponse> {
@@ -146,11 +124,11 @@ export const authService = {
   },
 
   // Helper function to check for token in URL
-  checkForTokenInURL() {
+  async checkForTokenInURL(): Promise<boolean> {
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('access_token');
     
-    if (token) {
+    if (token && token.trim() !== '') {
       localStorage.setItem('token', token);
       // Disparar evento personalizado para notificar el cambio de autenticación
       window.dispatchEvent(new CustomEvent('auth-change'));

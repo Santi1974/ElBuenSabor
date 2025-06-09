@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../../services/api';
+import api, { authService } from '../../services/api';
 import inventoryService from '../../services/inventoryService';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../hooks/useAuth';
@@ -51,6 +51,7 @@ const PRODUCTS_PER_PAGE = 10;
 const Home = () => {
   const navigate = useNavigate();
   const { addItem, isAuthenticated } = useCart();
+  const { refreshAuth } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -61,6 +62,23 @@ const Home = () => {
   const itemsPerPage = 10; // Fixed items per page
   const [totalItems, setTotalItems] = useState(0);
   const [hasNext, setHasNext] = useState(false);
+
+  // Check for token in URL on component mount
+  useEffect(() => {
+    const checkURLToken = async () => {
+      try {
+        const tokenFound = await authService.checkForTokenInURL();
+        if (tokenFound) {
+          // Refresh authentication state
+          refreshAuth();
+        }
+      } catch (error) {
+        console.error('Error checking URL token:', error);
+      }
+    };
+
+    checkURLToken();
+  }, [refreshAuth]);
 
   useEffect(() => {
     fetchProducts();
@@ -116,8 +134,6 @@ const Home = () => {
     setCurrentPage(page);
   };
 
-
-
   const handleNextPage = () => {
     if (hasNext) {
       setCurrentPage(currentPage + 1);
@@ -168,7 +184,6 @@ const Home = () => {
       searchPlaceholder="Buscar productos..."
     >
       <div className="home-content">
-
 
         {/* Pagination Info */}
         <div className="products-pagination-header">
