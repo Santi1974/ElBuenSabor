@@ -6,6 +6,7 @@ interface Column {
   width?: number;
   type?: 'text' | 'number' | 'date' | 'select' | 'password';
   options?: { value: string; label: string }[];
+  createOnly?: boolean;
 }
 
 interface DataTableProps {
@@ -61,7 +62,7 @@ const DataTable: React.FC<DataTableProps> = ({
       <table className="table table-striped table-hover">
         <thead>
           <tr>
-            {columns.map((column) => (
+            {columns.filter(column => column.type !== 'password').map((column) => (
               <th key={column.field} style={{ width: column.width }}>
                 {column.headerName}
               </th>
@@ -76,7 +77,7 @@ const DataTable: React.FC<DataTableProps> = ({
               onClick={() => onView(item)}
               style={{ cursor: 'pointer' }}
             >
-              {columns.map((column) => (
+              {columns.filter(column => column.type !== 'password').map((column) => (
                 <td key={column.field}>
                   {renderCellValue(column, item)}
                 </td>

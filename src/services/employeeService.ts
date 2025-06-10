@@ -56,14 +56,11 @@ const employeeService = {
   },
 
   update: async (id: number, employee: Employee) => {
+    // Remover password del objeto de actualización por seguridad
+    const { password, ...updateData } = employee;
     const response = await api.put(`${API_URL}/user/${id}`, {
-      full_name: employee.full_name,
-      email: employee.email,
-      role: employee.role,
-      phone_number: employee.phone_number,
-      password: employee.password,
+      ...updateData,
       google_sub: employee.google_sub || '',
-      active: employee.active
     });
     return response.data;
   },

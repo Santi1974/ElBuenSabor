@@ -7,6 +7,7 @@ interface Column {
   width?: number;
   type?: 'text' | 'number' | 'date' | 'select' | 'password';
   options?: { value: string; label: string }[];
+  createOnly?: boolean;
 }
 
 interface ViewModalProps {

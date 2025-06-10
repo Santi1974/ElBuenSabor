@@ -7,6 +7,7 @@ interface Column {
   width?: number;
   type?: 'text' | 'number' | 'date' | 'select' | 'password';
   options?: { value: string; label: string }[];
+  createOnly?: boolean;
 }
 
 interface FormFieldsProps {
@@ -29,8 +30,8 @@ const FormFields: React.FC<FormFieldsProps> = ({
     column.field !== 'parent_category_name' &&
     column.field !== 'measurement_unit.name' &&
     column.field !== 'type_label' &&
-    // Solo mostrar campo password si estamos creando un nuevo empleado
-    (column.field !== 'password' || (type === 'employee' && !selectedItem)) &&
+    // Solo mostrar campos marcados como createOnly si estamos creando (no editando)
+    (!column.createOnly || !selectedItem) &&
     (type !== 'inventario' || (
       column.field !== 'description' && 
       column.field !== 'recipe' && 
