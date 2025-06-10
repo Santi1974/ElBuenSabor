@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api, { authService } from '../../services/api';
+import { authService } from '../../services/api';
 import inventoryService from '../../services/inventoryService';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../hooks/useAuth';
@@ -46,7 +46,7 @@ interface InventoryItem {
 // Union type for all products
 type Product = ManufacturedItem | InventoryItem;
 
-const PRODUCTS_PER_PAGE = 10;
+
 
 const Home = () => {
   const navigate = useNavigate();
@@ -107,6 +107,10 @@ const Home = () => {
   };
 
   const handleProductClick = (product: Product) => {
+    if (!product || !product.id_key) {
+      console.warn('Invalid product clicked:', product);
+      return;
+    }
     if (!isAuthenticated) {
       return;
     }
@@ -117,6 +121,11 @@ const Home = () => {
   const handleAddToCart = (e: React.MouseEvent, product: Product) => {
     e.stopPropagation();
     
+    if (!product || !product.id_key) {
+      console.warn('Invalid product for cart:', product);
+      return;
+    }
+    
     if (!isAuthenticated) {
       navigate('/login');
       return;
@@ -124,7 +133,12 @@ const Home = () => {
 
     const productType = 'type' in product && product.type ? product.type : 
                        ('preparation_time' in product ? 'manufactured' : 'inventory');
-    addItem({ id_key: product.id_key, name: product.name, price: product.price, type: productType });
+    addItem({ 
+      id_key: product.id_key, 
+      name: product.name || 'Producto sin nombre', 
+      price: product.price || 0, 
+      type: productType 
+    });
   };
 
   // Pagination functions
@@ -152,27 +166,43 @@ const Home = () => {
   };
 
   const getButtonText = (product: Product) => {
+    if (!product) {
+      return 'No disponible';
+    }
     if (!isAuthenticated) {
       return 'No disponible';
     }
-    if (!isManufacturedItem(product) && product.current_stock <= 0) {
+    if (!isManufacturedItem(product) && (product.current_stock ?? 0) <= 0) {
       return 'Sin stock';
     }
     return 'Agregar al carrito';
   };
 
   const isButtonDisabled = (product: Product) => {
+    if (!product) {
+      return true; // Deshabilitar botón cuando el producto es nulo
+    }
     if (!isAuthenticated) {
       return true; // Deshabilitar botón cuando no está autenticado
     }
-    return !isManufacturedItem(product) && product.current_stock <= 0;
+    return !isManufacturedItem(product) && (product.current_stock ?? 0) <= 0;
   };
 
   // Filter products based on search term
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(search.toLowerCase()) ||
-    product.description.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredProducts = products.filter(product => {
+    try {
+      // Safely access properties with null/undefined checks
+      const name = product?.name || '';
+      const description = product?.description || '';
+      const searchTerm = search.toLowerCase();
+      
+      return name.toLowerCase().includes(searchTerm) ||
+             description.toLowerCase().includes(searchTerm);
+    } catch (error) {
+      console.warn('Error filtering product:', error, product);
+      return false; // Exclude problematic products from results
+    }
+  });
 
   return (
     <ClientLayout
@@ -202,32 +232,44 @@ const Home = () => {
               {search ? 'No se encontraron productos que coincidan con la búsqueda' : 'No hay productos disponibles'}
             </div>
           ) : (
-            filteredProducts.map(product => (
-              <div 
-                className="product-card" 
-                key={product.id_key}
-                //Si no esta logeado no se puede ver el detalle
-                onClick={() => handleProductClick(product)}
-              >
-                <img 
-                  src={product.image_url || 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=400&q=80'} 
-                  alt={product.name} 
-                  className="product-image" 
-                />
-                <div className="product-info">
-                  <h3 className="product-title">{product.name}</h3>
-                  <p className="product-description">{product.description}</p>
-                  <span className="product-price">${product.price.toFixed(2)}</span>
-                  <button 
-                    className="add-button"
-                    onClick={(e) => handleAddToCart(e, product)}
-                    disabled={isButtonDisabled(product)}
-                  >
-                    {getButtonText(product)}
-                  </button>
+            filteredProducts.map(product => {
+              // Safe rendering with null checks
+              const productName = product?.name || 'Producto sin nombre';
+              const productDescription = product?.description || 'Sin descripción';
+              const productPrice = typeof product?.price === 'number' ? product.price : 0;
+              const productImageUrl = product?.image_url || 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=400&q=80';
+              
+              return (
+                <div 
+                  className="product-card" 
+                  key={product?.id_key || Math.random()}
+                  //Si no esta logeado no se puede ver el detalle
+                  onClick={() => handleProductClick(product)}
+                >
+                  <img 
+                    src={productImageUrl} 
+                    alt={productName} 
+                    className="product-image" 
+                    onError={(e) => {
+                      // Fallback if image fails to load
+                      (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=400&q=80';
+                    }}
+                  />
+                  <div className="product-info">
+                    <h3 className="product-title">{productName}</h3>
+                    <p className="product-description">{productDescription}</p>
+                    <span className="product-price">${productPrice.toFixed(2)}</span>
+                    <button 
+                      className="add-button"
+                      onClick={(e) => handleAddToCart(e, product)}
+                      disabled={isButtonDisabled(product)}
+                    >
+                      {getButtonText(product)}
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
 
