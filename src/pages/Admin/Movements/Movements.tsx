@@ -453,7 +453,7 @@ const Movements: React.FC = () => {
       {/* No Data for Selected Period */}
       {revenueData && !hasData && !loading && (
         <div className="text-center">
-          <div className="card border-warning">
+          <div className="card">
             <div className="card-body">
               <i className="bi bi-calendar-x display-1 text-primary"></i>
               <h4 className="mt-3 text-primary">Sin movimientos en el período seleccionado</h4>

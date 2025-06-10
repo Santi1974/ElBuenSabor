@@ -38,6 +38,10 @@ const Login = () => {
                 navigate('/admin', { replace: true });
               } else if (user?.role === 'delivery') {
                 navigate('/delivery', { replace: true });
+              } else if (user?.role === 'cajero') {
+                navigate('/cashier', { replace: true });
+              } else if (user?.role === 'cocinero') {
+                navigate('/cook', { replace: true });
               } else {
                 navigate('/', { replace: true });
               }
@@ -74,6 +78,10 @@ const Login = () => {
           navigate('/admin', { replace: true });
         } else if (user?.role === 'delivery') {
           navigate('/delivery', { replace: true });
+        } else if (user?.role === 'cajero') {
+          navigate('/cashier', { replace: true });
+        } else if (user?.role === 'cocinero') {
+          navigate('/cook', { replace: true });
         } else {
           navigate('/', { replace: true });
         }
@@ -101,6 +109,10 @@ const Login = () => {
       navigate('/admin', { replace: true });
     } else if (user?.role === 'delivery') {
       navigate('/delivery', { replace: true });
+    } else if (user?.role === 'cajero') {
+      navigate('/cashier', { replace: true });
+    } else if (user?.role === 'cocinero') {
+      navigate('/cook', { replace: true });
     } else {
       navigate('/', { replace: true });
     }

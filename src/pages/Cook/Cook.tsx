@@ -1,0 +1,114 @@
+import { useState } from 'react';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import 'bootstrap/dist/css/bootstrap.min.css';
+
+const Cook = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [expandedMenu, setExpandedMenu] = useState<string | null>(null);
+
+  const menuItems = [
+    { path: 'orders', label: 'Pedidos en Cocina', icon: 'bi-receipt' },
+    { path: 'ingredients', label: 'Ingredientes', icon: 'bi-box-seam' },
+    { 
+      path: 'products/inventory',
+      label: 'Productos',
+      icon: 'bi-cart-fill',
+      submenu: [
+        { path: 'products/categories', label: 'Rubros' },
+        { path: 'products/inventory', label: 'Inventario' }
+      ]
+    }
+  ];
+
+  const handleNavigation = (path: string) => {
+    navigate(path);
+  };
+
+  const toggleSubmenu = (path: string) => {
+    setExpandedMenu(expandedMenu === path ? null : path);
+  };
+
+  const getCurrentTitle = () => {
+    const currentPath = location.pathname.split('/').pop();
+    const currentItem = menuItems.find(item => item.path === currentPath || 
+      (item.submenu && item.submenu.some(subItem => subItem.path === currentPath)));
+    return currentItem ? currentItem.label : 'Cocinero';
+  };
+
+  return (
+    <div className="container-fluid min-vh-100 d-flex flex-row p-0" style={{ width: '100vw', height: '100vh' }}>
+      {/* Sidebar */}
+      <aside className="text-white d-flex flex-column justify-content-start align-items-start p-4" style={{width: 250, backgroundColor: '#747474', minHeight: '100vh', flexShrink: 0}}>
+        <nav className="w-100">
+          <div className="list-group list-group-flush">
+            {menuItems.map((item) => (
+              <div key={item.path}>
+                <a
+                  href="#"
+                  className={`list-group-item text-white border-0 py-3 px-2 d-flex align-items-center justify-content-between hover-highlight ${
+                    location.pathname.includes(item.path) ? 'active' : ''
+                  }`}
+                  style={{backgroundColor: '#747474'}}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (item.submenu) {
+                      toggleSubmenu(item.path);
+                    } else {
+                      handleNavigation(item.path);
+                    }
+                  }}
+                >
+                  <div className="d-flex align-items-center">
+                    <i className={`bi ${item.icon} me-3 fs-5`}></i>
+                    <span className="fs-5">{item.label}</span>
+                  </div>
+                  {item.submenu && (
+                    <i className={`bi ${expandedMenu === item.path ? 'bi-chevron-up' : 'bi-chevron-down'} fs-6`}></i>
+                  )}
+                </a>
+                
+                {/* Submenu */}
+                {item.submenu && expandedMenu === item.path && (
+                  <div className="ms-4">
+                    {item.submenu.map((subItem) => (
+                      <a
+                        key={subItem.path}
+                        href="#"
+                        className={`list-group-item text-white border-0 py-2 px-2 d-flex align-items-center hover-highlight ${
+                          location.pathname.includes(subItem.path) ? 'active' : ''
+                        }`}
+                        style={{backgroundColor: '#636363', fontSize: '0.9rem'}}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleNavigation(subItem.path);
+                        }}
+                      >
+                        <span className="ms-3">{subItem.label}</span>
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </nav>
+      </aside>
+
+      {/* Main content */}
+      <main className="flex-grow-1 d-flex flex-column" style={{backgroundColor: '#f8f9fa', minHeight: '100vh'}}>
+        <header className="bg-white p-3 border-bottom">
+          <h1 className="h4 mb-0 text-dark fw-bold">
+            <i className="bi bi-person-badge me-2"></i>
+            Panel del Cocinero - {getCurrentTitle()}
+          </h1>
+        </header>
+        <div className="flex-grow-1 overflow-auto">
+          <Outlet />
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default Cook; 

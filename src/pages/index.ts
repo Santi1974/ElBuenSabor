@@ -7,4 +7,6 @@ export { default as Admin } from './Admin/Admin';
 export { default as Cart } from './Cart/Cart';
 export { default as ProductDetail } from './ProductDetail/ProductDetail';
 export { default as Profile } from './Profile/Profile';
-export { Delivery, DeliveryOrders } from './Delivery'; 
+export { Delivery, DeliveryOrders } from './Delivery';
+export { default as Cook } from './Cook/Cook';
+export { default as CookOrders } from './Cook/CookOrders/CookOrders'; 

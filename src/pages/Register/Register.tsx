@@ -39,6 +39,10 @@ const Register = () => {
         navigate('/admin');
       } else if (user?.role === 'delivery') {
         navigate('/delivery');
+      } else if (user?.role === 'cajero') {
+        navigate('/cashier');
+      } else if (user?.role === 'cocinero') {
+        navigate('/cook');
       } else {
         navigate('/');
       }

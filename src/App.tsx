@@ -8,6 +8,7 @@ import './App.css';
 import AdminRoutes from './routes/AdminRoutes';
 import DeliveryRoutes from './routes/DeliveryRoutes';
 import CashierRoutes from './routes/CashierRoutes';
+import CookRoutes from './routes/CookRoutes';
  
 function RoleRoute({ children, role }: { children: ReactNode; role: string }) {
   const user = authService.getCurrentUser();
@@ -17,13 +18,26 @@ function RoleRoute({ children, role }: { children: ReactNode; role: string }) {
     if (user.role === 'administrador') return <Navigate to="/admin" replace />;
     if (user.role === 'delivery') return <Navigate to="/delivery" replace />;
     if (user.role === 'cajero') return <Navigate to="/cashier" replace />;
+    if (user.role === 'cocinero') return <Navigate to="/cook" replace />;
     return <Navigate to="/" replace />;
   }
   return <>{children}</>;
 }
 
-// Nueva función para rutas públicas que requieren autenticación para funcionalidad completa
+// Nueva función para rutas públicas que redirige usuarios autenticados según su rol
 function PublicRoute({ children }: { children: ReactNode }) {
+  const user = authService.getCurrentUser();
+  
+  // Si el usuario está autenticado, redirigir según su rol
+  if (user) {
+    if (user.role === 'administrador') return <Navigate to="/admin" replace />;
+    if (user.role === 'delivery') return <Navigate to="/delivery" replace />;
+    if (user.role === 'cajero') return <Navigate to="/cashier" replace />;
+    if (user.role === 'cocinero') return <Navigate to="/cook" replace />;
+    // Solo los clientes pueden acceder a las rutas públicas
+    if (user.role !== 'cliente') return <Navigate to="/login" replace />;
+  }
+  
   return <>{children}</>;
 }
 
@@ -36,6 +50,7 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
     if (user.role === 'administrador') return <Navigate to="/admin" replace />;
     if (user.role === 'delivery') return <Navigate to="/delivery" replace />;
     if (user.role === 'cajero') return <Navigate to="/cashier" replace />;
+    if (user.role === 'cocinero') return <Navigate to="/cook" replace />;
     return <Navigate to="/login" replace />;
   }
   return <>{children}</>;
@@ -52,6 +67,7 @@ function App() {
           <Route path="/admin/*" element={<AdminRoutes />} />
           <Route path="/delivery/*" element={<DeliveryRoutes />} />
           <Route path="/cashier/*" element={<CashierRoutes />} />
+          <Route path="/cook/*" element={<CookRoutes />} />
           
           {/* Rutas públicas - se pueden ver sin autenticación */}
           <Route path="/" element={

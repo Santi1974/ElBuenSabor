@@ -134,6 +134,7 @@ const Cart = () => {
       if (paymentMethod === 'mercado_pago') {
         const mpResponse = await api.put(`/order/${order.id_key}/mp-payment`);
         window.location.href = mpResponse.data.payment_url;
+        navigate(`/order/${order.id_key}`);
       } else {
         // Navigate to order detail page for cash payments
         navigate(`/order/${order.id_key}`);
