@@ -92,7 +92,8 @@ const Orders = () => {
     en_preparacion: false,
     en_delivery: false,
     entregado: false,
-    cancelado: false
+    cancelado: false,
+    facturado: false
   });
 
   // Calculate total pages for pagination
@@ -169,6 +170,7 @@ const Orders = () => {
     if (statusFilters.en_delivery && order.status.toLowerCase() === 'en_delivery') return true;
     if (statusFilters.entregado && order.status.toLowerCase() === 'entregado') return true;
     if (statusFilters.cancelado && order.status.toLowerCase() === 'cancelado') return true;
+    if (statusFilters.facturado && order.status.toLowerCase() === 'facturado') return true;
     
     return false;
   });
@@ -198,6 +200,8 @@ const Orders = () => {
         return 'Entregado';
       case 'cancelado':
         return 'Cancelado';
+      case 'facturado':
+        return 'Facturado';
       default:
         return status;
     }
@@ -242,6 +246,8 @@ const Orders = () => {
         return 'secondary';
       case 'cancelado':
         return 'danger';
+      case 'facturado':
+        return 'primary';
       default:
         return 'secondary';
     }
@@ -348,6 +354,18 @@ const Orders = () => {
               />
                     <label className="form-check-label" htmlFor="cancelled">
                       Cancelado
+                    </label>
+                  </div>
+                  <div className="form-check">
+                    <input 
+                      className="form-check-input" 
+                      type="checkbox" 
+                      id="facturado" 
+                      checked={statusFilters.facturado}
+                      onChange={() => handleFilterChange('facturado')}
+                    />
+                    <label className="form-check-label" htmlFor="facturado">
+                      Facturado
                     </label>
                   </div>
                 </div>

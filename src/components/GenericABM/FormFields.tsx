@@ -1,5 +1,6 @@
 import React from 'react';
 import type { ABMType } from '../../hooks/useABMData';
+import PasswordField from '../PasswordField/PasswordField';
 
 interface Column {
   field: string;
@@ -71,16 +72,21 @@ const FormFields: React.FC<FormFieldsProps> = ({
                 </option>
               ))}
             </select>
+          ) : column.type === 'password' ? (
+            <PasswordField
+              value={formData[column.field] || ''}
+              onChange={(e) => onInputChange(column.field, e.target.value)}
+              placeholder="Contraseña temporal que el empleado deberá cambiar"
+              required={true}
+            />
           ) : (
             <input
-              type={column.type === 'password' ? 'password' : column.type || 'text'}
+              type={column.type || 'text'}
               className="form-control"
               value={formData[column.field] || ''}
               onChange={(e) =>
                 onInputChange(column.field, e.target.value)
               }
-              placeholder={column.type === 'password' ? 'Contraseña temporal que el empleado deberá cambiar' : ''}
-              required={column.type === 'password'}
             />
           )}
         </div>

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import userProfileService from '../../services/userProfileService';
 import type { UpdateProfileData } from '../../services/userProfileService';
+import AddressManager from '../AddressManager/AddressManager';
+import PasswordField from '../PasswordField/PasswordField';
 
 interface UserProfileProps {
   isOpen: boolean;
@@ -13,6 +15,7 @@ const UserProfileComponent: React.FC<UserProfileProps> = ({ isOpen, onClose, isM
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'profile' | 'addresses'>('profile');
   
   // Form data
   const [formData, setFormData] = useState<UpdateProfileData>({
@@ -175,6 +178,38 @@ const UserProfileComponent: React.FC<UserProfileProps> = ({ isOpen, onClose, isM
       )}
       
       <div className="modal-body">
+        {/* Navigation Tabs */}
+        <ul className="nav nav-tabs mb-4" role="tablist">
+          <li className="nav-item" role="presentation">
+            <button
+              className={`nav-link ${activeTab === 'profile' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveTab('profile');
+                setError(null);
+                setSuccess(null);
+              }}
+              type="button"
+            >
+              <i className="bi bi-person me-2"></i>
+              Información Personal
+            </button>
+          </li>
+          <li className="nav-item" role="presentation">
+            <button
+              className={`nav-link ${activeTab === 'addresses' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveTab('addresses');
+                setError(null);
+                setSuccess(null);
+              }}
+              type="button"
+            >
+              <i className="bi bi-geo-alt me-2"></i>
+              Mis Direcciones
+            </button>
+          </li>
+        </ul>
+
         {/* Messages */}
         {error && (
           <div className="alert alert-danger alert-dismissible" role="alert">
@@ -192,7 +227,7 @@ const UserProfileComponent: React.FC<UserProfileProps> = ({ isOpen, onClose, isM
           </div>
         )}
 
-        {loading && (
+        {loading && activeTab === 'profile' && (
           <div className="text-center mb-3">
             <div className="spinner-border spinner-border-sm text-primary" role="status">
               <span className="visually-hidden">Cargando...</span>
@@ -200,6 +235,8 @@ const UserProfileComponent: React.FC<UserProfileProps> = ({ isOpen, onClose, isM
           </div>
         )}
 
+        {/* Tab Content */}
+        {activeTab === 'profile' ? (
         <form onSubmit={handleSubmit}>
           <div className="row">
             <div className="col-md-6">
@@ -321,15 +358,12 @@ const UserProfileComponent: React.FC<UserProfileProps> = ({ isOpen, onClose, isM
                   <i className="bi bi-key me-2"></i>
                   Nueva Contraseña
                 </label>
-                <input
-                  type="password"
-                  className="form-control"
-                  id="password"
+                <PasswordField
                   value={formData.password || ''}
                   onChange={(e) => handleInputChange('password', e.target.value)}
-                  disabled={loading}
-                  minLength={6}
                   placeholder="Dejar vacío para mantener actual"
+                  className={`form-control ${loading ? 'disabled' : ''}`}
+                  id="password"
                 />
                 <small className="text-muted">Mínimo 6 caracteres, con letras y números</small>
               </div>
@@ -341,15 +375,12 @@ const UserProfileComponent: React.FC<UserProfileProps> = ({ isOpen, onClose, isM
                   <i className="bi bi-key-fill me-2"></i>
                   Confirmar Nueva Contraseña
                 </label>
-                <input
-                  type="password"
-                  className="form-control"
-                  id="confirmPassword"
+                <PasswordField
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  disabled={loading}
-                  minLength={6}
                   placeholder="Repetir nueva contraseña"
+                  className={`form-control ${loading ? 'disabled' : ''}`}
+                  id="confirmPassword"
                 />
               </div>
             </div>
@@ -375,6 +406,9 @@ const UserProfileComponent: React.FC<UserProfileProps> = ({ isOpen, onClose, isM
             </button>
           </div>
         </form>
+        ) : (
+          <AddressManager />
+        )}
       </div>
     </>
   );

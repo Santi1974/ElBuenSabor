@@ -9,6 +9,7 @@ import PaginationControls from './PaginationControls';
 import FormFields from './FormFields';
 import InventoryFormFields from './InventoryFormFields';
 import CategoryFormFields from './CategoryFormFields';
+
 import ViewModal from './ViewModal';
 
 interface GenericABMProps {
@@ -259,6 +260,8 @@ const GenericABM: React.FC<GenericABMProps> = ({
                       onUpdateIngredientDetail={updateIngredientDetail}
                     />
                   )}
+
+
 
                   {/* Category Related Fields */}
                   {(type === 'inventario' || type === 'ingrediente' || type === 'rubro') && (

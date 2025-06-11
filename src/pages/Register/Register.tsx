@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../../services/api';
 import googleIcon from '../../assets/google-icon.svg';
+import PasswordField from '../../components/PasswordField/PasswordField';
 
 const placeholderImage = 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80';
 
@@ -142,15 +143,13 @@ const Register = () => {
               </div>
               
               <div className="mb-4">
-                <input
-                  type="password"
-                  className="form-control"
-                  name="password"
-                  placeholder="Contraseña"
+                <PasswordField
                   value={formData.password}
                   onChange={handleChange}
-                  required
-                  disabled={isLoading}
+                  placeholder="Contraseña"
+                  required={true}
+                  name="password"
+                  className={`form-control ${isLoading ? 'disabled' : ''}`}
                 />
               </div>
               

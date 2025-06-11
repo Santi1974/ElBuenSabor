@@ -4,7 +4,6 @@ import clientService from '../services/clientService';
 import inventoryService from '../services/inventoryService';
 import categoryService from '../services/categoryService';
 import ingredientService from '../services/ingredientService';
-
 export type ABMType = 'employee' | 'client' | 'rubro' | 'inventario' | 'ingrediente';
 
 export const useABMData = (type: ABMType) => {
@@ -45,6 +44,7 @@ export const useABMData = (type: ABMType) => {
           setTotalItems(ingredientResponse.total);
           setHasNext(ingredientResponse.hasNext);
           break;
+
         case 'rubro':
           const [manufacturedCatsResponse, inventoryCatsResponse] = await Promise.all([
             categoryService.getAll(offset, itemsPerPage),
@@ -112,6 +112,7 @@ export const useABMData = (type: ABMType) => {
           case 'ingrediente':
             await ingredientService.delete(id);
             break;
+
           case 'rubro':
             const itemToDelete = data.find(item => item.id_key === id);
             if (itemToDelete && itemToDelete.category_type === 'inventory') {

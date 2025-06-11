@@ -10,6 +10,12 @@
   background: linear-gradient(135deg, #D87D4D, #C06A3D) !important;
 }
 
+.btn-login {
+  &:hover {
+    color: #D87D4D !important;
+  }
+}
+
 /* Estilos específicos para el input de búsqueda con focus */
 .client-header .form-control:focus {
   background-color: white !important;

@@ -203,12 +203,12 @@ const ClientHeader: React.FC<ClientHeaderProps> = ({
                   Iniciar Sesión
                 </button>
                 <button
-                  className="btn btn-outline-light btn-sm px-3"
+                  className="btn btn-outline-light btn-sm px-3 btn-login"
                   onClick={() => navigate('/register')}
                   style={{ 
                     borderColor: 'white',
                     color: 'white',
-                    fontWeight: '600'
+                    fontWeight: '600',
                   }}
                 >
                   <i className="bi bi-person-plus me-1"></i>

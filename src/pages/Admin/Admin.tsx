@@ -21,6 +21,7 @@ const Admin = () => {
         { path: 'products/inventory', label: 'Inventario' }
       ]
     },
+
     { path: 'rankings', label: 'Rankings', icon: 'bi-graph-up' },
     { path: 'movements', label: 'Movimientos', icon: 'bi-arrow-left-right' }
   ];

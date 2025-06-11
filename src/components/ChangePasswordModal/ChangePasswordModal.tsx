@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { authService } from '../../services/api';
+import PasswordField from '../PasswordField/PasswordField';
 
 interface ChangePasswordModalProps {
   onPasswordChanged: () => void;
@@ -72,16 +73,13 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onPasswordCha
                 <label htmlFor="newPassword" className="form-label">
                   Nueva Contraseña
                 </label>
-                <input
-                  type="password"
-                  className="form-control"
-                  id="newPassword"
+                <PasswordField
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  required
-                  disabled={isLoading}
-                  minLength={6}
                   placeholder="Mínimo 6 caracteres, con letras y números"
+                  required={true}
+                  className={`form-control ${isLoading ? 'disabled' : ''}`}
+                  id="newPassword"
                 />
               </div>
 
@@ -89,16 +87,13 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onPasswordCha
                 <label htmlFor="confirmPassword" className="form-label">
                   Confirmar Nueva Contraseña
                 </label>
-                <input
-                  type="password"
-                  className="form-control"
-                  id="confirmPassword"
+                <PasswordField
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  disabled={isLoading}
-                  minLength={6}
                   placeholder="Repetir contraseña"
+                  required={true}
+                  className={`form-control ${isLoading ? 'disabled' : ''}`}
+                  id="confirmPassword"
                 />
               </div>
 

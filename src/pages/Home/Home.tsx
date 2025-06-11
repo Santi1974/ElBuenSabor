@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../../services/api';
 import inventoryService from '../../services/inventoryService';
+import categoryService from '../../services/categoryService';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../hooks/useAuth';
 import ClientLayout from '../../components/ClientLayout/ClientLayout';
@@ -57,6 +58,11 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   
+  // Categories filter states
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
+  
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10; // Fixed items per page
@@ -84,6 +90,11 @@ const Home = () => {
     fetchProducts();
   }, [currentPage]);
 
+  // Load categories on component mount
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
   const fetchProducts = async () => {
     try {
       setLoading(true);
@@ -103,6 +114,46 @@ const Home = () => {
       setProducts([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      setCategoriesLoading(true);
+      
+      // Get both manufactured and inventory categories
+      const [manufacturedResponse, inventoryResponse] = await Promise.all([
+        categoryService.getTopLevelAll('manufactured'),
+        categoryService.getTopLevelAll('inventory')
+      ]);
+      
+      // Combine both types of categories
+      const allCategories: Category[] = [];
+      
+      // Handle manufactured categories
+      if (Array.isArray(manufacturedResponse)) {
+        allCategories.push(...manufacturedResponse);
+      } else if (manufacturedResponse?.items) {
+        allCategories.push(...manufacturedResponse.items);
+      }
+      
+      // Handle inventory categories
+      if (Array.isArray(inventoryResponse)) {
+        allCategories.push(...inventoryResponse);
+      } else if (inventoryResponse?.items) {
+        allCategories.push(...inventoryResponse.items);
+      }
+      
+      // Remove duplicates by id_key
+      const uniqueCategories = allCategories.filter((category, index, self) => 
+        index === self.findIndex(c => c.id_key === category.id_key)
+      );
+      
+      setCategories(uniqueCategories);
+    } catch (err) {
+      console.error('Error fetching categories:', err);
+    } finally {
+      setCategoriesLoading(false);
     }
   };
 
@@ -188,7 +239,7 @@ const Home = () => {
     return !isManufacturedItem(product) && (product.current_stock ?? 0) <= 0;
   };
 
-  // Filter products based on search term
+  // Filter products based on search term and selected category
   const filteredProducts = products.filter(product => {
     try {
       // Safely access properties with null/undefined checks
@@ -196,13 +247,25 @@ const Home = () => {
       const description = product?.description || '';
       const searchTerm = search.toLowerCase();
       
-      return name.toLowerCase().includes(searchTerm) ||
+      // Search filter
+      const matchesSearch = name.toLowerCase().includes(searchTerm) ||
              description.toLowerCase().includes(searchTerm);
+      
+      // Category filter
+      const matchesCategory = selectedCategoryId === null || 
+                             product?.category?.id_key === selectedCategoryId;
+      
+      return matchesSearch && matchesCategory;
     } catch (error) {
       console.warn('Error filtering product:', error, product);
       return false; // Exclude problematic products from results
     }
   });
+
+  const handleCategoryChange = (categoryId: number | null) => {
+    setSelectedCategoryId(categoryId);
+    setCurrentPage(1); // Reset to first page when filter changes
+  };
 
   return (
     <ClientLayout
@@ -219,6 +282,37 @@ const Home = () => {
         <div className="products-pagination-header">
           <div className="products-count">
             <span>Mostrando {filteredProducts.length} de {totalItems} productos</span>
+          </div>
+        </div>
+
+        {/* Category Filters */}
+        <div className="category-filters">
+          <div className="filter-section">
+            <h5 className="filter-title">
+              <i className="bi bi-funnel me-2"></i>
+              Filtrar por Categoría
+            </h5>
+            <div className="category-buttons">
+              <button
+                className={`category-btn ${selectedCategoryId === null ? 'active' : ''}`}
+                onClick={() => handleCategoryChange(null)}
+              >
+                Todas las categorías
+              </button>
+              {categoriesLoading ? (
+                <div className="categories-loading">Cargando categorías...</div>
+              ) : (
+                categories.map(category => (
+                  <button
+                    key={category.id_key}
+                    className={`category-btn ${selectedCategoryId === category.id_key ? 'active' : ''}`}
+                    onClick={() => handleCategoryChange(category.id_key)}
+                  >
+                    {category.name}
+                  </button>
+                ))
+              )}
+            </div>
           </div>
         </div>
 

@@ -88,7 +88,7 @@ const cookService = {
   // Get orders with status "en_cocina"
   getKitchenOrders: async (offset: number = 0, limit: number = 10) => {
     try {
-      const response = await api.get(`${API_URL}/order/status/en_cocina?offset=${offset}&limit=${limit}`);
+      const response = await api.get(`${API_URL}/order/?status=en_cocina&offset=${offset}&limit=${limit}`);
       
       // Handle both old and new response formats
       if (response.data && response.data.items !== undefined) {

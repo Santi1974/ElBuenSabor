@@ -5,6 +5,7 @@ import clientService from '../services/clientService';
 import inventoryService from '../services/inventoryService';
 import categoryService from '../services/categoryService';
 import ingredientService from '../services/ingredientService';
+import inventoryPurchaseService from '../services/inventoryPurchaseService';
 
 export const useFormData = (type: ABMType, onSuccess: () => void) => {
   const [formData, setFormData] = useState<any>({});
@@ -79,6 +80,7 @@ export const useFormData = (type: ABMType, onSuccess: () => void) => {
             measurement_unit_id: 0
           });
           break;
+
         case 'employee':
           setFormData({
             full_name: '',
@@ -157,6 +159,27 @@ export const useFormData = (type: ABMType, onSuccess: () => void) => {
             
             if (formData.product_type === 'inventory') {
               await inventoryService.updateInventoryProduct(selectedItem.id_key, invFormattedData);
+              
+              // Si se incrementó el stock, crear un registro de compra por la diferencia
+              if (formData.current_stock > selectedItem.current_stock) {
+                const stockDifference = formData.current_stock - selectedItem.current_stock;
+                const inventoryPurchase = {
+                  inventory_item_id: selectedItem.id_key,
+                  quantity: stockDifference,
+                  unit_cost: formData.purchase_cost || 0,
+                  total_cost: stockDifference * (formData.purchase_cost || 0),
+                  notes: `Actualización de stock - Incremento: ${stockDifference} unidades`,
+                  purchase_date: new Date().toISOString()
+                };
+                
+                try {
+                  await inventoryPurchaseService.create(inventoryPurchase);
+                  console.log('Inventory purchase created for inventory product stock update:', selectedItem.id_key);
+                } catch (purchaseError) {
+                  console.error('Error creating inventory purchase for inventory product stock update:', purchaseError);
+                  // No interrumpir el proceso si falla la creación de la compra
+                }
+              }
             } else {
               await inventoryService.update(selectedItem.id_key, invFormattedData);
             }
@@ -164,7 +187,29 @@ export const useFormData = (type: ABMType, onSuccess: () => void) => {
           case 'ingrediente':
             const { category: ingCategory, measurement_unit, ...ingredientData } = formData;
             await ingredientService.update(selectedItem.id_key, ingredientData);
+            
+            // Si se incrementó el stock, crear un registro de compra por la diferencia
+            if (formData.current_stock > selectedItem.current_stock) {
+              const stockDifference = formData.current_stock - selectedItem.current_stock;
+              const inventoryPurchase = {
+                inventory_item_id: selectedItem.id_key,
+                quantity: stockDifference,
+                unit_cost: formData.purchase_cost || 0,
+                total_cost: stockDifference * (formData.purchase_cost || 0),
+                notes: `Actualización de stock - Incremento: ${stockDifference} unidades`,
+                purchase_date: new Date().toISOString()
+              };
+              
+              try {
+                await inventoryPurchaseService.create(inventoryPurchase);
+                console.log('Inventory purchase created for stock update:', selectedItem.id_key);
+              } catch (purchaseError) {
+                console.error('Error creating inventory purchase for stock update:', purchaseError);
+                // No interrumpir el proceso si falla la creación de la compra
+              }
+            }
             break;
+
           case 'rubro':
             const { category_type: updateCategoryType, type_label: updateTypeLabel, ...updateCategoryData } = formData;
             const cleanUpdateCategoryData = {
@@ -201,16 +246,58 @@ export const useFormData = (type: ABMType, onSuccess: () => void) => {
               }))
             };
             
+            let createdInventoryItem;
             if (formData.product_type === 'inventory') {
-              await inventoryService.createInventoryProduct(invFormattedData);
+              createdInventoryItem = await inventoryService.createInventoryProduct(invFormattedData);
+              
+              // Crear automáticamente un registro de compra de inventario para productos de inventario
+              if (createdInventoryItem && createdInventoryItem.id_key && formData.current_stock > 0) {
+                const inventoryPurchase = {
+                  inventory_item_id: createdInventoryItem.id_key,
+                  quantity: formData.current_stock || 0,
+                  unit_cost: formData.purchase_cost || 0,
+                  total_cost: (formData.current_stock || 0) * (formData.purchase_cost || 0),
+                  notes: `Compra inicial - Creación de producto de inventario: ${formData.name}`,
+                  purchase_date: new Date().toISOString()
+                };
+                
+                try {
+                  await inventoryPurchaseService.create(inventoryPurchase);
+                  console.log('Inventory purchase created successfully for inventory product:', createdInventoryItem.id_key);
+                } catch (purchaseError) {
+                  console.error('Error creating inventory purchase for inventory product:', purchaseError);
+                  // No interrumpir el proceso si falla la creación de la compra
+                }
+              }
             } else {
-              await inventoryService.create(invFormattedData);
+              createdInventoryItem = await inventoryService.create(invFormattedData);
             }
             break;
           case 'ingrediente':
             const { category: ingCategory, measurement_unit, ...ingredientData } = formData;
-            await ingredientService.create(ingredientData);
+            const createdIngredient = await ingredientService.create(ingredientData);
+            
+            // Crear automáticamente un registro de compra de inventario
+            if (createdIngredient && createdIngredient.id_key && formData.current_stock > 0) {
+              const inventoryPurchase = {
+                inventory_item_id: createdIngredient.id_key,
+                quantity: formData.current_stock || 0,
+                unit_cost: formData.purchase_cost || 0,
+                total_cost: (formData.current_stock || 0) * (formData.purchase_cost || 0),
+                notes: `Compra inicial - Creación de ingrediente: ${formData.name}`,
+                purchase_date: new Date().toISOString()
+              };
+              
+              try {
+                await inventoryPurchaseService.create(inventoryPurchase);
+                console.log('Inventory purchase created successfully for ingredient:', createdIngredient.id_key);
+              } catch (purchaseError) {
+                console.error('Error creating inventory purchase for ingredient:', purchaseError);
+                // No interrumpir el proceso si falla la creación de la compra
+              }
+            }
             break;
+
           case 'rubro':
             const { category_type, type_label, ...categoryData } = formData;
             const cleanCategoryData = {

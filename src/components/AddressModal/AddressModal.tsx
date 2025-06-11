@@ -123,7 +123,7 @@ const AddressModal: React.FC<AddressModalProps> = ({
                     <div className="list-group mb-3">
                       {addresses.map((address) => (
                         <button
-                          key={address.id}
+                          key={address.id_key}
                           className="list-group-item list-group-item-action"
                           onClick={() => onSelectAddress?.(address)}
                         >
