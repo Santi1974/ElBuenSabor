@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import addressService, { type Address, type AddressFormData } from '../../services/addressService';
 import api from '../../services/api';
+import { handleError, ERROR_MESSAGES } from '../../utils/errorHandler';
 
 interface Country {
   id_key: number;
@@ -53,7 +54,7 @@ const AddressManager: React.FC = () => {
       // Asegurar que siempre sea un array
       setAddresses(Array.isArray(userAddresses) ? userAddresses : []);
     } catch (err: any) {
-      setError('Error al cargar las direcciones');
+      setError(handleError(err, 'load addresses'));
       console.error('Error loading addresses:', err);
       setAddresses([]); // Asegurar que addresses sea un array vacío en caso de error
     } finally {
@@ -104,7 +105,7 @@ const AddressManager: React.FC = () => {
       await loadAddresses();
       resetForm();
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Error al guardar la dirección');
+      setError(handleError(err, 'save address'));
     } finally {
       setSaving(false);
     }
@@ -132,7 +133,7 @@ const AddressManager: React.FC = () => {
         await addressService.delete(address.id_key);
         await loadAddresses();
       } catch (err: any) {
-        setError('Error al eliminar la dirección');
+        setError(handleError(err, 'delete address'));
       }
     }
   };

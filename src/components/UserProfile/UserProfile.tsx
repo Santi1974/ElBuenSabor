@@ -4,6 +4,7 @@ import userProfileService from '../../services/userProfileService';
 import type { UpdateProfileData } from '../../services/userProfileService';
 import AddressManager from '../AddressManager/AddressManager';
 import PasswordField from '../PasswordField/PasswordField';
+import { handleError, ERROR_MESSAGES } from '../../utils/errorHandler';
 
 interface UserProfileProps {
   isOpen: boolean;
@@ -53,7 +54,7 @@ const UserProfileComponent: React.FC<UserProfileProps> = ({ isOpen, onClose, isM
       }
     } catch (error: any) {
       console.error('Error loading profile:', error); // Debug log
-      setError(error.message || 'Error al cargar el perfil');
+      setError(handleError(error, 'load profile'));
     } finally {
       setLoading(false);
     }
@@ -153,7 +154,7 @@ const UserProfileComponent: React.FC<UserProfileProps> = ({ isOpen, onClose, isM
       setConfirmPassword('');
       
     } catch (error: any) {
-      setError(error.response?.data?.detail || 'Error al actualizar el perfil');
+      setError(handleError(error, 'update profile'));
     } finally {
       setLoading(false);
     }

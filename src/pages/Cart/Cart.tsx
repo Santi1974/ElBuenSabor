@@ -6,6 +6,7 @@ import type { Address, AddressFormData } from '../../types/address';
 import AddressModal from '../../components/AddressModal/AddressModal';
 import ClientLayout from '../../components/ClientLayout/ClientLayout';
 import api from '../../services/api';
+import { handleError } from '../../utils/errorHandler';
 
 const Cart = () => {
   const navigate = useNavigate();
@@ -140,7 +141,7 @@ const Cart = () => {
         navigate(`/order/${order.id_key}`);
       }
     } catch (err: any) {
-      setOrderError(err.message || 'Error al crear la orden');
+      setOrderError(handleError(err, 'create order'));
     } finally {
       setLoadingOrder(false);
     }

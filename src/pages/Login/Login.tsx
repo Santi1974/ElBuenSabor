@@ -4,6 +4,7 @@ import { authService } from '../../services/api';
 import googleIcon from '../../assets/google-icon.svg';
 import ChangePasswordModal from '../../components/ChangePasswordModal/ChangePasswordModal';
 import PasswordField from '../../components/PasswordField/PasswordField';
+import { handleError, ERROR_MESSAGES } from '../../utils/errorHandler';
 
 // Note: You will need to add a real food image to replace this
 const placeholderImage = 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80';
@@ -52,7 +53,7 @@ const Login = () => {
             setIsProcessingGoogle(false);
           }
         } catch (error) {
-          setError('Error al procesar el inicio de sesión con Google. Por favor, intente nuevamente.');
+          setError(handleError(error, 'Google login processing'));
           setIsProcessingGoogle(false);
         }
       }
@@ -88,7 +89,7 @@ const Login = () => {
         }
       }
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Error al iniciar sesión. Por favor, intente nuevamente.');
+      setError(handleError(err, 'login'));
     } finally {
       setIsLoading(false);
     }
@@ -98,7 +99,7 @@ const Login = () => {
     try {
       await authService.loginWithGoogle();
     } catch (err: any) {
-      setError('Error al iniciar sesión con Google. Por favor, intente nuevamente.');
+      setError(handleError(err, 'Google login'));
     }
   };
 

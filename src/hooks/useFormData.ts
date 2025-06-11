@@ -6,6 +6,7 @@ import inventoryService from '../services/inventoryService';
 import categoryService from '../services/categoryService';
 import ingredientService from '../services/ingredientService';
 import inventoryPurchaseService from '../services/inventoryPurchaseService';
+import { handleError, ERROR_MESSAGES } from '../utils/errorHandler';
 
 export const useFormData = (type: ABMType, onSuccess: () => void) => {
   const [formData, setFormData] = useState<any>({});
@@ -318,7 +319,7 @@ export const useFormData = (type: ABMType, onSuccess: () => void) => {
       onSuccess();
     } catch (err) {
       console.error('Error saving data:', err);
-      throw err;
+      throw new Error(handleError(err, 'save data'));
     }
   };
 

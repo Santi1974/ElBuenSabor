@@ -1,4 +1,5 @@
 import api from './api';
+import { handleError } from '../utils/errorHandler';
 
 const API_URL = 'http://localhost:8000';
 
@@ -27,7 +28,7 @@ const inventoryPurchaseService = {
       return response.data;
     } catch (error) {
       console.error('Error creating inventory purchase:', error);
-      throw error;
+      throw new Error(handleError(error, 'create inventory purchase'));
     }
   },
 
@@ -51,7 +52,7 @@ const inventoryPurchaseService = {
       }
     } catch (error) {
       console.error('Error fetching inventory purchases:', error);
-      throw error;
+      throw new Error(handleError(error, 'fetch inventory purchases'));
     }
   },
 

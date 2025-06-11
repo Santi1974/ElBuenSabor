@@ -63,7 +63,6 @@ export const authService = {
       const response = await api.post<AuthResponse>('/auth/login', credentials);
       if (response.data.access_token) {
         localStorage.setItem('token', response.data.access_token);
-        // Disparar evento personalizado para notificar el cambio de autenticación
         window.dispatchEvent(new CustomEvent('auth-change'));
       }
       return response.data;
@@ -73,7 +72,6 @@ export const authService = {
   },
 
   async loginWithGoogle(): Promise<void> {
-    // Redirect to Google login - the callback will be handled by the Login component
     window.location.href = `${API_URL}/auth/google/login`;
   },
 
@@ -82,7 +80,6 @@ export const authService = {
       const response = await api.post<AuthResponse>('/auth/register', data);
       if (response.data.access_token) {
         localStorage.setItem('token', response.data.access_token);
-        // Disparar evento personalizado para notificar el cambio de autenticación
         window.dispatchEvent(new CustomEvent('auth-change'));
       }
       return response.data;
@@ -93,7 +90,6 @@ export const authService = {
 
   logout() {
     localStorage.removeItem('token');
-    // Disparar evento personalizado para notificar el cambio de autenticación
     window.dispatchEvent(new CustomEvent('auth-change'));
     window.location.href = '/login';
   },
@@ -123,16 +119,13 @@ export const authService = {
     }
   },
 
-  // Helper function to check for token in URL
   async checkForTokenInURL(): Promise<boolean> {
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('access_token');
     
     if (token && token.trim() !== '') {
       localStorage.setItem('token', token);
-      // Disparar evento personalizado para notificar el cambio de autenticación
       window.dispatchEvent(new CustomEvent('auth-change'));
-      // Clean the URL without reloading the page
       window.history.replaceState({}, document.title, window.location.pathname);
       return true;
     }

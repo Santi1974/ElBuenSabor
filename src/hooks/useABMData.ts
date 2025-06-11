@@ -4,6 +4,7 @@ import clientService from '../services/clientService';
 import inventoryService from '../services/inventoryService';
 import categoryService from '../services/categoryService';
 import ingredientService from '../services/ingredientService';
+import { handleError, ERROR_MESSAGES } from '../utils/errorHandler';
 export type ABMType = 'employee' | 'client' | 'rubro' | 'inventario' | 'ingrediente';
 
 export const useABMData = (type: ABMType) => {
@@ -82,7 +83,7 @@ export const useABMData = (type: ABMType) => {
       }
       setError(null);
     } catch (err) {
-      setError('Error al cargar los datos');
+      setError(handleError(err, 'load data'));
       console.error('Error loading data:', err);
     }
   };
@@ -125,7 +126,7 @@ export const useABMData = (type: ABMType) => {
         await loadData();
         setError(null);
       } catch (err) {
-        setError('Error al eliminar el registro');
+        setError(handleError(err, 'delete record'));
         console.error('Error deleting data:', err);
       }
     }

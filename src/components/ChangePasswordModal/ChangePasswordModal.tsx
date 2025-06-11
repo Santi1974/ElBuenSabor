@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { authService } from '../../services/api';
 import PasswordField from '../PasswordField/PasswordField';
+import { handleError, ERROR_MESSAGES } from '../../utils/errorHandler';
 
 interface ChangePasswordModalProps {
   onPasswordChanged: () => void;
@@ -39,7 +40,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onPasswordCha
       await authService.changeEmployeePassword(newPassword);
       onPasswordChanged();
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Error al cambiar la contraseña. Inténtelo nuevamente.');
+      setError(handleError(err, 'change password'));
     } finally {
       setIsLoading(false);
     }
