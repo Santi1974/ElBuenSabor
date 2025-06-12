@@ -30,7 +30,7 @@ const Cart = () => {
       setLoadingAddresses(true);
       api.get('/address/user/addresses')
         .then(res => {
-          const mapped = res.data.map((addr: any) => ({
+          const mapped = res.data.items.map((addr: any) => ({
             id_key: addr.id_key,
             street: addr.street,
             street_number: addr.street_number,
@@ -38,6 +38,7 @@ const Cart = () => {
             name: addr.name,
             locality_id: addr.locality?.id_key,
             locality_name: addr.locality?.name,
+            user_id: addr.user_id
           }));
           setAddresses(mapped);
         })

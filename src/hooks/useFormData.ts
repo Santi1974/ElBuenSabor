@@ -199,34 +199,25 @@ export const useFormData = (type: ABMType, onSuccess: () => void, reloadCategori
             };
             await ingredientService.update(selectedItem.id_key, ingredientUpdateData);
             break;
-
           case 'rubro':
-            const { category_type: updateCategoryType, type_label: updateTypeLabel, ...updateCategoryData } = formData;
-            const cleanUpdateCategoryData = {
-              name: updateCategoryData.name,
-              description: updateCategoryData.description || '',
-              active: updateCategoryData.active !== false,
-              parent_id: updateCategoryData.parent_id || null
-            };
-            
-            if (selectedItem.category_type === 'inventory') {
-              await categoryService.updateInventoryCategory(selectedItem.id_key, cleanUpdateCategoryData);
-            } else {
-              await categoryService.update(selectedItem.id_key, cleanUpdateCategoryData);
-            }
-            
-            // Recargar categorías después de actualizar
-            if (reloadCategories) {
-              await reloadCategories();
-            }
+            await categoryService.update(selectedItem.id_key, formData);
             break;
         }
       } else {
         switch (type) {
           case 'employee':
-            await employeeService.create(formData);
-            // Mostrar mensaje con las credenciales
-            alert(`Empleado creado exitosamente!\n\nCredenciales de acceso:\nEmail: ${formData.email}\nContraseña: ${formData.password}\n\nEl empleado deberá cambiar su contraseña en el primer login.`);
+            try {
+              await employeeService.create(formData);
+              // Mostrar mensaje con las credenciales
+              alert(`Empleado creado exitosamente!\n\nCredenciales de acceso:\nEmail: ${formData.email}\nContraseña: ${formData.password}\n\nEl empleado deberá cambiar su contraseña en el primer login.`);
+            } catch (err: any) {
+              // Si es un error de validación de contraseña, mostrarlo
+              if (err.message && err.message.includes('contraseña')) {
+                throw new Error(err.message);
+              }
+              // Si es otro tipo de error, usar el mensaje genérico
+              throw new Error(handleError(err, 'create employee'));
+            }
             break;
           case 'client':
             await clientService.create(formData);
@@ -245,22 +236,22 @@ export const useFormData = (type: ABMType, onSuccess: () => void, reloadCategori
             if (formData.product_type === 'inventory') {
               createdInventoryItem = await inventoryService.createInventoryProduct(invFormattedData);
               
-              // Crear automáticamente un registro de compra de inventario para productos de inventario
-              if (createdInventoryItem && createdInventoryItem.id_key && formData.current_stock > 0) {
+              // Si hay stock inicial, crear un registro de compra
+              if (formData.current_stock > 0) {
                 const inventoryPurchase = {
                   inventory_item_id: createdInventoryItem.id_key,
-                  quantity: formData.current_stock || 0,
+                  quantity: formData.current_stock,
                   unit_cost: formData.purchase_cost || 0,
-                  total_cost: (formData.current_stock || 0) * (formData.purchase_cost || 0),
-                  notes: `Compra inicial - Creación de producto de inventario: ${formData.name}`,
+                  total_cost: formData.current_stock * (formData.purchase_cost || 0),
+                  notes: `Stock inicial - ${formData.current_stock} unidades`,
                   purchase_date: new Date().toISOString()
                 };
                 
                 try {
                   await inventoryPurchaseService.create(inventoryPurchase);
-                  console.log('Inventory purchase created successfully for inventory product:', createdInventoryItem.id_key);
+                  console.log('Inventory purchase created for new inventory product:', createdInventoryItem.id_key);
                 } catch (purchaseError) {
-                  console.error('Error creating inventory purchase for inventory product:', purchaseError);
+                  console.error('Error creating inventory purchase for new inventory product:', purchaseError);
                   // No interrumpir el proceso si falla la creación de la compra
                 }
               }
@@ -270,55 +261,17 @@ export const useFormData = (type: ABMType, onSuccess: () => void, reloadCategori
             break;
           case 'ingrediente':
             const { category: ingCategory, measurement_unit, ...ingredientData } = formData;
-            const createdIngredient = await ingredientService.create(ingredientData);
-            
-            // Crear automáticamente un registro de compra de inventario
-            if (createdIngredient && createdIngredient.id_key && formData.current_stock > 0) {
-              const inventoryPurchase = {
-                inventory_item_id: createdIngredient.id_key,
-                quantity: formData.current_stock || 0,
-                unit_cost: formData.purchase_cost || 0,
-                total_cost: (formData.current_stock || 0) * (formData.purchase_cost || 0),
-                notes: `Compra inicial - Creación de ingrediente: ${formData.name}`,
-                purchase_date: new Date().toISOString()
-              };
-              
-              try {
-                await inventoryPurchaseService.create(inventoryPurchase);
-                console.log('Inventory purchase created successfully for ingredient:', createdIngredient.id_key);
-              } catch (purchaseError) {
-                console.error('Error creating inventory purchase for ingredient:', purchaseError);
-                // No interrumpir el proceso si falla la creación de la compra
-              }
-            }
+            await ingredientService.create(ingredientData);
             break;
-
           case 'rubro':
-            const { category_type, type_label, ...categoryData } = formData;
-            const cleanCategoryData = {
-              name: categoryData.name,
-              description: categoryData.description || '',
-              active: categoryData.active !== false,
-              parent_id: categoryData.parent_id || null
-            };
-            
-            if (formData.category_type === 'inventory') {
-              await categoryService.createInventoryCategory(cleanCategoryData);
-            } else {
-              await categoryService.create(cleanCategoryData);
-            }
-            
-            // Recargar categorías después de crear
-            if (reloadCategories) {
-              await reloadCategories();
-            }
+            await categoryService.create(formData);
             break;
         }
       }
       onSuccess();
-    } catch (err) {
-      console.error('Error saving data:', err);
-      throw new Error(handleError(err, 'save data'));
+    } catch (err: any) {
+      console.error('Error in handleSubmit:', err);
+      throw err;
     }
   };
 

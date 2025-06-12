@@ -8,7 +8,6 @@ export interface Address {
   name: string;
   locality_id: number;
   locality_name?: string;
-  user_id: number;
 }
 
 export interface AddressFormData {

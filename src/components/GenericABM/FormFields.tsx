@@ -14,40 +14,25 @@ interface Column {
 interface FormFieldsProps {
   columns: Column[];
   formData: any;
-  type: ABMType;
   onInputChange: (field: string, value: any) => void;
-  selectedItem?: any;
+  type: ABMType;
+  isEditing: boolean;
 }
 
 const FormFields: React.FC<FormFieldsProps> = ({
   columns,
   formData,
-  type,
   onInputChange,
-  selectedItem
+  type,
+  isEditing
 }) => {
-  const filteredColumns = columns.filter(column => 
-    column.field !== 'category.name' && 
-    column.field !== 'parent_category_name' &&
-    column.field !== 'measurement_unit.name' &&
-    column.field !== 'type_label' &&
-    // Solo mostrar campos marcados como createOnly si estamos creando (no editando)
-    (!column.createOnly || !selectedItem) &&
-    (type !== 'inventario' || (
-      column.field !== 'description' && 
-      column.field !== 'recipe' && 
-      column.field !== 'image_url' &&
-      column.field !== 'preparation_time' &&
-      column.field !== 'current_stock' &&
-      column.field !== 'minimum_stock' &&
-      column.field !== 'purchase_cost'
-    )) &&
-    (type !== 'ingrediente' || (
-      column.field !== 'image_url' &&
-      // No mostrar current_stock al editar ingredientes
-      (column.field !== 'current_stock' || !selectedItem)
-    ))
-  );
+  // Filter out createOnly fields when editing
+  const filteredColumns = columns.filter(column => {
+    if (isEditing && column.createOnly) {
+      return false;
+    }
+    return true;
+  });
 
   return (
     <>
@@ -80,6 +65,7 @@ const FormFields: React.FC<FormFieldsProps> = ({
               onChange={(e) => onInputChange(column.field, e.target.value)}
               placeholder="Contraseña temporal que el empleado deberá cambiar"
               required={true}
+              showValidation={type === 'employee' && !isEditing}
             />
           ) : (
             <input

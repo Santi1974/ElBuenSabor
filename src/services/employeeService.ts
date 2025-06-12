@@ -13,6 +13,23 @@ interface Employee {
   first_login?: boolean;
 }
 
+// Validación de contraseña
+const validatePassword = (password: string): { isValid: boolean; error?: string } => {
+  if (password.length < 8) {
+    return { isValid: false, error: 'La contraseña debe tener al menos 8 caracteres' };
+  }
+  if (!/[A-Z]/.test(password)) {
+    return { isValid: false, error: 'La contraseña debe contener al menos una letra mayúscula' };
+  }
+  if (!/[a-z]/.test(password)) {
+    return { isValid: false, error: 'La contraseña debe contener al menos una letra minúscula' };
+  }
+  if (!/[^A-Za-z]/.test(password)) {
+    return { isValid: false, error: 'La contraseña debe contener al menos un símbolo o número' };
+  }
+  return { isValid: true };
+};
+
 const employeeService = {
   getAll: async (offset: number = 0, limit: number = 10) => {
     try {
@@ -42,6 +59,12 @@ const employeeService = {
   },
 
   create: async (employee: Employee) => {
+    // Validar la contraseña antes de crear el empleado
+    const validation = validatePassword(employee.password);
+    if (!validation.isValid) {
+      throw new Error(validation.error);
+    }
+
     const response = await api.post(`${API_URL}/user/`, {
       full_name: employee.full_name,
       email: employee.email,

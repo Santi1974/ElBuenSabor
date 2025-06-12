@@ -2,6 +2,9 @@ import type { User } from './user';
 import type { Address } from './address';
 import type { ManufacturedItem, InventoryItem } from './product';
 
+export type DeliveryMethod = 'pickup' | 'delivery';
+export type PaymentMethod = 'cash' | 'mercado_pago';
+
 export interface OrderDetail {
   quantity: number;
   subtotal: number;
@@ -24,8 +27,8 @@ export interface Order {
   final_total: number;
   status: string;
   estimated_time: number;
-  delivery_method: string;
-  payment_method: string;
+  delivery_method: DeliveryMethod;
+  payment_method: PaymentMethod;
   payment_id: string;
   is_paid: boolean;
   notes: string;

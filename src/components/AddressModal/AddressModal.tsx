@@ -51,7 +51,7 @@ const AddressModal: React.FC<AddressModalProps> = ({
   useEffect(() => {
     api.get('/country/')
       .then(res => {
-        const countriesData = Array.isArray(res.data) ? res.data : [];
+        const countriesData = res.data.items || [];
         setCountries(countriesData);
       })
       .catch(err => {
@@ -68,7 +68,7 @@ const AddressModal: React.FC<AddressModalProps> = ({
     ? provinces.find(p => p.id_key === selectedProvince)?.localities || []
     : [];
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev: AddressFormData) => ({
       ...prev,
@@ -96,6 +96,19 @@ const AddressModal: React.FC<AddressModalProps> = ({
     } finally {
       setSaving(false);
     }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      street: '',
+      street_number: 0,
+      zip_code: '',
+      name: '',
+      locality_id: 0,
+    });
+    setSelectedCountry(null);
+    setSelectedProvince(null);
+    setShowForm(false);
   };
 
   if (!show) return null;
@@ -198,66 +211,84 @@ const AddressModal: React.FC<AddressModalProps> = ({
                       name="name"
                       value={formData.name}
                       onChange={handleChange}
+                      placeholder="Ej: Casa, Trabajo, etc."
                       required
                     />
                   </div>
-                  <select
-                    className="form-select"
-                    value={selectedCountry ?? ''}
-                    onChange={e => {
-                      setSelectedCountry(Number(e.target.value));
-                      setSelectedProvince(null);
-                      setFormData(f => ({ ...f, locality_id: 0 }));
-                    }}
-                    required
-                  >
-                    <option value="">Selecciona un país</option>
-                    {Array.isArray(countries) && countries.map(c => (
-                      <option key={c.id_key} value={c.id_key}>{c.name}</option>
-                    ))}
-                  </select>
 
-                  <select
-                    className="form-select mt-2"
-                    value={selectedProvince ?? ''}
-                    onChange={e => {
-                      setSelectedProvince(Number(e.target.value));
-                      setFormData(f => ({ ...f, locality_id: 0 }));
-                    }}
-                    disabled={!selectedCountry}
-                    required
-                  >
-                    <option value="">Selecciona una provincia</option>
-                    {Array.isArray(provinces) && provinces.map(p => (
-                      <option key={p.id_key} value={p.id_key}>{p.name}</option>
-                    ))}
-                  </select>
+                  <div className="mb-3">
+                    <label className="form-label">País</label>
+                    <select
+                      className="form-select"
+                      value={selectedCountry ?? ''}
+                      onChange={e => {
+                        setSelectedCountry(Number(e.target.value) || null);
+                        setSelectedProvince(null);
+                        setFormData(f => ({ ...f, locality_id: 0 }));
+                      }}
+                      required
+                    >
+                      <option value="">Selecciona un país</option>
+                      {countries.map(c => (
+                        <option key={c.id_key} value={c.id_key}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
 
-                  <select
-                    className="form-select mt-2"
-                    value={formData.locality_id}
-                    onChange={e => setFormData(f => ({ ...f, locality_id: Number(e.target.value) }))}
-                    disabled={!selectedProvince}
-                    required
-                  >
-                    <option value="">Selecciona una localidad</option>
-                    {Array.isArray(localities) && localities.map(l => (
-                      <option key={l.id_key} value={l.id_key}>{l.name}</option>
-                    ))}
-                  </select>
-                  {error && <div className="alert alert-danger">{error}</div>}
-                  <div className="d-flex gap-2">
+                  <div className="mb-3">
+                    <label className="form-label">Provincia</label>
+                    <select
+                      className="form-select"
+                      value={selectedProvince ?? ''}
+                      onChange={e => {
+                        setSelectedProvince(Number(e.target.value) || null);
+                        setFormData(f => ({ ...f, locality_id: 0 }));
+                      }}
+                      disabled={!selectedCountry}
+                      required
+                    >
+                      <option value="">Selecciona una provincia</option>
+                      {provinces.map(p => (
+                        <option key={p.id_key} value={p.id_key}>{p.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="form-label">Localidad</label>
+                    <select
+                      className="form-select"
+                      name="locality_id"
+                      value={formData.locality_id}
+                      onChange={handleChange}
+                      disabled={!selectedProvince}
+                      required
+                    >
+                      <option value="">Selecciona una localidad</option>
+                      {localities.map(l => (
+                        <option key={l.id_key} value={l.id_key}>{l.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {error && (
+                    <div className="alert alert-danger" role="alert">
+                      {error}
+                    </div>
+                  )}
+
+                  <div className="d-flex gap-2 justify-content-end">
                     <button
                       type="button"
-                      className="btn btn-outline-secondary w-100"
-                      onClick={() => setShowForm(false)}
+                      className="btn btn-outline-secondary"
+                      onClick={resetForm}
                       disabled={saving}
                     >
                       Cancelar
                     </button>
                     <button
                       type="submit"
-                      className="btn btn-primary w-100"
+                      className="btn btn-primary"
                       disabled={saving}
                     >
                       {saving ? 'Guardando...' : 'Guardar'}

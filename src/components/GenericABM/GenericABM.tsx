@@ -268,16 +268,7 @@ const GenericABM: React.FC<GenericABMProps> = ({
                 )}
                 <form onSubmit={handleFormSubmit}>
                   {/* Basic Form Fields */}
-                  <FormFields
-                    columns={columns}
-                    formData={formData}
-                    type={type}
-                    onInputChange={handleInputChange}
-                    selectedItem={selectedItem}
-                  />
-
-                  {/* Inventory Specific Fields */}
-                  {type === 'inventario' && (
+                  {type === 'inventario' ? (
                     <InventoryFormFields
                       formData={formData}
                       selectedItem={selectedItem}
@@ -293,12 +284,7 @@ const GenericABM: React.FC<GenericABMProps> = ({
                       onRemoveIngredient={removeIngredient}
                       onUpdateIngredientDetail={updateIngredientDetail}
                     />
-                  )}
-
-
-
-                  {/* Category Related Fields */}
-                  {(type === 'inventario' || type === 'ingrediente' || type === 'rubro') && (
+                  ) : type === 'rubro' ? (
                     <CategoryFormFields
                       type={type}
                       formData={formData}
@@ -314,6 +300,14 @@ const GenericABM: React.FC<GenericABMProps> = ({
                       onSubcategorySelection={handleSubcategorySelectionWithForm}
                       onImageChange={handleImageChange}
                       onRemoveImage={removeImage}
+                    />
+                  ) : (
+                    <FormFields
+                      columns={columns}
+                      formData={formData}
+                      onInputChange={handleInputChange}
+                      type={type}
+                      isEditing={!!selectedItem}
                     />
                   )}
                   
