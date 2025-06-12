@@ -102,14 +102,33 @@ const Orders = () => {
   
   useEffect(() => {
     fetchOrders();
-  }, [currentPage, itemsPerPage]);
+  }, [currentPage, itemsPerPage, searchTerm, statusFilters]);
 
   const fetchOrders = async () => {
     try {
       setLoading(true);
       setError('');
       const offset = (currentPage - 1) * itemsPerPage;
-      const response = await api.get(`/order/user/token?offset=${offset}&limit=${itemsPerPage}`);
+      
+      // Construir los parámetros de filtro
+      const activeFilters = Object.entries(statusFilters)
+        .filter(([_, isActive]) => isActive)
+        .map(([status]) => status);
+      
+      const params = new URLSearchParams({
+        offset: offset.toString(),
+        limit: itemsPerPage.toString()
+      });
+      
+      if (searchTerm) {
+        params.append('search', searchTerm);
+      }
+      
+      if (activeFilters.length > 0) {
+        params.append('status', activeFilters.join(','));
+      }
+      
+      const response = await api.get(`/order/user/token?${params.toString()}`);
       
       if (response.data && response.data.items !== undefined) {
         setOrders(response.data.items);
@@ -139,6 +158,7 @@ const Orders = () => {
       ...prev,
       [filterName]: !prev[filterName as keyof typeof prev]
     }));
+    setCurrentPage(1); // Resetear a la primera página cuando cambian los filtros
   };
 
   const handleOrderClick = (order: Order) => {
@@ -150,31 +170,6 @@ const Orders = () => {
     setShowDetailModal(false);
     setSelectedOrder(null);
   };
-
-  // Filter orders based on search term and status filters
-  const filteredOrders = orders.filter(order => {
-    // First filter by search term
-    const matchesSearch = 
-      order.id_key.toString().includes(searchTerm) ||
-      order.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.payment_method.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    if (!matchesSearch) return false;
-    
-    // Then filter by status if any filter is active
-    const anyFilterActive = Object.values(statusFilters).some(value => value);
-    
-    if (!anyFilterActive) return true;
-    
-    if (statusFilters.a_confirmar && order.status.toLowerCase() === 'a_confirmar') return true;
-    if (statusFilters.en_preparacion && order.status.toLowerCase() === 'en_preparacion') return true;
-    if (statusFilters.en_delivery && order.status.toLowerCase() === 'en_delivery') return true;
-    if (statusFilters.entregado && order.status.toLowerCase() === 'entregado') return true;
-    if (statusFilters.cancelado && order.status.toLowerCase() === 'cancelado') return true;
-    if (statusFilters.facturado && order.status.toLowerCase() === 'facturado') return true;
-    
-    return false;
-  });
 
   // Format date to display in a readable format
   const formatDate = (dateString: string) => {
@@ -281,7 +276,10 @@ const Orders = () => {
       showBackButton={true}
       showSearchBar={true}
       searchValue={searchTerm}
-      onSearchChange={setSearchTerm}
+      onSearchChange={(value) => {
+        setSearchTerm(value);
+        setCurrentPage(1); // Resetear a la primera página cuando cambia la búsqueda
+      }}
       searchPlaceholder="Buscar"
     >
       <div className="container-fluid py-4">
@@ -417,7 +415,7 @@ const Orders = () => {
                   <i className="bi bi-exclamation-triangle me-2"></i>
                   {error}
                 </div>
-          ) : filteredOrders.length === 0 ? (
+          ) : orders.length === 0 ? (
                 <div className="card">
                   <div className="card-body text-center py-5">
                     <i className="bi bi-inbox display-4 text-muted mb-3"></i>
@@ -425,7 +423,7 @@ const Orders = () => {
                   </div>
                 </div>
           ) : (
-            filteredOrders.map(order => (
+            orders.map(order => (
               <div 
                 key={order.id_key} 
                     className="card order-card-hover"
