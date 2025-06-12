@@ -14,10 +14,12 @@ const Register = () => {
     email: '',
     phone_number: '',
     password: '',
+    confirmPassword: '',
     role: 'cliente',
     active: true
   });
   const [error, setError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -26,6 +28,16 @@ const Register = () => {
       ...prev,
       [name]: value
     }));
+
+    // Verificar coincidencia de contraseñas en tiempo real
+    if (name === 'password' || name === 'confirmPassword') {
+      const otherField = name === 'password' ? formData.confirmPassword : formData.password;
+      if (value && otherField && value !== otherField) {
+        setPasswordError('Las contraseñas no coinciden');
+      } else {
+        setPasswordError('');
+      }
+    }
   };
 
   // Password validation function
@@ -48,10 +60,17 @@ const Register = () => {
       return;
     }
 
+    // Validate password confirmation
+    if (formData.password !== formData.confirmPassword) {
+      setError('Las contraseñas no coinciden');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      await authService.register(formData);
+      const { confirmPassword, ...registrationData } = formData;
+      await authService.register(registrationData);
       // Redirigir basándose en el rol del usuario
       const user = authService.getCurrentUser();
       if (user?.role === 'administrador') {
@@ -81,7 +100,7 @@ const Register = () => {
   };
 
   return (
-    <div className="container-fluid vh-100">
+    <div className="container-fluid vh-100 overflow-auto">
       <div className="row h-100">
         {/* Left side - Image */}
         <div className="col-md-6 d-none d-md-block p-0">
@@ -160,7 +179,7 @@ const Register = () => {
                 />
               </div>
               
-              <div className="mb-4">
+              <div className="mb-3">
                 <PasswordField
                   value={formData.password}
                   onChange={handleChange}
@@ -170,6 +189,23 @@ const Register = () => {
                   className={`form-control ${isLoading ? 'disabled' : ''}`}
                   showValidation={true}
                 />
+              </div>
+
+              <div className="mb-4">
+                <PasswordField
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  placeholder="Confirmar contraseña"
+                  required={true}
+                  name="confirmPassword"
+                  className={`form-control ${isLoading ? 'disabled' : ''}`}
+                  showValidation={false}
+                />
+                {passwordError && (
+                  <div className="text-danger mt-1 small">
+                    {passwordError}
+                  </div>
+                )}
               </div>
               
               <button 
