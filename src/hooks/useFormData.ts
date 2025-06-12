@@ -187,28 +187,12 @@ export const useFormData = (type: ABMType, onSuccess: () => void) => {
             break;
           case 'ingrediente':
             const { category: ingCategory, measurement_unit, ...ingredientData } = formData;
-            await ingredientService.update(selectedItem.id_key, ingredientData);
-            
-            // Si se incrementó el stock, crear un registro de compra por la diferencia
-            if (formData.current_stock > selectedItem.current_stock) {
-              const stockDifference = formData.current_stock - selectedItem.current_stock;
-              const inventoryPurchase = {
-                inventory_item_id: selectedItem.id_key,
-                quantity: stockDifference,
-                unit_cost: formData.purchase_cost || 0,
-                total_cost: stockDifference * (formData.purchase_cost || 0),
-                notes: `Actualización de stock - Incremento: ${stockDifference} unidades`,
-                purchase_date: new Date().toISOString()
-              };
-              
-              try {
-                await inventoryPurchaseService.create(inventoryPurchase);
-                console.log('Inventory purchase created for stock update:', selectedItem.id_key);
-              } catch (purchaseError) {
-                console.error('Error creating inventory purchase for stock update:', purchaseError);
-                // No interrumpir el proceso si falla la creación de la compra
-              }
-            }
+            // Incluir el current_stock original para mantener la integridad de los datos
+            const ingredientUpdateData = {
+              ...ingredientData,
+              current_stock: selectedItem.current_stock // Mantener el stock actual sin cambios
+            };
+            await ingredientService.update(selectedItem.id_key, ingredientUpdateData);
             break;
 
           case 'rubro':

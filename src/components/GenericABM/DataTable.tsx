@@ -15,6 +15,8 @@ interface DataTableProps {
   onEdit: (item: any) => void;
   onDelete: (id: number) => void;
   onView: (item: any) => void;
+  onAddStock?: (item: any) => void;
+  type?: string;
 }
 
 const DataTable: React.FC<DataTableProps> = ({
@@ -22,7 +24,9 @@ const DataTable: React.FC<DataTableProps> = ({
   data,
   onEdit,
   onDelete,
-  onView
+  onView,
+  onAddStock,
+  type
 }) => {
   const renderCellValue = (column: Column, item: any) => {
     if (column.type === 'password') {
@@ -83,6 +87,18 @@ const DataTable: React.FC<DataTableProps> = ({
                 </td>
               ))}
               <td>
+                {((type === 'inventario' && item.product_type === 'inventory') || type === 'ingrediente') && onAddStock && (
+                  <button
+                    className="btn btn-sm btn-outline-success me-2"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onAddStock(item);
+                    }}
+                    title="Agregar Stock"
+                  >
+                    <i className="bi bi-box-arrow-in-down"></i>
+                  </button>
+                )}
                 <button
                   className="btn btn-sm btn-outline-primary me-2"
                   onClick={(e) => {

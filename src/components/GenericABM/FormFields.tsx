@@ -43,7 +43,9 @@ const FormFields: React.FC<FormFieldsProps> = ({
       column.field !== 'purchase_cost'
     )) &&
     (type !== 'ingrediente' || (
-      column.field !== 'image_url'
+      column.field !== 'image_url' &&
+      // No mostrar current_stock al editar ingredientes
+      (column.field !== 'current_stock' || !selectedItem)
     ))
   );
 

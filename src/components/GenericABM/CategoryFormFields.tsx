@@ -199,6 +199,38 @@ const CategoryFormFields: React.FC<CategoryFormFieldsProps> = ({
             )}
           </div>
 
+          {/* Stock inicial - solo para crear nuevos ingredientes */}
+          {!selectedItem && (
+            <div className="mb-3">
+              <label className="form-label">Stock Inicial</label>
+              <input
+                type="number"
+                className="form-control"
+                min="0"
+                step="0.1"
+                value={formData.current_stock || 0}
+                onChange={(e) => onInputChange('current_stock', parseFloat(e.target.value) || 0)}
+                placeholder="Stock inicial del ingrediente..."
+              />
+              <div className="form-text">
+                El stock inicial que tendrá el ingrediente al crearlo. Para modificar el stock luego, use "Agregar Inventario".
+              </div>
+            </div>
+          )}
+
+          {/* Información de stock actual - solo al editar */}
+          {selectedItem && (
+            <div className="mb-3">
+              <div className="alert alert-info">
+                <h6 className="alert-heading">
+                  <i className="bi bi-info-circle me-2"></i>
+                  Stock Actual: {selectedItem.current_stock || 0} {selectedItem.measurement_unit?.name || 'unidades'}
+                </h6>
+                <p className="mb-0">Para modificar el stock, use el botón "Agregar Inventario" desde la tabla.</p>
+              </div>
+            </div>
+          )}
+
           <div className="mb-3">
             <label className="form-label">Unidad de Medida</label>
             <select

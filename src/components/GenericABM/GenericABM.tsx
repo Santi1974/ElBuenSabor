@@ -9,8 +9,9 @@ import PaginationControls from './PaginationControls';
 import FormFields from './FormFields';
 import InventoryFormFields from './InventoryFormFields';
 import CategoryFormFields from './CategoryFormFields';
-
 import ViewModal from './ViewModal';
+import AddInventoryModal from '../AddInventoryModal';
+import { authService } from '../../services/api';
 
 interface GenericABMProps {
   title: string;
@@ -31,6 +32,8 @@ const GenericABM: React.FC<GenericABMProps> = ({
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isAddInventoryModalOpen, setIsAddInventoryModalOpen] = useState(false);
+  const [selectedStockItem, setSelectedStockItem] = useState<any>(null);
   const [viewItem, setViewItem] = useState<any>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -115,6 +118,20 @@ const GenericABM: React.FC<GenericABMProps> = ({
     setViewItem(null);
   };
 
+  const handleOpenAddInventoryModal = (item?: any) => {
+    setSelectedStockItem(item);
+    setIsAddInventoryModalOpen(true);
+  };
+
+  const handleCloseAddInventoryModal = () => {
+    setIsAddInventoryModalOpen(false);
+    setSelectedStockItem(null);
+  };
+
+  const handleInventorySuccess = () => {
+    loadData(); // Recargar datos después de agregar inventario
+  };
+
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -174,6 +191,15 @@ const GenericABM: React.FC<GenericABMProps> = ({
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2>{title}</h2>
         <div>
+          {(type === 'inventario' || type === 'ingrediente') && (
+            <button
+              className="btn btn-success me-2"
+              onClick={handleOpenAddInventoryModal}
+            >
+              <i className="bi bi-box-arrow-in-down me-2"></i>
+              Agregar Inventario
+            </button>
+          )}
           <button
             className="btn btn-primary"
             onClick={() => handleOpenModal()}
@@ -197,6 +223,8 @@ const GenericABM: React.FC<GenericABMProps> = ({
         onEdit={(item) => handleOpenModal(item)}
         onDelete={handleDelete}
         onView={handleOpenViewModal}
+        onAddStock={handleOpenAddInventoryModal}
+        type={type}
       />
 
       {/* Pagination */}
@@ -312,6 +340,16 @@ const GenericABM: React.FC<GenericABMProps> = ({
           onClose={handleCloseViewModal}
         />
       )}
+
+      {/* Add Inventory Modal */}
+      <AddInventoryModal
+        isOpen={isAddInventoryModalOpen}
+        onClose={handleCloseAddInventoryModal}
+        onSuccess={handleInventorySuccess}
+        inventoryItemId={selectedStockItem?.id_key}
+        inventoryItemName={selectedStockItem?.name}
+        userRole={authService.getCurrentUser()?.role === 'cocinero' ? 'cocinero' : 'administrador'}
+      />
     </div>
   );
 };

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { authService } from '../../services/api';
 
 const Cook = () => {
   const navigate = useNavigate();
@@ -97,12 +98,16 @@ const Cook = () => {
 
       {/* Main content */}
       <main className="flex-grow-1 d-flex flex-column" style={{backgroundColor: '#f8f9fa', minHeight: '100vh'}}>
-        <header className="bg-white p-3 border-bottom">
+        <header className="bg-white p-3 border-bottom d-flex align-items-center justify-content-between">
           <h1 className="h4 mb-0 text-dark fw-bold">
             <i className="bi bi-person-badge me-2"></i>
-            Panel del Cocinero - {getCurrentTitle()}
+             Cocinero
           </h1>
+          <button className="btn btn-link text-dark fs-2 me-3 p-0" style={{textDecoration: 'none'}} onClick={() => authService.logout()}>
+            <i className="bi bi-box-arrow-right text-danger"></i>
+          </button>
         </header>
+        
         <div className="flex-grow-1 overflow-auto">
           <Outlet />
         </div>

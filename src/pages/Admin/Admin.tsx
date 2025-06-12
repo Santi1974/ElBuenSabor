@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { authService } from '../../services/api';
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -110,8 +111,9 @@ const Admin = () => {
           </button>
           <span className="fs-2 fw-bold flex-grow-1 text-dark">{getCurrentTitle()}</span>
           <div className="d-flex align-items-center">
-            <span className="me-3 text-muted">Admin</span>
-            <span className="fs-2 text-dark"><i className="bi bi-person-circle"></i></span>
+            <button className="btn btn-link text-dark fs-2 me-3 p-0" style={{textDecoration: 'none'}} onClick={() => authService.logout()}>
+              <i className="bi bi-box-arrow-right text-danger"></i>
+            </button>
           </div>
         </header>
         {/* Content */}
