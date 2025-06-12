@@ -12,8 +12,6 @@ interface CategoryFormFieldsProps {
   measurementUnits: any[];
   imagePreview: string | null;
   onInputChange: (field: string, value: any) => void;
-  onCategorySelection: (categoryId: string) => void;
-  onSubcategorySelection: (subcategoryId: string) => void;
   onImageChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onRemoveImage: () => void;
 }
@@ -29,8 +27,6 @@ const CategoryFormFields: React.FC<CategoryFormFieldsProps> = ({
   measurementUnits,
   imagePreview,
   onInputChange,
-  onCategorySelection,
-  onSubcategorySelection,
   onImageChange,
   onRemoveImage
 }) => {
@@ -122,7 +118,7 @@ const CategoryFormFields: React.FC<CategoryFormFieldsProps> = ({
           <select
             className="form-select"
             value={selectedCategory ? selectedCategory.id_key : ''}
-            onChange={(e) => onCategorySelection(e.target.value)}
+            onChange={(e) => onInputChange('category_id', e.target.value)}
             required={availableSubcategories.length === 0}
           >
             <option value="">Seleccione una categoría...</option>
@@ -150,7 +146,7 @@ const CategoryFormFields: React.FC<CategoryFormFieldsProps> = ({
           <select
             className="form-select"
             value={formData.category_id || ''}
-            onChange={(e) => onSubcategorySelection(e.target.value)}
+            onChange={(e) => onInputChange('category_id', e.target.value)}
             required
           >
             <option value="">Seleccione una subcategoría...</option>

@@ -8,12 +8,8 @@ interface InventoryFormFieldsProps {
   measurementUnits: any[];
   imagePreview: string | null;
   onInputChange: (field: string, value: any) => void;
-  onProductTypeChange: (productType: string) => void;
   onImageChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onRemoveImage: () => void;
-  onAddIngredient: () => void;
-  onRemoveIngredient: (index: number) => void;
-  onUpdateIngredientDetail: (index: number, field: string, value: any) => void;
 }
 
 const InventoryFormFields: React.FC<InventoryFormFieldsProps> = ({
@@ -24,12 +20,8 @@ const InventoryFormFields: React.FC<InventoryFormFieldsProps> = ({
   measurementUnits,
   imagePreview,
   onInputChange,
-  onProductTypeChange,
   onImageChange,
-  onRemoveImage,
-  onAddIngredient,
-  onRemoveIngredient,
-  onUpdateIngredientDetail
+  onRemoveImage
 }) => {
   return (
     <>
@@ -40,7 +32,7 @@ const InventoryFormFields: React.FC<InventoryFormFieldsProps> = ({
           <select
             className="form-select"
             value={formData.product_type || ''}
-            onChange={(e) => onProductTypeChange(e.target.value)}
+            onChange={(e) => onInputChange('product_type', e.target.value)}
             required
           >
             <option value="">Seleccione el tipo...</option>
@@ -192,7 +184,7 @@ const InventoryFormFields: React.FC<InventoryFormFieldsProps> = ({
             <button
               type="button"
               className="btn btn-sm btn-success"
-              onClick={onAddIngredient}
+              onClick={() => onInputChange('ingredients', [...(formData.ingredients || []), { quantity: 0 } as any])}
             >
               <i className="bi bi-plus"></i> Agregar Ingrediente
             </button>
@@ -213,7 +205,7 @@ const InventoryFormFields: React.FC<InventoryFormFieldsProps> = ({
                       className="form-select form-select-sm"
                       value={detail.inventory_item_id || ''}
                       onChange={(e) => 
-                        onUpdateIngredientDetail(index, 'inventory_item_id', parseInt(e.target.value))
+                        onInputChange(`ingredients.${index}.inventory_item_id`, parseInt(e.target.value))
                       }
                       required
                     >
@@ -234,7 +226,7 @@ const InventoryFormFields: React.FC<InventoryFormFieldsProps> = ({
                       step="0.1"
                       value={detail.quantity || ''}
                       onChange={(e) => 
-                        onUpdateIngredientDetail(index, 'quantity', parseFloat(e.target.value) || 0)
+                        onInputChange(`ingredients.${index}.quantity`, parseFloat(e.target.value) || 0)
                       }
                       placeholder="0"
                       required
@@ -244,7 +236,7 @@ const InventoryFormFields: React.FC<InventoryFormFieldsProps> = ({
                     <button
                       type="button"
                       className="btn btn-outline-danger btn-sm w-100"
-                      onClick={() => onRemoveIngredient(index)}
+                      onClick={() => onInputChange(`ingredients.${index}.quantity`, 0)}
                     >
                       <i className="bi bi-trash"></i>
                     </button>

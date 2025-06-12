@@ -12,6 +12,7 @@ import CategoryFormFields from './CategoryFormFields';
 import ViewModal from './ViewModal';
 import AddInventoryModal from '../AddInventoryModal';
 import { authService } from '../../services/api';
+import { Modal, Button } from 'react-bootstrap';
 
 interface GenericABMProps {
   title: string;
@@ -36,6 +37,8 @@ const GenericABM: React.FC<GenericABMProps> = ({
   const [selectedStockItem, setSelectedStockItem] = useState<any>(null);
   const [viewItem, setViewItem] = useState<any>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
 
   const {
     categories,
@@ -70,10 +73,11 @@ const GenericABM: React.FC<GenericABMProps> = ({
     formData,
     selectedItem,
     selectedDetails,
-    setSelectedDetails,
     imagePreview,
+    passwordError: formPasswordError,
     initializeFormData,
     handleInputChange,
+    handlePasswordConfirmChange,
     handleImageChange,
     removeImage,
     handleSubmit,
@@ -138,12 +142,13 @@ const GenericABM: React.FC<GenericABMProps> = ({
     loadData(); // Recargar datos después de agregar inventario
   };
 
-  const handleFormSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleFormSubmit = async () => {
     try {
       await handleSubmit();
-    } catch (err) {
-      setFormError('Error al guardar los datos');
+      setShowForm(false);
+      handleInventorySuccess();
+    } catch (err: any) {
+      setFormError(err.message);
     }
   };
 
@@ -192,164 +197,136 @@ const GenericABM: React.FC<GenericABMProps> = ({
     });
   };
 
+  const handleCloseForm = () => {
+    setShowForm(false);
+    resetForm();
+    setFormError(null);
+  };
+
   return (
-    <div className="container-fluid p-4">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2>{title}</h2>
-        <div>
-          {(type === 'inventario' || type === 'ingrediente') && (
+    <div className="container-fluid">
+      <div className="row">
+        <div className="col">
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <h2>{title}</h2>
             <button
-              className="btn btn-success me-2"
-              onClick={handleOpenAddInventoryModal}
+              className="btn btn-primary"
+              onClick={() => {
+                setShowForm(true);
+                initializeFormData();
+              }}
             >
-              <i className="bi bi-box-arrow-in-down me-2"></i>
-              Agregar Inventario
+              <i className="bi bi-plus-circle me-1"></i>
+              Nuevo
             </button>
-          )}
-          <button
-            className="btn btn-primary"
-            onClick={() => handleOpenModal()}
+          </div>
+
+          {/* Modal de formulario */}
+          <Modal
+            show={showForm}
+            onHide={handleCloseForm}
+            backdrop="static"
+            keyboard={false}
+            size="lg"
           >
-            <i className="bi bi-plus-lg me-2"></i>
-            Agregar
-          </button>
+            <Modal.Header closeButton>
+              <Modal.Title>
+                {selectedItem ? 'Editar' : 'Nuevo'} {title}
+              </Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+              {formError && (
+                <div className="alert alert-danger" role="alert">
+                  {formError}
+                </div>
+              )}
+              {type === 'inventario' ? (
+                <InventoryFormFields
+                  formData={formData}
+                  selectedItem={selectedItem}
+                  selectedDetails={selectedDetails}
+                  availableIngredients={availableIngredients}
+                  measurementUnits={measurementUnits}
+                  imagePreview={imagePreview}
+                  onInputChange={handleInputChange}
+                  onProductTypeChange={handleProductTypeChange}
+                  onImageChange={handleImageChange}
+                  onRemoveImage={removeImage}
+                  onAddIngredient={addIngredient}
+                  onRemoveIngredient={removeIngredient}
+                  onUpdateIngredientDetail={updateIngredientDetail}
+                />
+              ) : type === 'rubro' ? (
+                <CategoryFormFields
+                  type={type}
+                  formData={formData}
+                  selectedItem={selectedItem}
+                  categories={categories}
+                  selectedCategory={selectedCategory}
+                  availableSubcategories={availableSubcategories}
+                  parentCategories={parentCategories}
+                  measurementUnits={measurementUnits}
+                  imagePreview={imagePreview}
+                  onInputChange={handleInputChange}
+                  onCategorySelection={handleCategorySelectionWithForm}
+                  onSubcategorySelection={handleSubcategorySelectionWithForm}
+                  onImageChange={handleImageChange}
+                  onRemoveImage={removeImage}
+                />
+              ) : (
+                <FormFields
+                  columns={columns}
+                  formData={formData}
+                  onInputChange={handleInputChange}
+                  type={type}
+                  isEditing={!!selectedItem}
+                  onPasswordConfirmChange={handlePasswordConfirmChange}
+                  passwordError={formPasswordError}
+                />
+              )}
+            </Modal.Body>
+            <Modal.Footer>
+              <Button variant="secondary" onClick={handleCloseForm}>
+                Cancelar
+              </Button>
+              <Button variant="primary" onClick={handleFormSubmit}>
+                {selectedItem ? 'Guardar cambios' : 'Crear'}
+              </Button>
+            </Modal.Footer>
+          </Modal>
+
+          {/* Modal de visualización */}
+          <Modal show={!!viewItem} onHide={() => setViewItem(null)}>
+            <Modal.Header closeButton>
+              <Modal.Title>Detalles</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+              {viewItem && (
+                <div>
+                  {columns.map((column) => (
+                    <div key={column.field} className="mb-2">
+                      <strong>{column.headerName}: </strong>
+                      {viewItem[column.field]}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Modal.Body>
+          </Modal>
+
+          {/* Tabla de datos */}
+          <DataTable
+            columns={columns}
+            data={data}
+            onEdit={(item) => {
+              setShowForm(true);
+              initializeFormData(item);
+            }}
+            onView={setViewItem}
+            onDelete={handleDelete}
+          />
         </div>
       </div>
-
-      {error && (
-        <div className="alert alert-danger" role="alert">
-          {error}
-        </div>
-      )}
-
-      {/* Table */}
-      <DataTable
-        columns={columns}
-        data={data}
-        onEdit={(item) => handleOpenModal(item)}
-        onDelete={handleDelete}
-        onView={handleOpenViewModal}
-        onAddStock={handleOpenAddInventoryModal}
-        type={type}
-      />
-
-      {/* Pagination */}
-      <PaginationControls
-        currentPage={currentPage}
-        totalItems={totalItems}
-        hasNext={hasNext}
-        dataLength={data.length}
-        getTotalPages={getTotalPages}
-        onPageChange={handlePageChange}
-        onNextPage={handleNextPage}
-        onPrevPage={handlePrevPage}
-      />
-
-      {/* Modal */}
-      {isModalOpen && (
-        <div className="modal fade show" style={{ display: 'block' }}>
-          <div className="modal-dialog">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">
-                  {selectedItem ? 'Editar' : 'Agregar'} {title}
-                </h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={handleCloseModal}
-                ></button>
-              </div>
-              <div className="modal-body">
-                {formError && (
-                  <div className="alert alert-danger" role="alert">
-                    {formError}
-                  </div>
-                )}
-                <form onSubmit={handleFormSubmit}>
-                  {/* Basic Form Fields */}
-                  {type === 'inventario' ? (
-                    <InventoryFormFields
-                      formData={formData}
-                      selectedItem={selectedItem}
-                      selectedDetails={selectedDetails}
-                      availableIngredients={availableIngredients}
-                      measurementUnits={measurementUnits}
-                      imagePreview={imagePreview}
-                      onInputChange={handleInputChange}
-                      onProductTypeChange={handleProductTypeChange}
-                      onImageChange={handleImageChange}
-                      onRemoveImage={removeImage}
-                      onAddIngredient={addIngredient}
-                      onRemoveIngredient={removeIngredient}
-                      onUpdateIngredientDetail={updateIngredientDetail}
-                    />
-                  ) : type === 'rubro' ? (
-                    <CategoryFormFields
-                      type={type}
-                      formData={formData}
-                      selectedItem={selectedItem}
-                      categories={categories}
-                      selectedCategory={selectedCategory}
-                      availableSubcategories={availableSubcategories}
-                      parentCategories={parentCategories}
-                      measurementUnits={measurementUnits}
-                      imagePreview={imagePreview}
-                      onInputChange={handleInputChange}
-                      onCategorySelection={handleCategorySelectionWithForm}
-                      onSubcategorySelection={handleSubcategorySelectionWithForm}
-                      onImageChange={handleImageChange}
-                      onRemoveImage={removeImage}
-                    />
-                  ) : (
-                    <FormFields
-                      columns={columns}
-                      formData={formData}
-                      onInputChange={handleInputChange}
-                      type={type}
-                      isEditing={!!selectedItem}
-                    />
-                  )}
-                  
-                  <div className="text-end">
-                    <button
-                      type="button"
-                      className="btn btn-secondary me-2"
-                      onClick={handleCloseModal}
-                    >
-                      Cancelar
-                    </button>
-                    <button type="submit" className="btn btn-primary">
-                      {selectedItem ? 'Guardar' : 'Agregar'}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {/* View Modal */}
-      {isViewModalOpen && viewItem && (
-        <ViewModal
-          title={title}
-          type={type}
-          columns={columns}
-          viewItem={viewItem}
-          onClose={handleCloseViewModal}
-        />
-      )}
-
-      {/* Add Inventory Modal */}
-      <AddInventoryModal
-        isOpen={isAddInventoryModalOpen}
-        onClose={handleCloseAddInventoryModal}
-        onSuccess={handleInventorySuccess}
-        inventoryItemId={selectedStockItem?.id_key}
-        inventoryItemName={selectedStockItem?.name}
-        userRole={authService.getCurrentUser()?.role === 'cocinero' ? 'cocinero' : 'administrador'}
-      />
     </div>
   );
 };
