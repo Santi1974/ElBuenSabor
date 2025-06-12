@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import ClientLayout from '../../components/ClientLayout/ClientLayout';
 import './Orders.css';
+import invoiceService from '../../services/invoiceService';
 
 interface OrderDetail {
   id_key: number;
@@ -725,6 +726,14 @@ const Orders = () => {
                   </div>
                 </div>
                 <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => invoiceService.downloadInvoiceByOrderId(selectedOrder.id_key)}
+                  >
+                    <i className="bi bi-download me-2"></i>
+                    Descargar Factura
+                  </button>
                   <button
                     type="button"
                     className="btn btn-secondary"

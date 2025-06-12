@@ -170,6 +170,52 @@ class InvoiceService {
     }
   }
 
+  // Method to find and download invoice PDF by order ID
+  async downloadInvoiceByOrderId(orderId: number): Promise<{ success: boolean; message: string }> {
+    try {
+      let offset = 0;
+      const limit = 100;
+      let foundInvoice: Invoice | null = null;
+
+      while (!foundInvoice) {
+        const result = await this.getAll(offset, limit);
+        
+        foundInvoice = result.data.find(invoice => invoice.order.id_key === orderId) || null;
+        
+        if (!foundInvoice && !result.hasNext) {
+          return {
+            success: false,
+            message: `No se encontró factura para la orden ${orderId}`
+          };
+        }
+        
+        if (!foundInvoice && result.hasNext) {
+          offset += limit;
+        }
+      }
+
+      if (foundInvoice) {
+        await this.downloadPDF(foundInvoice);
+        return {
+          success: true,
+          message: `Factura ${foundInvoice.number} descargada exitosamente para la orden ${orderId}`
+        };
+      }
+
+      return {
+        success: false,
+        message: `No se encontró factura para la orden ${orderId}`
+      };
+
+    } catch (error) {
+      console.error('Error searching and downloading invoice by order ID:', error);
+      return {
+        success: false,
+        message: `Error al buscar factura para la orden ${orderId}: ${error instanceof Error ? error.message : 'Error desconocido'}`
+      };
+    }
+  }
+
   // Utility methods for formatting
   formatInvoiceNumber(number: string): string {
     return number;
