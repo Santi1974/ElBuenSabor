@@ -67,7 +67,18 @@ export const authService = {
       }
       return response.data;
     } catch (error: any) {
-      throw error;
+      if (error.response?.status === 422) {
+        const errorMessage = error.response.data?.detail[0].msg || 'Error de validación en los datos ingresados';
+        throw new Error(errorMessage);
+      }
+      
+      // Manejar otros errores HTTP
+      if (error.response?.data?.detail) {
+        throw new Error(error.response.data.detail[0].msg);
+      }
+      
+      // Error genérico
+      throw new Error(error.message || 'Error al iniciar sesión');
     }
   },
 
@@ -78,13 +89,21 @@ export const authService = {
   async register(data: RegisterData): Promise<AuthResponse> {
     try {
       const response = await api.post<AuthResponse>('/auth/register', data);
-      if (response.data.access_token) {
-        localStorage.setItem('token', response.data.access_token);
-        window.dispatchEvent(new CustomEvent('auth-change'));
-      }
+      window.location.href = '/login';
       return response.data;
     } catch (error: any) {
-      throw error;
+      if (error.response?.status === 422) {
+        const errorMessage = error.response.data?.detail[0].msg || 'Error de validación en los datos de registro';
+        throw new Error(errorMessage);
+      }
+      
+      // Manejar otros errores HTTP
+      if (error.response?.data?.detail) {
+        throw new Error(error.response.data.detail[0].msg);
+      }
+      
+      // Error genérico
+      throw new Error(error.message || 'Error al registrar usuario');
     }
   },
 

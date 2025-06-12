@@ -23,6 +23,8 @@ export const getErrorMessage = (error: any, fallbackMessage?: string): string =>
   // Si el error tiene la estructura típica de axios con response.data.detail
   if (error?.response?.data?.detail) {
     return error.response.data.detail;
+  }else if (error?.response?.data?.detail[0].msg) {
+    return error.response.data.detail[0].msg;
   }
 
   // Si tiene response.data.message como alternativa
