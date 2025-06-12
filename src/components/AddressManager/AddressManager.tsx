@@ -65,7 +65,7 @@ const AddressManager: React.FC = () => {
   const loadCountries = async () => {
     try {
       const response = await api.get('/country/');
-      const countriesData = Array.isArray(response.data) ? response.data : [];
+      const countriesData = response.data.items || [];
       setCountries(countriesData);
     } catch (err) {
       console.error('Error fetching countries:', err);
