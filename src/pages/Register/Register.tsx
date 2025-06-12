@@ -28,9 +28,26 @@ const Register = () => {
     }));
   };
 
+  // Password validation function
+  const validatePassword = (password: string): boolean => {
+    const minLength = password.length >= 8;
+    const hasUppercase = /[A-Z]/.test(password);
+    const hasLowercase = /[a-z]/.test(password);
+    const hasSymbolOrNumber = /[^A-Za-z]/.test(password);
+    
+    return minLength && hasUppercase && hasLowercase && hasSymbolOrNumber;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    // Validate password before submission
+    if (!validatePassword(formData.password)) {
+      setError('La contraseña no cumple con los requisitos de seguridad');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -151,6 +168,7 @@ const Register = () => {
                   required={true}
                   name="password"
                   className={`form-control ${isLoading ? 'disabled' : ''}`}
+                  showValidation={true}
                 />
               </div>
               

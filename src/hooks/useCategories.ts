@@ -15,6 +15,8 @@ export const useCategories = (type: ABMType) => {
   const loadCategories = async () => {
     if (type === 'inventario' || type === 'ingrediente') {
       try {
+        // Para inventario, necesitamos cargar ambos tipos de categorías inicialmente
+        // Para ingredientes, solo categorías de inventory
         const categoryType = type === 'ingrediente' ? 'inventory' : 'manufactured';
         const categoriesData = await categoryService.getTopLevelAll(categoryType);
         
@@ -30,22 +32,35 @@ export const useCategories = (type: ABMType) => {
     }
   };
 
-  const loadCategoriesForProduct = async (productType: string) => {
+  const loadCategoriesForProduct = async (productType: string): Promise<any[]> => {
     if (type === 'inventario') {
       try {
+        // Limpiar el estado antes de cargar nuevas categorías
+        setCategories([]);
+        setSelectedCategory(null);
+        setAvailableSubcategories([]);
+        
         const categoryType = productType === 'inventory' ? 'inventory' : 'manufactured';
         const categoriesData = await categoryService.getTopLevelAll(categoryType);
         
+        let newCategories: any[] = [];
         if (categoriesData && categoriesData.items !== undefined) {
-          setCategories(Array.isArray(categoriesData.items) ? categoriesData.items : []);
+          newCategories = Array.isArray(categoriesData.items) ? categoriesData.items : [];
         } else {
-          setCategories(Array.isArray(categoriesData) ? categoriesData : []);
+          newCategories = Array.isArray(categoriesData) ? categoriesData : [];
         }
+        
+        setCategories(newCategories);
+        
+        // Retornar las categorías cargadas
+        return newCategories;
       } catch (err) {
         console.error('Error loading categories:', err);
         setCategories([]);
+        return [];
       }
     }
+    return [];
   };
 
   const loadParentCategories = async () => {
@@ -120,10 +135,12 @@ export const useCategories = (type: ABMType) => {
     setAvailableSubcategories([]);
   };
 
-  const findCategoryForItem = (item: any) => {
+  const findCategoryForItem = (item: any, categoriesToSearch?: any[]) => {
     if (!item.category) return;
 
-    const parentCategory = categories.find(cat => 
+    const searchCategories = categoriesToSearch || categories;
+
+    const parentCategory = searchCategories.find(cat => 
       cat.id_key === item.category.id_key || 
       (cat.subcategories && cat.subcategories.some((sub: any) => sub.id_key === item.category.id_key))
     );
@@ -137,6 +154,8 @@ export const useCategories = (type: ABMType) => {
         } else {
           setSelectedCategory(item.category);
         }
+      } else {
+        setSelectedCategory(item.category);
       }
     }
   };

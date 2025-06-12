@@ -88,14 +88,20 @@ const GenericABM: React.FC<GenericABMProps> = ({
     resetCategorySelection();
     initializeFormData(item);
     
-    if (item && (type === 'inventario' || type === 'ingrediente')) {
-      findCategoryForItem(item);
-    }
-    
-    if (type === 'inventario') {
-      if (item && item.product_type) {
-        await loadCategoriesForProduct(item.product_type);
+    // Para inventario, cargar las categorías correctas ANTES de buscar la categoría del item
+    if (type === 'inventario' && item) {
+      if (item.product_type) {
+        const loadedCategories = await loadCategoriesForProduct(item.product_type);
+        findCategoryForItem(item, loadedCategories);
+      } else if (item.type) {
+        const loadedCategories = await loadCategoriesForProduct(item.type);
+        findCategoryForItem(item, loadedCategories);
+      } else {
+        findCategoryForItem(item);
       }
+    } else if (item && (type === 'inventario' || type === 'ingrediente')) {
+      // Para ingredientes o inventario sin product_type específico
+      findCategoryForItem(item);
     }
     
     setIsModalOpen(true);
