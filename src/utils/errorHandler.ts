@@ -20,16 +20,19 @@ export interface ApiError {
  * @returns Mensaje de error formateado
  */
 export const getErrorMessage = (error: any, fallbackMessage?: string): string => {
-  // Si el error tiene la estructura típica de axios con response.data.detail
-  if (error?.response?.data?.detail) {
+  // Si el error viene con detail como string
+  if (typeof error?.response?.data?.detail === 'string') {
     return error.response.data.detail;
-  }else if (error?.response?.data?.detail[0].msg) {
-    return error.response.data.detail[0].msg;
   }
 
-  // Si tiene response.data.message como alternativa
-  if (error?.response?.data?.message) {
-    return error.response.data.message;
+  // Si el error viene con detail como array de mensajes
+  if (Array.isArray(error?.response?.data?.detail)) {
+    return error.response.data.detail[0]?.msg || error.response.data.detail[0] || fallbackMessage || ERROR_MESSAGES.GENERIC;
+  }
+
+  // Si el error viene con detail como objeto
+  if (error?.response?.data?.detail && typeof error.response.data.detail === 'object') {
+    return error.response.data.detail.message || fallbackMessage || ERROR_MESSAGES.GENERIC;
   }
 
   // Si el error tiene un mensaje directo
@@ -37,13 +40,13 @@ export const getErrorMessage = (error: any, fallbackMessage?: string): string =>
     return error.message;
   }
 
-  // Si hay un mensaje personalizado de fallback
+  // Si hay un mensaje de fallback, usarlo
   if (fallbackMessage) {
     return fallbackMessage;
   }
 
   // Mensaje genérico por defecto
-  return 'Ha ocurrido un error inesperado. Por favor, intente nuevamente.';
+  return ERROR_MESSAGES.GENERIC;
 };
 
 /**

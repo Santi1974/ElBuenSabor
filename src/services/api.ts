@@ -49,7 +49,10 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 || error.response?.status === 403) {
+   
+    if ((error.response?.status === 401 || error.response?.status === 403) && 
+        localStorage.getItem('token') && 
+        !window.location.pathname.includes('/login')) {
       localStorage.removeItem('token');
       window.location.href = '/login';
     }
@@ -67,14 +70,21 @@ export const authService = {
       }
       return response.data;
     } catch (error: any) {
-      if (error.response?.status === 422) {
-        const errorMessage = error.response.data?.detail[0].msg || 'Error de validación en los datos ingresados';
+      // Si el error viene con detail como string
+      if (typeof error.response?.data?.detail === 'string') {
+        throw new Error(error.response.data.detail);
+      }
+      
+      // Si el error viene con detail como array de mensajes
+      if (Array.isArray(error.response?.data?.detail)) {
+        const errorMessage = error.response.data.detail[0]?.msg || error.response.data.detail[0] || 'Error de validación en los datos ingresados';
         throw new Error(errorMessage);
       }
       
-      // Manejar otros errores HTTP
-      if (error.response?.data?.detail) {
-        throw new Error(error.response.data.detail[0].msg);
+      // Si el error viene con detail como objeto
+      if (error.response?.data?.detail && typeof error.response.data.detail === 'object') {
+        const errorMessage = error.response.data.detail.message || 'Error de validación en los datos ingresados';
+        throw new Error(errorMessage);
       }
       
       // Error genérico
