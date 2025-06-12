@@ -1,6 +1,6 @@
 import React from 'react';
-import ClientLayout from '../../components/ClientLayout/ClientLayout';
-import UserProfile from '../../components/UserProfile';
+import ClientLayout from '../../../components/ClientLayout/ClientLayout';
+import UserProfile from '../../../components/UserProfile';
 
 const Profile: React.FC = () => {
   return (

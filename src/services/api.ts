@@ -1,4 +1,6 @@
 import axios from 'axios';
+import type { AuthResponse } from '../types/user';
+import type { ApiError } from '../types/common';
 
 const API_URL = 'http://localhost:8000';
 
@@ -16,19 +18,6 @@ export interface RegisterData {
   active: boolean;
 }
 
-export interface AuthResponse {
-  access_token: string;
-  first_login?: boolean;
-  user: {
-    id: string;
-    email: string;
-    nombre: string;
-    apellido: string;
-    telefono: string;
-    role: string;
-  };
-}
-
 const api = axios.create({
   baseURL: API_URL,
   headers: {
@@ -37,19 +26,23 @@ const api = axios.create({
 });
 
 // Add token to requests if it exists
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
   }
-  return config;
-});
+);
 
 // Handle token expiration
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-   
+  (error: ApiError) => {
     if ((error.response?.status === 401 || error.response?.status === 403) && 
         localStorage.getItem('token') && 
         !window.location.pathname.includes('/login')) {

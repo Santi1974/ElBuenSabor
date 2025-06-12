@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import api from '../../services/api';
-import { useCart } from '../../context/CartContext';
-import { useAuth } from '../../hooks/useAuth';
-import ClientLayout from '../../components/ClientLayout/ClientLayout';
+import api from '../../../services/api';
+import { useCart } from '../../../context/CartContext';
+import { useAuth } from '../../../hooks/useAuth';
+import ClientLayout from '../../../components/ClientLayout/ClientLayout';
 import './ProductDetail.css';
 
 interface Category {

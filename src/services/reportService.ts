@@ -1,50 +1,71 @@
 import api from './api';
+import type { Order } from '../types/order';
+import type { User } from '../types/user';
+import type { ManufacturedItem, InventoryItem } from '../types/product';
 
 const API_URL = 'http://localhost:8000';
 
-interface TopProduct {
-  id: number;
-  name: string;
-  quantity: number;
-  revenue: number;
-  category: string;
+export interface TopProduct {
+  product: ManufacturedItem | InventoryItem;
+  total_quantity: number;
+  total_revenue: number;
 }
 
-interface TopCustomer {
-  id: number;
-  name: string;
-  email: string;
-  order_count: number;
-  total_amount: number;
+export interface TopCustomer {
+  user: User;
+  total_orders: number;
+  total_spent: number;
 }
 
-interface ReportParams {
+export interface ReportParams {
   start_date?: string;
   end_date?: string;
-  limit?: number;
+  category_id?: number;
+  user_id?: number;
+  payment_method?: string;
+  delivery_method?: string;
+  status?: string;
 }
 
-interface RevenueReport {
-  revenue: number;
-  total_expenses: number;
-  profit: number;
-  profit_margin_percentage: number;
-  total_invoices: number;
-  total_inventory_purchases: number;
-  start_date: string;
-  end_date: string;
+export interface RevenueReport {
+  total_revenue: number;
+  total_orders: number;
+  average_order_value: number;
+  orders: Order[];
+  top_products: TopProduct[];
+  top_customers: TopCustomer[];
 }
 
 const reportService = {
-  getTopProducts: async (params: ReportParams = {}) => {
+  getRevenueReport: async (params: ReportParams): Promise<RevenueReport> => {
     try {
       const queryParams = new URLSearchParams();
       
       if (params.start_date) queryParams.append('start_date', params.start_date);
       if (params.end_date) queryParams.append('end_date', params.end_date);
-      if (params.limit) queryParams.append('limit', params.limit.toString());
+      if (params.category_id) queryParams.append('category_id', params.category_id.toString());
+      if (params.user_id) queryParams.append('user_id', params.user_id.toString());
+      if (params.payment_method) queryParams.append('payment_method', params.payment_method);
+      if (params.delivery_method) queryParams.append('delivery_method', params.delivery_method);
+      if (params.status) queryParams.append('status', params.status);
       
-      const response = await api.get(`${API_URL}/reports/top-products?${queryParams.toString()}`);
+      const response = await api.get<RevenueReport>(`${API_URL}/reports/revenue?${queryParams.toString()}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching revenue report:', error);
+      throw error;
+    }
+  },
+
+  getTopProducts: async (params: ReportParams): Promise<TopProduct[]> => {
+    try {
+      const queryParams = new URLSearchParams();
+      
+      if (params.start_date) queryParams.append('start_date', params.start_date);
+      if (params.end_date) queryParams.append('end_date', params.end_date);
+      if (params.category_id) queryParams.append('category_id', params.category_id.toString());
+      
+      const response = await api.get<TopProduct[]>(`${API_URL}/reports/top-products?${queryParams.toString()}`);
       return response.data;
     } catch (error) {
       console.error('Error fetching top products:', error);
@@ -52,33 +73,17 @@ const reportService = {
     }
   },
 
-  getTopCustomers: async (params: ReportParams = {}) => {
+  getTopCustomers: async (params: ReportParams): Promise<TopCustomer[]> => {
     try {
       const queryParams = new URLSearchParams();
       
       if (params.start_date) queryParams.append('start_date', params.start_date);
       if (params.end_date) queryParams.append('end_date', params.end_date);
-      if (params.limit) queryParams.append('limit', params.limit.toString());
       
-      const response = await api.get(`${API_URL}/reports/top-customers?${queryParams.toString()}`);
+      const response = await api.get<TopCustomer[]>(`${API_URL}/reports/top-customers?${queryParams.toString()}`);
       return response.data;
     } catch (error) {
       console.error('Error fetching top customers:', error);
-      throw error;
-    }
-  },
-
-  getRevenue: async (params: ReportParams = {}): Promise<RevenueReport> => {
-    try {
-      const queryParams = new URLSearchParams();
-      
-      if (params.start_date) queryParams.append('start_date', params.start_date);
-      if (params.end_date) queryParams.append('end_date', params.end_date);
-      
-      const response = await api.get(`${API_URL}/reports/revenue?${queryParams.toString()}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching revenue report:', error);
       throw error;
     }
   },
@@ -121,5 +126,4 @@ const reportService = {
   }
 };
 
-export default reportService;
-export type { TopProduct, TopCustomer, ReportParams, RevenueReport }; 
+export default reportService; 

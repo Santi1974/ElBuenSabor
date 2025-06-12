@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../../services/api';
-import ClientLayout from '../../components/ClientLayout/ClientLayout';
+import api from '../../../services/api';
+import ClientLayout from '../../../components/ClientLayout/ClientLayout';
 import './Orders.css';
-import invoiceService from '../../services/invoiceService';
+import invoiceService from '../../../services/invoiceService';
 
 interface OrderDetail {
   id_key: number;

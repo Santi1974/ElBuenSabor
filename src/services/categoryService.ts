@@ -1,23 +1,16 @@
 import api from './api';
+import type { Category } from '../types/category';
+import type { PaginatedResponse, ApiPaginatedResponse } from '../types/common';
 
 const API_URL = 'http://localhost:8000';
 
-interface Category {
-  name: string;
-  description: string;
-  active: boolean;
-  parent_id: number | null;
-  id_key: number;
-  subcategories: Category[];
-}
-
 const categoryService = {
-  getAll: async (offset: number = 0, limit: number = 10) => {
+  getAll: async (offset: number = 0, limit: number = 10): Promise<PaginatedResponse<Category>> => {
     try {
-      const response = await api.get(`${API_URL}/manufactured_item_category/?offset=${offset}&limit=${limit}`);
+      const response = await api.get<ApiPaginatedResponse<Category> | Category[]>(`${API_URL}/manufactured_item_category/?offset=${offset}&limit=${limit}`);
       
       // Handle both old and new response formats
-      if (response.data && response.data.items !== undefined) {
+      if ('items' in response.data) {
         // New format with pagination
         return {
           data: response.data.items,
@@ -27,9 +20,10 @@ const categoryService = {
       } else {
         // Old format - direct array
         console.warn('API returned old format, converting to new format');
+        const items = response.data;
         return {
-          data: response.data,
-          total: response.data.length,
+          data: items,
+          total: items.length,
           hasNext: false
         };
       }
@@ -39,12 +33,12 @@ const categoryService = {
     }
   },
 
-  getTopLevelAll: async (type: 'manufactured' | 'inventory' = 'manufactured') => {
+  getTopLevelAll: async (type: 'manufactured' | 'inventory' = 'manufactured'): Promise<Category[]> => {
     try {
       const endpoint = type === 'inventory' 
         ? `${API_URL}/inventory_item_category/top-level/all`
         : `${API_URL}/manufactured_item_category/top-level/all`;
-      const response = await api.get(endpoint);
+      const response = await api.get<Category[]>(endpoint);
       return response.data;
     } catch (error) {
       console.error('Error fetching top-level categories:', error);
@@ -53,12 +47,12 @@ const categoryService = {
   },
 
   // Métodos específicos para inventory item categories
-  getInventoryCategories: async (offset: number = 0, limit: number = 10) => {
+  getInventoryCategories: async (offset: number = 0, limit: number = 10): Promise<PaginatedResponse<Category>> => {
     try {
-      const response = await api.get(`${API_URL}/inventory_item_category/?offset=${offset}&limit=${limit}`);
+      const response = await api.get<ApiPaginatedResponse<Category> | Category[]>(`${API_URL}/inventory_item_category/?offset=${offset}&limit=${limit}`);
       
       // Handle both old and new response formats
-      if (response.data && response.data.items !== undefined) {
+      if ('items' in response.data) {
         // New format with pagination
         return {
           data: response.data.items,
@@ -68,9 +62,10 @@ const categoryService = {
       } else {
         // Old format - direct array
         console.warn('API returned old format, converting to new format');
+        const items = response.data;
         return {
-          data: response.data,
-          total: response.data.length,
+          data: items,
+          total: items.length,
           hasNext: false
         };
       }
@@ -80,9 +75,9 @@ const categoryService = {
     }
   },
 
-  getTopLevelInventoryCategories: async () => {
+  getTopLevelInventoryCategories: async (): Promise<Category[]> => {
     try {
-      const response = await api.get(`${API_URL}/inventory_item_category/top-level/all`);
+      const response = await api.get<Category[]>(`${API_URL}/inventory_item_category/top-level/all`);
       return response.data;
     } catch (error) {
       console.error('Error fetching top-level inventory categories:', error);
@@ -90,9 +85,9 @@ const categoryService = {
     }
   },
 
-  getById: async (id: number) => {
+  getById: async (id: number): Promise<Category> => {
     try {
-      const response = await api.get(`${API_URL}/manufactured_item_category/${id}`);
+      const response = await api.get<Category>(`${API_URL}/manufactured_item_category/${id}`);
       return response.data;
     } catch (error) {
       console.error(`Error fetching category ${id}:`, error);
@@ -100,9 +95,9 @@ const categoryService = {
     }
   },
 
-  create: async (categoryData: Omit<Category, 'id_key' | 'subcategories'>) => {
+  create: async (categoryData: Omit<Category, 'id_key' | 'subcategories'>): Promise<Category> => {
     try {
-      const response = await api.post(`${API_URL}/manufactured_item_category/`, categoryData);
+      const response = await api.post<Category>(`${API_URL}/manufactured_item_category/`, categoryData);
       return response.data;
     } catch (error) {
       console.error('Error creating category:', error);
@@ -110,9 +105,9 @@ const categoryService = {
     }
   },
 
-  update: async (id: number, categoryData: Omit<Category, 'id_key' | 'subcategories'>) => {
+  update: async (id: number, categoryData: Omit<Category, 'id_key' | 'subcategories'>): Promise<Category> => {
     try {
-      const response = await api.put(`${API_URL}/manufactured_item_category/${id}`, categoryData);
+      const response = await api.put<Category>(`${API_URL}/manufactured_item_category/${id}`, categoryData);
       return response.data;
     } catch (error) {
       console.error(`Error updating category ${id}:`, error);
@@ -120,10 +115,9 @@ const categoryService = {
     }
   },
 
-  delete: async (id: number) => {
+  delete: async (id: number): Promise<void> => {
     try {
-      const response = await api.delete(`${API_URL}/manufactured_item_category/${id}`);
-      return response.data;
+      await api.delete(`${API_URL}/manufactured_item_category/${id}`);
     } catch (error) {
       console.error(`Error deleting category ${id}:`, error);
       throw error;
@@ -131,9 +125,9 @@ const categoryService = {
   },
 
   // CRUD methods for inventory item categories
-  createInventoryCategory: async (categoryData: Omit<Category, 'id_key' | 'subcategories'>) => {
+  createInventoryCategory: async (categoryData: Omit<Category, 'id_key' | 'subcategories'>): Promise<Category> => {
     try {
-      const response = await api.post(`${API_URL}/inventory_item_category/`, categoryData);
+      const response = await api.post<Category>(`${API_URL}/inventory_item_category/`, categoryData);
       return response.data;
     } catch (error: any) {
       console.error('Error creating inventory category:', error);
@@ -143,9 +137,9 @@ const categoryService = {
     }
   },
 
-  updateInventoryCategory: async (id: number, categoryData: Omit<Category, 'id_key' | 'subcategories'>) => {
+  updateInventoryCategory: async (id: number, categoryData: Omit<Category, 'id_key' | 'subcategories'>): Promise<Category> => {
     try {
-      const response = await api.put(`${API_URL}/inventory_item_category/${id}`, categoryData);
+      const response = await api.put<Category>(`${API_URL}/inventory_item_category/${id}`, categoryData);
       return response.data;
     } catch (error) {
       console.error(`Error updating inventory category ${id}:`, error);
@@ -153,10 +147,9 @@ const categoryService = {
     }
   },
 
-  deleteInventoryCategory: async (id: number) => {
+  deleteInventoryCategory: async (id: number): Promise<void> => {
     try {
-      const response = await api.delete(`${API_URL}/inventory_item_category/${id}`);
-      return response.data;
+      await api.delete(`${API_URL}/inventory_item_category/${id}`);
     } catch (error) {
       console.error(`Error deleting inventory category ${id}:`, error);
       throw error;

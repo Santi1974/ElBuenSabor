@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import api from '../../services/api';
-import ClientLayout from '../../components/ClientLayout/ClientLayout';
+import api from '../../../services/api';
+import ClientLayout from '../../../components/ClientLayout/ClientLayout';
 import './OrderDetail.css';
 
 interface OrderDetail {
