@@ -104,24 +104,6 @@ const Movements: React.FC = () => {
           <i className="bi bi-arrow-left-right me-2"></i>
           Movimientos Financieros
         </h2>
-        <button
-          className="btn btn-success"
-          onClick={handleDownloadExcel}
-          disabled={loading || downloading || !hasData}
-          title={!hasData ? "No hay datos para descargar en el período seleccionado" : "Descargar reporte en Excel"}
-        >
-          {downloading ? (
-            <>
-              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-              Descargando...
-            </>
-          ) : (
-            <>
-              <i className="bi bi-file-earmark-excel me-2"></i>
-              Descargar Excel
-            </>
-          )}
-        </button>
       </div>
 
       {/* Filters */}

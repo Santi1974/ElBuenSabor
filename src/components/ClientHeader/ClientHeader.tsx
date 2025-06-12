@@ -142,8 +142,7 @@ const ClientHeader: React.FC<ClientHeaderProps> = ({
                       <div className="d-flex align-items-center">
                         <i className="bi bi-person-circle fs-4 text-primary me-2"></i>
                         <div className="flex-grow-1">
-                          <div className="fw-bold text-dark small">{user?.full_name || 'Usuario'}</div>
-                          <div className="text-muted" style={{ fontSize: '0.75rem' }}>{user?.email || ''}</div>
+                          <div className="text-muted">{user?.email || ''}</div>
                         </div>
                       </div>
                     </li>

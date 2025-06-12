@@ -158,7 +158,11 @@ export const useFormData = (type: ABMType, onSuccess: () => void) => {
               }))
             };
             
-            if (formData.product_type === 'inventory') {
+            // Verificar el tipo del producto existente (selectedItem) no el formData
+            // selectedItem.product_type o selectedItem.type indica si es 'inventory' o 'manufactured'
+            const isInventoryProduct = selectedItem.product_type === 'inventory' || selectedItem.type === 'inventory';
+            
+            if (isInventoryProduct) {
               await inventoryService.updateInventoryProduct(selectedItem.id_key, invFormattedData);
               
               // Si se incrementó el stock, crear un registro de compra por la diferencia
@@ -182,6 +186,7 @@ export const useFormData = (type: ABMType, onSuccess: () => void) => {
                 }
               }
             } else {
+              // Es un producto manufacturado, usar el endpoint correcto
               await inventoryService.update(selectedItem.id_key, invFormattedData);
             }
             break;

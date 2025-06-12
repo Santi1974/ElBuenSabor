@@ -20,7 +20,8 @@ export const useAuth = () => {
     try {
       const currentUser = authService.getCurrentUser();
       if (currentUser) {
-        setUser(currentUser);
+        setUser(currentUser)
+        console.log(currentUser);
         setIsAuthenticated(true);
       } else {
         setUser(null);
