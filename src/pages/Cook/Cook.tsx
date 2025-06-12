@@ -19,7 +19,8 @@ const Cook = () => {
         { path: 'products/categories', label: 'Rubros' },
         { path: 'products/inventory', label: 'Inventario' }
       ]
-    }
+    },
+    { path: 'settings', label: 'Configuración', icon: 'bi-gear-fill' }
   ];
 
   const handleNavigation = (path: string) => {

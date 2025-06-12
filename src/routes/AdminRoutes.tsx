@@ -9,8 +9,7 @@ import Ingredients from '../pages/Admin/Ingredients/Ingredients';
 import Rankings from '../pages/Admin/Rankings/Rankings';
 import Invoices from '../pages/Admin/Invoices/Invoices';
 import Movements from '../pages/Admin/Movements/Movements';
-
-
+import Settings from '../pages/Employee/Settings/Settings';
 
 const AdminRoutes: React.FC = () => {
   return (
@@ -30,6 +29,7 @@ const AdminRoutes: React.FC = () => {
         <Route path="rankings" element={<Rankings />} />
         <Route path="invoices" element={<Invoices />} />
         <Route path="movements" element={<Movements />} />
+        <Route path="settings" element={<Settings />} />
       </Route>
     </Routes>
   );

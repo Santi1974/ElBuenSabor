@@ -7,7 +7,8 @@ const Cashier = () => {
   const location = useLocation();
 
   const menuItems = [
-    { path: 'orders', label: 'Pedidos', icon: 'bi-receipt' }
+    { path: 'orders', label: 'Pedidos', icon: 'bi-receipt' },
+    { path: 'settings', label: 'Configuración', icon: 'bi-gear-fill' }
   ];
 
   const handleNavigation = (path: string) => {
