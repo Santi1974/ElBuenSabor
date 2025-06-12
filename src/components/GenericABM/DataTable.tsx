@@ -54,11 +54,53 @@ const DataTable: React.FC<DataTableProps> = ({
       return value.length > 50 ? value.substring(0, 50) + '...' : value;
     }
     
+    // Special handling for stock fields with color indicators
+    if (column.field === 'current_stock' && (type === 'ingrediente' || (type === 'inventario' && item.product_type === 'inventory'))) {
+      const currentStock = item.current_stock || 0;
+      const minimumStock = item.minimum_stock || 0;
+      const isLow = currentStock <= minimumStock;
+      
+      return (
+        <span className={`badge ${isLow ? 'bg-danger' : 'bg-success'}`}>
+          {currentStock}
+          {isLow && <i className="bi bi-exclamation-triangle ms-1" title="Stock bajo"></i>}
+        </span>
+      );
+    }
+    
+    if (column.field === 'minimum_stock' && (type === 'ingrediente' || (type === 'inventario' && item.product_type === 'inventory'))) {
+      return (
+        <span className="badge bg-info">
+          {item.minimum_stock || 0}
+        </span>
+      );
+    }
+    
     if (column.field.includes('.')) {
       return column.field.split('.').reduce((obj, key) => obj?.[key], item);
     }
     
     return item[column.field];
+  };
+
+  // Function to determine if an item has low stock
+  const isLowStock = (item: any) => {
+    // Check if it's an ingredient or inventory item with stock information
+    if (type === 'ingrediente' || (type === 'inventario' && item.product_type === 'inventory')) {
+      const currentStock = item.current_stock || 0;
+      const minimumStock = item.minimum_stock || 0;
+      return currentStock <= minimumStock;
+    }
+    return false;
+  };
+
+  // Function to get row class based on stock status
+  const getRowClasses = (item: any) => {
+    let classes = '';
+    if (isLowStock(item)) {
+      classes += 'table-warning'; // Bootstrap warning color (yellow/amber)
+    }
+    return classes;
   };
 
   return (
@@ -80,6 +122,8 @@ const DataTable: React.FC<DataTableProps> = ({
               key={index}
               onClick={() => onView(item)}
               style={{ cursor: 'pointer' }}
+              className={getRowClasses(item)}
+              title={isLowStock(item) ? 'Stock bajo - Por debajo del stock mínimo' : ''}
             >
               {columns.filter(column => column.type !== 'password').map((column) => (
                 <td key={column.field}>
