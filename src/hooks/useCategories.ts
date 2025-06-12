@@ -84,6 +84,23 @@ export const useCategories = (type: ABMType) => {
     }
   };
 
+  // Nueva función para recargar categorías después de operaciones CRUD
+  const reloadCategoriesAfterCRUD = async () => {
+    try {
+      // Recargar categorías según el tipo
+      if (type === 'inventario' || type === 'ingrediente') {
+        await loadCategories();
+      }
+      
+      // Siempre recargar categorías padre para rubros, ya que pueden ser usadas en otros tipos
+      await loadParentCategories();
+      
+      console.log('Categories reloaded after CRUD operation');
+    } catch (err) {
+      console.error('Error reloading categories after CRUD:', err);
+    }
+  };
+
   const loadIngredients = async () => {
     if (type === 'inventario') {
       try {
@@ -190,6 +207,7 @@ export const useCategories = (type: ABMType) => {
     loadParentCategories,
     loadIngredients,
     loadMeasurementUnits,
+    reloadCategoriesAfterCRUD,
     handleCategorySelection,
     handleSubcategorySelection,
     resetCategorySelection,

@@ -8,7 +8,7 @@ import ingredientService from '../services/ingredientService';
 import inventoryPurchaseService from '../services/inventoryPurchaseService';
 import { handleError, ERROR_MESSAGES } from '../utils/errorHandler';
 
-export const useFormData = (type: ABMType, onSuccess: () => void) => {
+export const useFormData = (type: ABMType, onSuccess: () => void, reloadCategories?: () => Promise<void>) => {
   const [formData, setFormData] = useState<any>({});
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [selectedDetails, setSelectedDetails] = useState<any[]>([]);
@@ -214,6 +214,11 @@ export const useFormData = (type: ABMType, onSuccess: () => void) => {
             } else {
               await categoryService.update(selectedItem.id_key, cleanUpdateCategoryData);
             }
+            
+            // Recargar categorías después de actualizar
+            if (reloadCategories) {
+              await reloadCategories();
+            }
             break;
         }
       } else {
@@ -301,6 +306,11 @@ export const useFormData = (type: ABMType, onSuccess: () => void) => {
               await categoryService.createInventoryCategory(cleanCategoryData);
             } else {
               await categoryService.create(cleanCategoryData);
+            }
+            
+            // Recargar categorías después de crear
+            if (reloadCategories) {
+              await reloadCategories();
             }
             break;
         }

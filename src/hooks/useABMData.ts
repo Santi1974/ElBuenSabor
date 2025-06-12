@@ -7,7 +7,7 @@ import ingredientService from '../services/ingredientService';
 import { handleError, ERROR_MESSAGES } from '../utils/errorHandler';
 export type ABMType = 'employee' | 'client' | 'rubro' | 'inventario' | 'ingrediente';
 
-export const useABMData = (type: ABMType) => {
+export const useABMData = (type: ABMType, reloadCategories?: () => Promise<void>) => {
   const [data, setData] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
@@ -120,6 +120,10 @@ export const useABMData = (type: ABMType) => {
               await categoryService.deleteInventoryCategory(id);
             } else {
               await categoryService.delete(id);
+            }
+            
+            if (reloadCategories) {
+              await reloadCategories();
             }
             break;
         }

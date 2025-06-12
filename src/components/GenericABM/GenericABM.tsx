@@ -37,7 +37,21 @@ const GenericABM: React.FC<GenericABMProps> = ({
   const [viewItem, setViewItem] = useState<any>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
-  // Custom hooks
+  const {
+    categories,
+    selectedCategory,
+    availableSubcategories,
+    parentCategories,
+    availableIngredients,
+    measurementUnits,
+    loadCategoriesForProduct,
+    reloadCategoriesAfterCRUD,
+    handleCategorySelection,
+    handleSubcategorySelection,
+    resetCategorySelection,
+    findCategoryForItem
+  } = useCategories(type);
+
   const {
     data,
     currentPage,
@@ -50,7 +64,7 @@ const GenericABM: React.FC<GenericABMProps> = ({
     handlePageChange,
     handleNextPage,
     handlePrevPage
-  } = useABMData(type);
+  } = useABMData(type, reloadCategoriesAfterCRUD);
 
   const {
     formData,
@@ -68,21 +82,7 @@ const GenericABM: React.FC<GenericABMProps> = ({
     loadData();
     handleCloseModal();
     setFormError(null);
-  });
-
-  const {
-    categories,
-    selectedCategory,
-    availableSubcategories,
-    parentCategories,
-    availableIngredients,
-    measurementUnits,
-    loadCategoriesForProduct,
-    handleCategorySelection,
-    handleSubcategorySelection,
-    resetCategorySelection,
-    findCategoryForItem
-  } = useCategories(type);
+  }, reloadCategoriesAfterCRUD);
 
   const handleOpenModal = async (item?: any) => {
     resetCategorySelection();

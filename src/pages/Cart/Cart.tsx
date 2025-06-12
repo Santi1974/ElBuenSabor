@@ -13,6 +13,7 @@ const Cart = () => {
   const { items, updateQuantity, removeItem, clearCart } = useCart();
   const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>('pickup');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
+  const [notes, setNotes] = useState('');
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
   const [addresses, setAddresses] = useState<Address[]>([]);
@@ -30,7 +31,7 @@ const Cart = () => {
       api.get('/address/user/addresses')
         .then(res => {
           const mapped = res.data.map((addr: any) => ({
-            id: addr.id_key,
+            id_key: addr.id_key,
             street: addr.street,
             street_number: addr.street_number,
             zip_code: addr.zip_code,
@@ -66,7 +67,7 @@ const Cart = () => {
   const handleAddressSave = (addressData: AddressFormData) => {
     const newAddress: Address = {
       ...addressData,
-      id: Date.now(),
+      id_key: Date.now(),
       locality_name: '',
     };
     const updatedAddresses = [...addresses, newAddress];
@@ -99,7 +100,7 @@ const Cart = () => {
       date: now,
       delivery_method: deliveryMethod,
       payment_method: paymentMethod,
-      notes: '',
+      notes: notes,
       details: manufacturedItems.map(item => ({
         quantity: item.quantity,
         manufactured_item_id: item.product.id_key
@@ -111,7 +112,7 @@ const Cart = () => {
     };
     
     if (isDelivery && selectedAddress) {
-      payload.address_id = selectedAddress.id;
+      payload.address_id = selectedAddress.id_key;
     }
     
     return payload;
@@ -296,6 +297,21 @@ const Cart = () => {
                   <label className="form-check-label" htmlFor="mercado_pago">
                     Mercado Pago
                   </label>
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <h4 className="h6 mb-3">Notas del pedido (opcional):</h4>
+                <textarea
+                  className="form-control"
+                  rows={3}
+                  placeholder="Agregar comentarios especiales para el pedido..."
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  maxLength={500}
+                />
+                <div className="form-text">
+                  {notes.length}/500 caracteres
                 </div>
               </div>
 
