@@ -9,17 +9,14 @@ const Rankings: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // Filter states
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [limit, setLimit] = useState(10);
   const [activeTab, setActiveTab] = useState<'products' | 'customers'>('products');
 
   useEffect(() => {
-    // Load mock data by default for testing
-    // TODO: Replace with loadData() when real API data is available
-    loadMockData();
-  }, [limit]); // Reload when limit changes
+    loadData();
+  }, [limit]);
 
   const loadData = async () => {
     setLoading(true);
@@ -66,30 +63,28 @@ const Rankings: React.FC = () => {
     setStartDate('');
     setEndDate('');
     setLimit(10);
-    // Reload data after clearing filters
     setTimeout(() => loadData(), 100);
   };
 
-  // Helper function to get medal style and icon
   const getMedalStyle = (position: number) => {
     switch (position) {
       case 1:
         return {
-          color: '#FFD700', // Gold
+          color: '#FFD700',
           icon: 'bi-award-fill',
-          textColor: '#B8860B' // Darker gold for text
+          textColor: '#B8860B'
         };
       case 2:
         return {
-          color: '#C0C0C0', // Silver
+          color: '#C0C0C0',
           icon: 'bi-award-fill',
-          textColor: '#A8A8A8' // Darker silver for text
+          textColor: '#A8A8A8'
         };
       case 3:
         return {
-          color: '#CD7F32', // Bronze
+          color: '#CD7F32',
           icon: 'bi-award-fill',
-          textColor: '#B5651D' // Darker bronze for text
+          textColor: '#B5651D'
         };
       default:
         return {
@@ -98,132 +93,6 @@ const Rankings: React.FC = () => {
           textColor: '#6c757d'
         };
     }
-  };
-
-  // Mock data for testing
-  const loadMockData = () => {
-    const mockProducts: TopProduct[] = [
-      {
-        id: 1,
-        name: "Pizza Margherita",
-        quantity: 45,
-        revenue: 22500,
-        category: "Pizzas"
-      },
-      {
-        id: 2,
-        name: "Hamburguesa Clásica",
-        quantity: 38,
-        revenue: 19000,
-        category: "Hamburguesas"
-      },
-      {
-        id: 3,
-        name: "Pasta Carbonara",
-        quantity: 32,
-        revenue: 16000,
-        category: "Pastas"
-      },
-      {
-        id: 4,
-        name: "Empanadas de Carne",
-        quantity: 67,
-        revenue: 13400,
-        category: "Empanadas"
-      },
-      {
-        id: 5,
-        name: "Pizza Pepperoni",
-        quantity: 25,
-        revenue: 12500,
-        category: "Pizzas"
-      },
-      {
-        id: 6,
-        name: "Milanesa Napolitana",
-        quantity: 22,
-        revenue: 11000,
-        category: "Carnes"
-      },
-      {
-        id: 7,
-        name: "Ensalada César",
-        quantity: 28,
-        revenue: 8400,
-        category: "Ensaladas"
-      },
-      {
-        id: 8,
-        name: "Lomito Completo",
-        quantity: 15,
-        revenue: 7500,
-        category: "Sandwiches"
-      }
-    ];
-
-    const mockCustomers: TopCustomer[] = [
-      {
-        id: 93,
-        name: "Juan Carlos Pérez",
-        email: "juan.perez@example.com",
-        order_count: 12,
-        total_amount: 35600
-      },
-      {
-        id: 98,
-        name: "María González",
-        email: "maria.gonzalez@example.com",
-        order_count: 10,
-        total_amount: 28900
-      },
-      {
-        id: 45,
-        name: "Carlos Rodríguez",
-        email: "carlos.rodriguez@example.com",
-        order_count: 8,
-        total_amount: 24500
-      },
-      {
-        id: 67,
-        name: "Ana Martínez",
-        email: "ana.martinez@example.com",
-        order_count: 9,
-        total_amount: 21800
-      },
-      {
-        id: 123,
-        name: "Luis Fernández",
-        email: "luis.fernandez@example.com",
-        order_count: 7,
-        total_amount: 19200
-      },
-      {
-        id: 89,
-        name: "Patricia López",
-        email: "patricia.lopez@example.com",
-        order_count: 6,
-        total_amount: 16500
-      },
-      {
-        id: 156,
-        name: "Roberto Silva",
-        email: "roberto.silva@example.com",
-        order_count: 5,
-        total_amount: 14300
-      },
-      {
-        id: 78,
-        name: "Carmen Ruiz",
-        email: "carmen.ruiz@example.com",
-        order_count: 4,
-        total_amount: 12100
-      }
-    ];
-
-    // Apply limit to mock data
-    setTopProducts(mockProducts.slice(0, limit));
-    setTopCustomers(mockCustomers.slice(0, limit));
-    setError(null);
   };
 
   return (
@@ -292,15 +161,6 @@ const Rankings: React.FC = () => {
               >
                 <i className="bi bi-arrow-clockwise me-2"></i>
                 Limpiar
-              </button>
-              <button
-                className="btn btn-outline-info"
-                onClick={loadMockData}
-                disabled={loading}
-                title="Cargar datos de prueba"
-              >
-                <i className="bi bi-database me-2"></i>
-                Mock Data
               </button>
             </div>
           </div>

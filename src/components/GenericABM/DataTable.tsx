@@ -131,7 +131,7 @@ const DataTable: React.FC<DataTableProps> = ({
                 </td>
               ))}
               <td>
-                {((type === 'inventario' && item.product_type === 'inventory') || type === 'ingrediente') && onAddStock && (
+                {((type === 'inventario' && (item.product_type === 'inventory' || item.type === 'inventory')) || type === 'ingrediente') && onAddStock && (
                   <button
                     className="btn btn-sm btn-outline-success me-2"
                     onClick={(e) => {

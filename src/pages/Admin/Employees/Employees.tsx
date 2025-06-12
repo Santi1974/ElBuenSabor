@@ -12,7 +12,6 @@ export const Employees: React.FC = () => {
       type: 'select' as const,
       options: [
         { value: 'administrador', label: 'Administrador' },
-        { value: 'cliente', label: 'Cliente' },
         { value: 'delivery', label: 'Delivery' },
         { value: 'cocinero', label: 'Cocinero' },
         { value: 'cajero', label: 'Cajero'}

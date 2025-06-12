@@ -11,8 +11,6 @@ const Clients: React.FC = () => {
       width: 150,
       type: 'select' as const,
       options: [
-        { value: 'empleado', label: 'Empleado' },
-        { value: 'admin', label: 'Administrador' },
         { value: 'cliente', label: 'Cliente' }
       ]
     },
