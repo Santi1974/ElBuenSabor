@@ -10,6 +10,7 @@ const CashierOrders = () => {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [processingOrderId, setProcessingOrderId] = useState<number | null>(null);
+  const [statusFilter, setStatusFilter] = useState('');
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -22,14 +23,20 @@ const CashierOrders = () => {
   
   useEffect(() => {
     fetchOrders();
-  }, [currentPage, itemsPerPage]);
+  }, [currentPage, itemsPerPage, statusFilter]);
 
   const fetchOrders = async () => {
     try {
       setLoading(true);
       setError('');
       const offset = (currentPage - 1) * itemsPerPage;
-      const response = await cashierService.getAllOrders(offset, itemsPerPage);
+      
+      let response;
+      if (statusFilter) {
+        response = await cashierService.getOrdersByStatus(statusFilter, offset, itemsPerPage);
+      } else {
+        response = await cashierService.getAllOrders(offset, itemsPerPage);
+      }
       
       setOrders(response.data);
       setTotalItems(response.total);
@@ -126,7 +133,7 @@ const CashierOrders = () => {
     switch (status.toLowerCase()) {
       case 'a_confirmar':
         return 'A confirmar';
-      case 'a_cocina':
+      case 'en_cocina':
         return 'En cocina';
       case 'listo':
         return 'Listo';
@@ -134,8 +141,8 @@ const CashierOrders = () => {
         return 'En delivery';
       case 'entregado':
         return 'Entregado';
-      case 'cancelado':
-        return 'Cancelado';
+      case 'facturado':
+        return 'Facturado';
       default:
         return status;
     }
@@ -146,7 +153,7 @@ const CashierOrders = () => {
     switch (status.toLowerCase()) {
       case 'a_confirmar':
         return 'bg-warning';
-      case 'a_cocina':
+      case 'en_cocina':
         return 'bg-info';
       case 'listo':
         return 'bg-success';
@@ -154,8 +161,8 @@ const CashierOrders = () => {
         return 'bg-primary';
       case 'entregado':
         return 'bg-secondary';
-      case 'cancelado':
-        return 'bg-danger';
+      case 'facturado':
+        return 'bg-dark';
       default:
         return 'bg-light text-dark';
     }
@@ -208,6 +215,33 @@ const CashierOrders = () => {
     }
   };
 
+  const handleStatusFilterChange = (status: string) => {
+    setStatusFilter(status);
+    setCurrentPage(1); // Reset to first page when filter changes
+  };
+
+  const handleMarkAsPaid = async (orderId: number) => {
+    try {
+      setProcessingOrderId(orderId);
+      await cashierService.markAsPaid(orderId);
+      
+      // Refresh the orders list
+      await fetchOrders();
+      
+      // Close the modal if it's open
+      if (selectedOrder?.id_key === orderId) {
+        closeDetailModal();
+      }
+      
+      alert('Pedido marcado como pagado exitosamente');
+    } catch (err) {
+      console.error('Error marking order as paid:', err);
+      alert('Error al marcar el pedido como pagado. Por favor, intente nuevamente.');
+    } finally {
+      setProcessingOrderId(null);
+    }
+  };
+
   return (
     <div className="container-fluid p-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
@@ -220,9 +254,9 @@ const CashierOrders = () => {
         </div>
       </div>
 
-      {/* Search Bar */}
+      {/* Search Bar and Filters */}
       <div className="row mb-4">
-        <div className="col-md-6">
+        <div className="col-md-4">
           <div className="input-group">
             <span className="input-group-text bg-white border-end-0">
               <i className="bi bi-search text-muted"></i>
@@ -236,7 +270,22 @@ const CashierOrders = () => {
             />
           </div>
         </div>
-        <div className="col-md-6 d-flex justify-content-end align-items-center">
+        <div className="col-md-3">
+          <select 
+            className="form-select" 
+            value={statusFilter}
+            onChange={(e) => handleStatusFilterChange(e.target.value)}
+          >
+            <option value="">Todos los estados</option>
+            <option value="a_confirmar">A confirmar</option>
+            <option value="en_cocina">En cocina</option>
+            <option value="listo">Listo</option>
+            <option value="en_delivery">En delivery</option>
+            <option value="entregado">Entregado</option>
+            <option value="facturado">Facturado</option>
+          </select>
+        </div>
+        <div className="col-md-5 d-flex justify-content-end align-items-center">
           <div className="d-flex align-items-center gap-2">
             <span className="text-muted small">Mostrar:</span>
             <select 
@@ -286,12 +335,13 @@ const CashierOrders = () => {
                       <th className="border-0 fw-semibold text-muted px-4 py-3">Total</th>
                       <th className="border-0 fw-semibold text-muted px-4 py-3">Fecha</th>
                       <th className="border-0 fw-semibold text-muted px-4 py-3">Pago</th>
+                      <th className="border-0 fw-semibold text-muted px-4 py-3">Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredOrders.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="text-center py-5 text-muted">
+                        <td colSpan={8} className="text-center py-5 text-muted">
                           <i className="bi bi-inbox fs-1 d-block mb-3"></i>
                           {searchTerm ? 'No se encontraron pedidos que coincidan con la búsqueda' : 'No hay pedidos'}
                         </td>
@@ -346,6 +396,21 @@ const CashierOrders = () => {
                             <span className={`badge ${order.is_paid ? 'bg-success' : 'bg-warning'} small`}>
                               {order.is_paid ? 'Pagado' : 'Pendiente'}
                             </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            {!order.is_paid && (
+                              <button
+                                className="btn btn-success btn-sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleMarkAsPaid(order.id_key);
+                                }}
+                                disabled={processingOrderId === order.id_key}
+                              >
+                                <i className="bi bi-cash me-1"></i>
+                                {processingOrderId === order.id_key ? 'Procesando...' : 'Pagado'}
+                              </button>
+                            )}
                           </td>
                         </tr>
                       ))
@@ -592,11 +657,22 @@ const CashierOrders = () => {
                 <button type="button" className="btn btn-secondary" onClick={closeDetailModal}>
                   Cerrar
                 </button>
+                {!selectedOrder.is_paid && (
+                  <button 
+                    type="button" 
+                    className="btn btn-success"
+                    onClick={() => handleMarkAsPaid(selectedOrder.id_key)}
+                    disabled={processingOrderId === selectedOrder.id_key}
+                  >
+                    <i className="bi bi-cash me-2"></i>
+                    {processingOrderId === selectedOrder.id_key ? 'Procesando...' : 'Marcar como Pagado'}
+                  </button>
+                )}
                 {selectedOrder.status.toLowerCase() === 'a_confirmar' && (
                   <>
                     <button 
                       type="button" 
-                      className="btn btn-success"
+                      className="btn btn-info"
                       onClick={() => handleMoveToKitchen(selectedOrder.id_key)}
                       disabled={processingOrderId === selectedOrder.id_key}
                     >

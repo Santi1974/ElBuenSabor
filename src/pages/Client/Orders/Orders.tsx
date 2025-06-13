@@ -90,10 +90,10 @@ const Orders = () => {
   
   const [statusFilters, setStatusFilters] = useState({
     a_confirmar: false,
-    en_preparacion: false,
+    en_cocina: false,
+    listo: false,
     en_delivery: false,
     entregado: false,
-    cancelado: false,
     facturado: false
   });
 
@@ -188,14 +188,14 @@ const Orders = () => {
     switch (status.toLowerCase()) {
       case 'a_confirmar':
         return 'A confirmar';
-      case 'en_preparacion':
-        return 'En preparación';
+      case 'en_cocina':
+        return 'En cocina';
+      case 'listo':
+        return 'Listo';
       case 'en_delivery':
         return 'En camino';
       case 'entregado':
         return 'Entregado';
-      case 'cancelado':
-        return 'Cancelado';
       case 'facturado':
         return 'Facturado';
       default:
@@ -234,16 +234,16 @@ const Orders = () => {
     switch (status.toLowerCase()) {
       case 'entregado':
         return 'success';
-      case 'en_preparacion':
+      case 'en_cocina':
         return 'warning';
-      case 'en_delivery':
+      case 'listo':
         return 'info';
+      case 'en_delivery':
+        return 'primary';
       case 'a_confirmar':
         return 'secondary';
-      case 'cancelado':
-        return 'danger';
       case 'facturado':
-        return 'primary';
+        return 'dark';
       default:
         return 'secondary';
     }
@@ -311,12 +311,24 @@ const Orders = () => {
               <input 
                       className="form-check-input" 
                 type="checkbox" 
-                id="preparing" 
-                checked={statusFilters.en_preparacion}
-                onChange={() => handleFilterChange('en_preparacion')}
+                id="en_cocina" 
+                checked={statusFilters.en_cocina}
+                onChange={() => handleFilterChange('en_cocina')}
               />
-                    <label className="form-check-label" htmlFor="preparing">
-                      En preparación
+                    <label className="form-check-label" htmlFor="en_cocina">
+                      En cocina
+                    </label>
+            </div>
+                  <div className="form-check">
+              <input 
+                      className="form-check-input" 
+                type="checkbox" 
+                id="listo" 
+                checked={statusFilters.listo}
+                onChange={() => handleFilterChange('listo')}
+              />
+                    <label className="form-check-label" htmlFor="listo">
+                      Listo
                     </label>
             </div>
                   <div className="form-check">
@@ -343,18 +355,7 @@ const Orders = () => {
                       Entregado
                     </label>
             </div>
-                  <div className="form-check">
-              <input 
-                      className="form-check-input" 
-                type="checkbox" 
-                id="cancelled" 
-                checked={statusFilters.cancelado}
-                onChange={() => handleFilterChange('cancelado')}
-              />
-                    <label className="form-check-label" htmlFor="cancelled">
-                      Cancelado
-                    </label>
-                  </div>
+
                   <div className="form-check">
                     <input 
                       className="form-check-input" 

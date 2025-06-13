@@ -124,14 +124,16 @@ const OrderDetail = () => {
     switch (status.toLowerCase()) {
       case 'a_confirmar':
         return 'A confirmar';
-      case 'en_preparacion':
-        return 'En preparación';
+      case 'en_cocina':
+        return 'En cocina';
+      case 'listo':
+        return 'Listo';
       case 'en_delivery':
         return 'En camino';
       case 'entregado':
         return 'Entregado';
-      case 'cancelado':
-        return 'Cancelado';
+      case 'facturado':
+        return 'Facturado';
       default:
         return status;
     }
@@ -432,14 +434,16 @@ const getStatusButtonClass = (status: string) => {
   switch (status.toLowerCase()) {
     case 'entregado':
       return 'btn-success';
-    case 'en_preparacion':
+    case 'en_cocina':
       return 'btn-warning';
-    case 'en_delivery':
+    case 'listo':
       return 'btn-info';
+    case 'en_delivery':
+      return 'btn-primary';
     case 'a_confirmar':
       return 'btn-secondary';
-    case 'cancelado':
-      return 'btn-danger';
+    case 'facturado':
+      return 'btn-dark';
     default:
       return 'btn-secondary';
   }
