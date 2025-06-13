@@ -126,6 +126,16 @@ const cashierService = {
       console.error('Error moving order to ready:', error);
       throw error;
     }
+  },
+
+  markAsPaid: async (orderId: number) => {
+    try {
+      const response = await api.put(`${API_URL}/order/${orderId}/cash-payment`);
+      return response.data;
+    } catch (error) {
+      console.error('Error marking order as paid:', error);
+      throw error;
+    }
   }
 };
 

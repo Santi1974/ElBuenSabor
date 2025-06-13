@@ -169,34 +169,78 @@ const CashierOrders = () => {
     }
   };
 
+  const handleMarkAsPaid = async (orderId: number) => {
+    try {
+      setProcessingOrderId(orderId);
+      await cashierService.markAsPaid(orderId);
+      
+      // Refresh the orders list
+      await fetchOrders();
+      
+      // Close the modal if it's open
+      if (selectedOrder?.id_key === orderId) {
+        closeDetailModal();
+      }
+      
+      alert('Pedido marcado como pagado exitosamente');
+    } catch (err) {
+      console.error('Error marking order as paid:', err);
+      alert('Error al marcar el pedido como pagado. Por favor, intente nuevamente.');
+    } finally {
+      setProcessingOrderId(null);
+    }
+  };
+
   // Filter orders based on search term only (status filtering is done on backend)
   const filteredOrders = orders.filter(order => {
     if (!searchTerm) return true;
     
-    return (
-      order.id_key.toString().includes(searchTerm) ||
-      order.user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.user.phone_number.includes(searchTerm) ||
-      order.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.delivery_method.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.payment_method.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    try {
+      const searchLower = searchTerm.toLowerCase().trim();
+      
+      // Si el término de búsqueda es solo números, priorizar búsqueda por ID
+      if (/^\d+$/.test(searchTerm)) {
+        return order.id_key.toString().includes(searchTerm);
+      }
+      
+      // Búsqueda general en todos los campos con validaciones
+      return (
+        order.id_key.toString().includes(searchTerm) ||
+        (order.user?.full_name || '').toLowerCase().includes(searchLower) ||
+        (order.user?.phone_number || '').includes(searchTerm) ||
+        (order.user?.email || '').toLowerCase().includes(searchLower) ||
+        translateStatus(order.status || '').toLowerCase().includes(searchLower) ||
+        translateDeliveryMethod(order.delivery_method || '').toLowerCase().includes(searchLower) ||
+        translatePaymentMethod(order.payment_method || '').toLowerCase().includes(searchLower)
+      );
+    } catch (error) {
+      console.error('Error filtering order:', error, order);
+      return false; // Si hay error, no incluir este pedido en los resultados
+    }
   });
 
   // Format date to display in a readable format
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-AR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    if (!dateString) return 'Sin fecha';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'Fecha inválida';
+      return date.toLocaleDateString('es-AR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      console.error('Error formatting date:', error, dateString);
+      return 'Error en fecha';
+    }
   };
 
   // Translate status to Spanish
   const translateStatus = (status: string) => {
+    if (!status) return '';
     switch (status.toLowerCase()) {
       case 'a_confirmar':
         return 'A confirmar';
@@ -217,6 +261,7 @@ const CashierOrders = () => {
 
   // Get status badge color
   const getStatusBadgeColor = (status: string) => {
+    if (!status) return 'bg-light text-dark';
     switch (status.toLowerCase()) {
       case 'a_confirmar':
         return 'bg-warning';
@@ -237,6 +282,7 @@ const CashierOrders = () => {
 
   // Translate delivery method to Spanish
   const translateDeliveryMethod = (method: string) => {
+    if (!method) return '';
     switch (method.toLowerCase()) {
       case 'delivery':
         return 'Delivery';
@@ -249,6 +295,7 @@ const CashierOrders = () => {
 
   // Translate payment method to Spanish
   const translatePaymentMethod = (method: string) => {
+    if (!method) return '';
     switch (method.toLowerCase()) {
       case 'credit_card':
         return 'Tarjeta de crédito';
@@ -294,300 +341,324 @@ const CashierOrders = () => {
         </div>
       </div>
 
-      <div className="row gap-3">
-        {/* Filters Section */}
-        <div className="col-12 col-lg-3">
-          <div className="card">
-            <div className="card-header">
-              <h5 className="card-title mb-0">
-                <i className="bi bi-funnel me-2"></i>
-                Filtros por Estado
-              </h5>
-            </div>
-            <div className="card-body">
-              <div className="d-flex flex-column gap-2">
-                <div className="form-check">
-                  <input 
-                    className="form-check-input" 
-                    type="checkbox" 
-                    id="a_confirmar" 
-                    checked={statusFilters.a_confirmar}
-                    onChange={() => handleFilterChange('a_confirmar')}
-                  />
-                  <label className="form-check-label" htmlFor="a_confirmar">
-                    A confirmar
-                  </label>
-                </div>
-                <div className="form-check">
-                  <input 
-                    className="form-check-input" 
-                    type="checkbox" 
-                    id="en_cocina" 
-                    checked={statusFilters.en_cocina}
-                    onChange={() => handleFilterChange('en_cocina')}
-                  />
-                  <label className="form-check-label" htmlFor="en_cocina">
-                    En cocina
-                  </label>
-                </div>
-                <div className="form-check">
-                  <input 
-                    className="form-check-input" 
-                    type="checkbox" 
-                    id="listo" 
-                    checked={statusFilters.listo}
-                    onChange={() => handleFilterChange('listo')}
-                  />
-                  <label className="form-check-label" htmlFor="listo">
-                    Listo
-                  </label>
-                </div>
-                <div className="form-check">
-                  <input 
-                    className="form-check-input" 
-                    type="checkbox" 
-                    id="en_delivery" 
-                    checked={statusFilters.en_delivery}
-                    onChange={() => handleFilterChange('en_delivery')}
-                  />
-                  <label className="form-check-label" htmlFor="en_delivery">
-                    En delivery
-                  </label>
-                </div>
-                <div className="form-check">
-                  <input 
-                    className="form-check-input" 
-                    type="checkbox" 
-                    id="entregado" 
-                    checked={statusFilters.entregado}
-                    onChange={() => handleFilterChange('entregado')}
-                  />
-                  <label className="form-check-label" htmlFor="entregado">
-                    Entregado
-                  </label>
-                </div>
-                <div className="form-check">
-                  <input 
-                    className="form-check-input" 
-                    type="checkbox" 
-                    id="facturado" 
-                    checked={statusFilters.facturado}
-                    onChange={() => handleFilterChange('facturado')}
-                  />
-                  <label className="form-check-label" htmlFor="facturado">
-                    Facturado
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
+      {/* Filters Section - Moved to top */}
+      <div className="card mb-4">
+        <div className="card-header">
+          <h5 className="card-title mb-0">
+            <i className="bi bi-funnel me-2"></i>
+            Filtros por Estado
+          </h5>
         </div>
-
-        {/* Orders List Section */}
-        <div className="col-12 col-lg-8">
-          {/* Search Bar */}
-          <div className="row mb-4">
-            <div className="col-md-8">
-              <div className="input-group">
-                <span className="input-group-text bg-white border-end-0">
-                  <i className="bi bi-search text-muted"></i>
-                </span>
-                <input
-                  type="text"
-                  className="form-control border-start-0"
-                  placeholder="Buscar por ID, cliente, estado, método..."
-                  value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    setCurrentPage(1); // Resetear a la primera página cuando cambia la búsqueda
-                  }}
+        <div className="card-body">
+          <div className="row g-3">
+            <div className="col-6 col-md-4 col-lg-2">
+              <div className="form-check">
+                <input 
+                  className="form-check-input" 
+                  type="checkbox" 
+                  id="a_confirmar" 
+                  checked={statusFilters.a_confirmar}
+                  onChange={() => handleFilterChange('a_confirmar')}
                 />
+                <label className="form-check-label" htmlFor="a_confirmar">
+                  A confirmar
+                </label>
               </div>
             </div>
-            
+            <div className="col-6 col-md-4 col-lg-2">
+              <div className="form-check">
+                <input 
+                  className="form-check-input" 
+                  type="checkbox" 
+                  id="en_cocina" 
+                  checked={statusFilters.en_cocina}
+                  onChange={() => handleFilterChange('en_cocina')}
+                />
+                <label className="form-check-label" htmlFor="en_cocina">
+                  En cocina
+                </label>
+              </div>
+            </div>
+            <div className="col-6 col-md-4 col-lg-2">
+              <div className="form-check">
+                <input 
+                  className="form-check-input" 
+                  type="checkbox" 
+                  id="listo" 
+                  checked={statusFilters.listo}
+                  onChange={() => handleFilterChange('listo')}
+                />
+                <label className="form-check-label" htmlFor="listo">
+                  Listo
+                </label>
+              </div>
+            </div>
+            <div className="col-6 col-md-4 col-lg-2">
+              <div className="form-check">
+                <input 
+                  className="form-check-input" 
+                  type="checkbox" 
+                  id="en_delivery" 
+                  checked={statusFilters.en_delivery}
+                  onChange={() => handleFilterChange('en_delivery')}
+                />
+                <label className="form-check-label" htmlFor="en_delivery">
+                  En delivery
+                </label>
+              </div>
+            </div>
+            <div className="col-6 col-md-4 col-lg-2">
+              <div className="form-check">
+                <input 
+                  className="form-check-input" 
+                  type="checkbox" 
+                  id="entregado" 
+                  checked={statusFilters.entregado}
+                  onChange={() => handleFilterChange('entregado')}
+                />
+                <label className="form-check-label" htmlFor="entregado">
+                  Entregado
+                </label>
+              </div>
+            </div>
+            <div className="col-6 col-md-4 col-lg-2">
+              <div className="form-check">
+                <input 
+                  className="form-check-input" 
+                  type="checkbox" 
+                  id="facturado" 
+                  checked={statusFilters.facturado}
+                  onChange={() => handleFilterChange('facturado')}
+                />
+                <label className="form-check-label" htmlFor="facturado">
+                  Facturado
+                </label>
+              </div>
+            </div>
           </div>
-
-          {/* Pagination Info */}
-          <div className="card mb-3" style={{ padding: '5px 10px' }}>
-            <div className="card-body p-1">
-              <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <span className="text-muted">
-                  Mostrando {filteredOrders.length} de {totalItems} pedidos
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Error Message */}
-          {error && (
-            <div className="alert alert-danger" role="alert">
-              <i className="bi bi-exclamation-triangle me-2"></i>
-              {error}
-            </div>
-          )}
-
-          {/* Loading State */}
-          {loading ? (
-            <div className="card">
-              <div className="card-body text-center py-5">
-                <div className="spinner-border text-primary mb-3" role="status">
-                  <span className="visually-hidden">Cargando...</span>
-                </div>
-                <p className="text-muted mb-0">Cargando pedidos...</p>
-              </div>
-            </div>
-          ) : (
-            <>
-              {/* Orders Table */}
-              <div className="card border-0 shadow-sm">
-                <div className="card-body p-0">
-                  <div className="table-responsive">
-                    <table className="table table-hover mb-0">
-                      <thead className="table-light">
-                        <tr>
-                          <th className="border-0 fw-semibold text-muted px-4 py-3">Pedido</th>
-                          <th className="border-0 fw-semibold text-muted px-4 py-3">Cliente</th>
-                          <th className="border-0 fw-semibold text-muted px-4 py-3">Estado</th>
-                          <th className="border-0 fw-semibold text-muted px-4 py-3">Método</th>
-                          <th className="border-0 fw-semibold text-muted px-4 py-3">Total</th>
-                          <th className="border-0 fw-semibold text-muted px-4 py-3">Fecha</th>
-                          <th className="border-0 fw-semibold text-muted px-4 py-3">Pago</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredOrders.length === 0 ? (
-                          <tr>
-                            <td colSpan={7} className="text-center py-5 text-muted">
-                              <i className="bi bi-inbox fs-1 d-block mb-3"></i>
-                              {searchTerm || Object.values(statusFilters).some(Boolean) ? 
-                                'No se encontraron pedidos que coincidan con los filtros' : 
-                                'No hay pedidos'
-                              }
-                            </td>
-                          </tr>
-                        ) : (
-                          filteredOrders.map((order) => (
-                            <tr 
-                              key={order.id_key} 
-                              className="cursor-pointer"
-                              onClick={() => handleOrderClick(order)}
-                              style={{cursor: 'pointer'}}
-                            >
-                              <td className="px-4 py-3">
-                                <div className="d-flex flex-column">
-                                  <span className="fw-semibold text-primary">#{order.id_key}</span>
-                                  <small className="text-muted">
-                                    {order.estimated_time} min estimado
-                                  </small>
-                                </div>
-                              </td>
-                              <td className="px-4 py-3">
-                                <div className="d-flex flex-column">
-                                  <span className="fw-semibold">{order.user.full_name}</span>
-                                  <small className="text-muted">{order.user.phone_number}</small>
-                                </div>
-                              </td>
-                              <td className="px-4 py-3">
-                                <span className={`badge ${getStatusBadgeColor(order.status)}`}>
-                                  {translateStatus(order.status)}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3">
-                                <div className="d-flex flex-column">
-                                  <span>{translateDeliveryMethod(order.delivery_method)}</span>
-                                  <small className="text-muted">{translatePaymentMethod(order.payment_method)}</small>
-                                </div>
-                              </td>
-                              <td className="px-4 py-3">
-                                <div className="d-flex flex-column">
-                                  <span className="fw-semibold">${order.final_total.toFixed(2)}</span>
-                                  {order.discount > 0 && (
-                                    <small className="text-success">
-                                      Desc: ${order.discount.toFixed(2)}
-                                    </small>
-                                  )}
-                                </div>
-                              </td>
-                              <td className="px-4 py-3">
-                                <span className="text-muted small">{formatDate(order.date)}</span>
-                              </td>
-                              <td className="px-4 py-3">
-                                <span className={`badge ${order.is_paid ? 'bg-success' : 'bg-warning'} small`}>
-                                  {order.is_paid ? 'Pagado' : 'Pendiente'}
-                                </span>
-                              </td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="card mt-3" style={{ padding: '5px 10px' }}>
-                  <div className="card-body p-1">
-                    <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                      <small className="text-muted">
-                        Página {currentPage} de {totalPages} - Mostrando {filteredOrders.length} de {totalItems} elementos
-                      </small>
-                      <nav aria-label="Page navigation">
-                        <ul className="pagination pagination-sm mb-0">
-                          <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
-                            <button 
-                              className="page-link" 
-                              onClick={handlePrevPage}
-                              disabled={currentPage === 1}
-                            >
-                              Anterior
-                            </button>
-                          </li>
-                          
-                          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                            let pageNumber;
-                            if (totalPages <= 5) {
-                              pageNumber = i + 1;
-                            } else if (currentPage <= 3) {
-                              pageNumber = i + 1;
-                            } else if (currentPage >= totalPages - 2) {
-                              pageNumber = totalPages - 4 + i;
-                            } else {
-                              pageNumber = currentPage - 2 + i;
-                            }
-                            
-                            return (
-                              <li key={pageNumber} className={`page-item ${currentPage === pageNumber ? 'active' : ''}`}>
-                                <button 
-                                  className="page-link" 
-                                  onClick={() => handlePageChange(pageNumber)}
-                                >
-                                  {pageNumber}
-                                </button>
-                              </li>
-                            );
-                          })}
-                          
-                          <li className={`page-item ${!hasNext ? 'disabled' : ''}`}>
-                            <button 
-                              className="page-link" 
-                              onClick={handleNextPage}
-                              disabled={!hasNext}
-                            >
-                              Siguiente
-                            </button>
-                          </li>
-                        </ul>
-                      </nav>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
         </div>
       </div>
+
+      {/* Search Bar */}
+      <div className="row mb-4">
+        <div className="col-md-6">
+          <div className="input-group">
+            <span className="input-group-text bg-white border-end-0">
+              <i className="bi bi-search text-muted"></i>
+            </span>
+            <input
+              type="text"
+              className="form-control border-start-0"
+              placeholder="Buscar por ID de pedido, cliente, teléfono..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1); // Resetear a la primera página cuando cambia la búsqueda
+              }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Pagination Info */}
+      <div className="card mb-3" style={{ padding: '5px 10px' }}>
+        <div className="card-body p-1">
+          <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <span className="text-muted">
+              Mostrando {filteredOrders.length} de {totalItems} pedidos
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="alert alert-danger" role="alert">
+          <i className="bi bi-exclamation-triangle me-2"></i>
+          {error}
+        </div>
+      )}
+
+      {/* Orders List Section */}
+      {/* Loading State */}
+      {loading ? (
+        <div className="card">
+          <div className="card-body text-center py-5">
+            <div className="spinner-border text-primary mb-3" role="status">
+              <span className="visually-hidden">Cargando...</span>
+            </div>
+            <p className="text-muted mb-0">Cargando pedidos...</p>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Orders Table */}
+          <div className="card border-0 shadow-sm">
+            <div className="card-body p-0">
+              <div className="table-responsive">
+                <table className="table table-hover mb-0">
+                  <thead className="table-light">
+                    <tr>
+                      <th className="border-0 fw-semibold text-muted px-4 py-3">Pedido</th>
+                      <th className="border-0 fw-semibold text-muted px-4 py-3">Cliente</th>
+                      <th className="border-0 fw-semibold text-muted px-4 py-3">Estado</th>
+                      <th className="border-0 fw-semibold text-muted px-4 py-3">Método</th>
+                      <th className="border-0 fw-semibold text-muted px-4 py-3">Total</th>
+                      <th className="border-0 fw-semibold text-muted px-4 py-3">Fecha</th>
+                      <th className="border-0 fw-semibold text-muted px-4 py-3">Pago</th>
+                      <th className="border-0 fw-semibold text-muted px-4 py-3">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredOrders.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} className="text-center py-5 text-muted">
+                          <i className="bi bi-inbox fs-1 d-block mb-3"></i>
+                          {searchTerm || Object.values(statusFilters).some(Boolean) ? 
+                            'No se encontraron pedidos que coincidan con los filtros' : 
+                            'No hay pedidos'
+                          }
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredOrders.map((order) => (
+                        <tr 
+                          key={order.id_key} 
+                          className="cursor-pointer"
+                        >
+                          <td className="px-4 py-3" onClick={() => handleOrderClick(order)} style={{cursor: 'pointer'}}>
+                            <div className="d-flex flex-column">
+                              <span className="fw-semibold text-primary">#{order.id_key || 'N/A'}</span>
+                              <small className="text-muted">
+                                {order.estimated_time || 0} min estimado
+                              </small>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3" onClick={() => handleOrderClick(order)} style={{cursor: 'pointer'}}>
+                            <div className="d-flex flex-column">
+                              <span className="fw-semibold">{order.user?.full_name || 'Sin nombre'}</span>
+                              <small className="text-muted">{order.user?.phone_number || 'Sin teléfono'}</small>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3" onClick={() => handleOrderClick(order)} style={{cursor: 'pointer'}}>
+                            <span className={`badge ${getStatusBadgeColor(order.status)}`}>
+                              {translateStatus(order.status)}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3" onClick={() => handleOrderClick(order)} style={{cursor: 'pointer'}}>
+                            <div className="d-flex flex-column">
+                              <span>{translateDeliveryMethod(order.delivery_method)}</span>
+                              <small className="text-muted">{translatePaymentMethod(order.payment_method)}</small>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3" onClick={() => handleOrderClick(order)} style={{cursor: 'pointer'}}>
+                            <div className="d-flex flex-column">
+                              <span className="fw-semibold">${(order.final_total || 0).toFixed(2)}</span>
+                              {(order.discount || 0) > 0 && (
+                                <small className="text-success">
+                                  Desc: ${(order.discount || 0).toFixed(2)}
+                                </small>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3" onClick={() => handleOrderClick(order)} style={{cursor: 'pointer'}}>
+                            <span className="text-muted small">{order.date ? formatDate(order.date) : 'Sin fecha'}</span>
+                          </td>
+                          <td className="px-4 py-3" onClick={() => handleOrderClick(order)} style={{cursor: 'pointer'}}>
+                            <span className={`badge ${order.is_paid ? 'bg-success' : 'bg-warning'} small`}>
+                              {order.is_paid ? 'Pagado' : 'Pendiente'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            {!order.is_paid && (
+                              <button
+                                className="btn btn-sm btn-success"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleMarkAsPaid(order.id_key);
+                                }}
+                                disabled={processingOrderId === order.id_key}
+                                title="Marcar como pagado"
+                              >
+                                <i className="bi bi-cash"></i>
+                                {processingOrderId === order.id_key ? (
+                                  <span className="spinner-border spinner-border-sm ms-1" role="status"></span>
+                                ) : (
+                                  <span className="ms-1 d-none d-md-inline">Pagado</span>
+                                )}
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="card mt-3" style={{ padding: '5px 10px' }}>
+              <div className="card-body p-1">
+                <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                  <small className="text-muted">
+                    Página {currentPage} de {totalPages} - Mostrando {filteredOrders.length} de {totalItems} elementos
+                  </small>
+                  <nav aria-label="Page navigation">
+                    <ul className="pagination pagination-sm mb-0">
+                      <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+                        <button 
+                          className="page-link" 
+                          onClick={handlePrevPage}
+                          disabled={currentPage === 1}
+                        >
+                          Anterior
+                        </button>
+                      </li>
+                      
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        let pageNumber;
+                        if (totalPages <= 5) {
+                          pageNumber = i + 1;
+                        } else if (currentPage <= 3) {
+                          pageNumber = i + 1;
+                        } else if (currentPage >= totalPages - 2) {
+                          pageNumber = totalPages - 4 + i;
+                        } else {
+                          pageNumber = currentPage - 2 + i;
+                        }
+                        
+                        return (
+                          <li key={pageNumber} className={`page-item ${currentPage === pageNumber ? 'active' : ''}`}>
+                            <button 
+                              className="page-link" 
+                              onClick={() => handlePageChange(pageNumber)}
+                            >
+                              {pageNumber}
+                            </button>
+                          </li>
+                        );
+                      })}
+                      
+                      <li className={`page-item ${!hasNext ? 'disabled' : ''}`}>
+                        <button 
+                          className="page-link" 
+                          onClick={handleNextPage}
+                          disabled={!hasNext}
+                        >
+                          Siguiente
+                        </button>
+                      </li>
+                    </ul>
+                  </nav>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
 
       {/* Order Detail Modal */}
       {showDetailModal && selectedOrder && (
@@ -767,11 +838,22 @@ const CashierOrders = () => {
                 <button type="button" className="btn btn-secondary" onClick={closeDetailModal}>
                   Cerrar
                 </button>
+                {!selectedOrder.is_paid && (
+                  <button 
+                    type="button" 
+                    className="btn btn-success"
+                    onClick={() => handleMarkAsPaid(selectedOrder.id_key)}
+                    disabled={processingOrderId === selectedOrder.id_key}
+                  >
+                    <i className="bi bi-cash me-2"></i>
+                    {processingOrderId === selectedOrder.id_key ? 'Procesando...' : 'Marcar como Pagado'}
+                  </button>
+                )}
                 {selectedOrder.status.toLowerCase() === 'a_confirmar' && (
                   <>
                     <button 
                       type="button" 
-                      className="btn btn-success"
+                      className="btn btn-info"
                       onClick={() => handleMoveToKitchen(selectedOrder.id_key)}
                       disabled={processingOrderId === selectedOrder.id_key}
                     >
