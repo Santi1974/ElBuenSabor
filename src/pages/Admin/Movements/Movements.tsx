@@ -30,7 +30,7 @@ const Movements: React.FC = () => {
         ...(endDate && { end_date: endDate })
       };
 
-      const data = await reportService.getRevenue(params);
+      const data = await reportService.getRevenueReport(params);
       setRevenueData(data);
     } catch (err) {
       setError('Error al cargar los datos de movimientos');
