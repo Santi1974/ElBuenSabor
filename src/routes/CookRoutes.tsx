@@ -5,6 +5,7 @@ import Clients from '../pages/Admin/Clients/Clients';
 import Inventory from '../pages/Admin/Inventory/Inventory';
 import Categories from '../pages/Admin/Categories/Categories';
 import Ingredients from '../pages/Admin/Ingredients/Ingredients';
+import { EmployeeSettings } from '../pages';
 import { authService } from '../services/api';
 
 function CookRoutes() {
@@ -27,6 +28,7 @@ function CookRoutes() {
         </Route>
 
         <Route path="ingredients" element={<Ingredients />} />
+        <Route path="configuracion" element={<EmployeeSettings />} />
       </Route>
     </Routes>
   );

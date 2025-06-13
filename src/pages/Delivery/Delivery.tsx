@@ -6,7 +6,8 @@ const Delivery = () => {
   const location = useLocation();
 
   const menuItems = [
-    { path: 'pedidos', label: 'Pedidos', icon: 'bi-truck' }
+    { path: 'pedidos', label: 'Pedidos', icon: 'bi-truck' },
+    { path: 'configuracion', label: 'Configuración', icon: 'bi-gear-fill' }
   ];
 
   const handleNavigation = (path: string) => {

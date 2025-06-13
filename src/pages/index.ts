@@ -9,4 +9,5 @@ export { default as ProductDetail } from './Client/ProductDetail/ProductDetail';
 export { default as Profile } from './Client/Profile/Profile';
 export { Delivery, DeliveryOrders } from './Delivery';
 export { default as Cook } from './Cook/Cook';
-export { default as CookOrders } from './Cook/CookOrders/CookOrders'; 
+export { default as CookOrders } from './Cook/CookOrders/CookOrders';
+export { EmployeeSettings } from './Employee'; 

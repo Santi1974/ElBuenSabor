@@ -1,6 +1,6 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { Admin } from '../pages';
+import { Admin, EmployeeSettings } from '../pages';
 import { Employees } from '../pages/Admin/Employees/Employees';
 import Clients from '../pages/Admin/Clients/Clients';
 import Inventory from '../pages/Admin/Inventory/Inventory';
@@ -30,6 +30,7 @@ const AdminRoutes: React.FC = () => {
         <Route path="rankings" element={<Rankings />} />
         <Route path="invoices" element={<Invoices />} />
         <Route path="movements" element={<Movements />} />
+        <Route path="settings" element={<EmployeeSettings />} />
       </Route>
     </Routes>
   );
