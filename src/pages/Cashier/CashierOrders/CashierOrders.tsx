@@ -242,6 +242,50 @@ const CashierOrders = () => {
     }
   };
 
+  const handleMoveToDelivery = async (orderId: number) => {
+    try {
+      setProcessingOrderId(orderId);
+      await cashierService.moveToDelivery(orderId);
+      
+      // Refresh the orders list
+      await fetchOrders();
+      
+      // Close the modal if it's open
+      if (selectedOrder?.id_key === orderId) {
+        closeDetailModal();
+      }
+      
+      alert('Pedido enviado a delivery exitosamente');
+    } catch (err) {
+      console.error('Error moving order to delivery:', err);
+      alert('Error al enviar el pedido a delivery. Por favor, intente nuevamente.');
+    } finally {
+      setProcessingOrderId(null);
+    }
+  };
+
+  const handleMoveToDelivered = async (orderId: number) => {
+    try {
+      setProcessingOrderId(orderId);
+      await cashierService.moveToDelivered(orderId);
+      
+      // Refresh the orders list
+      await fetchOrders();
+      
+      // Close the modal if it's open
+      if (selectedOrder?.id_key === orderId) {
+        closeDetailModal();
+      }
+      
+      alert('Pedido marcado como entregado exitosamente');
+    } catch (err) {
+      console.error('Error marking order as delivered:', err);
+      alert('Error al marcar el pedido como entregado. Por favor, intente nuevamente.');
+    } finally {
+      setProcessingOrderId(null);
+    }
+  };
+
   return (
     <div className="container-fluid p-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
@@ -398,19 +442,49 @@ const CashierOrders = () => {
                             </span>
                           </td>
                           <td className="px-4 py-3">
-                            {!order.is_paid && (
-                              <button
-                                className="btn btn-success btn-sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleMarkAsPaid(order.id_key);
-                                }}
-                                disabled={processingOrderId === order.id_key}
-                              >
-                                <i className="bi bi-cash me-1"></i>
-                                {processingOrderId === order.id_key ? 'Procesando...' : 'Pagado'}
-                              </button>
-                            )}
+                            <div className="d-flex gap-1">
+                              {!order.is_paid && (
+                                <button
+                                  className="btn btn-success btn-sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleMarkAsPaid(order.id_key);
+                                  }}
+                                  disabled={processingOrderId === order.id_key}
+                                >
+                                  <i className="bi bi-cash me-1"></i>
+                                  {processingOrderId === order.id_key ? 'Procesando...' : 'Pagado'}
+                                </button>
+                              )}
+                              
+                              {order.status.toLowerCase() === 'listo' && order.delivery_method.toLowerCase() === 'delivery' && (
+                                <button
+                                  className="btn btn-primary btn-sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleMoveToDelivery(order.id_key);
+                                  }}
+                                  disabled={processingOrderId === order.id_key}
+                                >
+                                  <i className="bi bi-truck me-1"></i>
+                                  {processingOrderId === order.id_key ? 'Procesando...' : 'Pasar a Delivery'}
+                                </button>
+                              )}
+                              
+                              {order.status.toLowerCase() === 'listo' && order.delivery_method.toLowerCase() === 'pickup' && (
+                                <button
+                                  className="btn btn-warning btn-sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleMoveToDelivered(order.id_key);
+                                  }}
+                                  disabled={processingOrderId === order.id_key}
+                                >
+                                  <i className="bi bi-check-circle me-1"></i>
+                                  {processingOrderId === order.id_key ? 'Procesando...' : 'Marcar Entregado'}
+                                </button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))
@@ -689,6 +763,28 @@ const CashierOrders = () => {
                       {processingOrderId === selectedOrder.id_key ? 'Procesando...' : 'Marcar como Listo'}
                     </button>
                   </>
+                )}
+                {selectedOrder.status.toLowerCase() === 'listo' && selectedOrder.delivery_method.toLowerCase() === 'delivery' && (
+                  <button 
+                    type="button" 
+                    className="btn btn-primary"
+                    onClick={() => handleMoveToDelivery(selectedOrder.id_key)}
+                    disabled={processingOrderId === selectedOrder.id_key}
+                  >
+                    <i className="bi bi-truck me-2"></i>
+                    {processingOrderId === selectedOrder.id_key ? 'Procesando...' : 'Pasar a Delivery'}
+                  </button>
+                )}
+                {selectedOrder.status.toLowerCase() === 'listo' && selectedOrder.delivery_method.toLowerCase() === 'pickup' && (
+                  <button 
+                    type="button" 
+                    className="btn btn-warning"
+                    onClick={() => handleMoveToDelivered(selectedOrder.id_key)}
+                    disabled={processingOrderId === selectedOrder.id_key}
+                  >
+                    <i className="bi bi-check-circle me-2"></i>
+                    {processingOrderId === selectedOrder.id_key ? 'Procesando...' : 'Marcar Entregado'}
+                  </button>
                 )}
               </div>
             </div>

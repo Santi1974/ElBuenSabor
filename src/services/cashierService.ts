@@ -153,6 +153,26 @@ const cashierService = {
       console.error('Error marking order as paid:', error);
       throw error;
     }
+  },
+
+  moveToDelivery: async (orderId: number) => {
+    try {
+      const response = await api.put(`${API_URL}/order/${orderId}/status?status=en_delivery`);
+      return response.data;
+    } catch (error) {
+      console.error('Error moving order to delivery:', error);
+      throw error;
+    }
+  },
+
+  moveToDelivered: async (orderId: number) => {
+    try {
+      const response = await api.put(`${API_URL}/order/${orderId}/status?status=entregado`);
+      return response.data;
+    } catch (error) {
+      console.error('Error moving order to delivered:', error);
+      throw error;
+    }
   }
 };
 
