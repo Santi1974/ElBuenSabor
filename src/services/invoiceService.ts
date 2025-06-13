@@ -1,6 +1,4 @@
 import api from './api';
-import type { Invoice, InvoiceFilters } from '../types/invoice';
-import type { PaginatedResponse, ApiPaginatedResponse } from '../types/common';
 
 // Interfaces for invoice data structure
 export interface User {
@@ -77,75 +75,220 @@ export interface Order {
   id_key: number;
 }
 
-const API_URL = 'http://localhost:8000';
+export interface Invoice {
+  number: string;
+  date: string;
+  total: number;
+  type: string;
+  pdf_url: string | null;
+  order: Order;
+  original_invoice_id: number | null;
+  id_key: number;
+}
 
-const invoiceService = {
-  getAll: async (offset: number = 0, limit: number = 10, filters?: InvoiceFilters): Promise<PaginatedResponse<Invoice>> => {
+export interface InvoicesResponse {
+  total: number;
+  offset: number;
+  limit: number;
+  items: Invoice[];
+}
+
+class InvoiceService {
+  async getAll(offset = 0, limit = 10): Promise<{ data: Invoice[], total: number, hasNext: boolean }> {
     try {
-      const queryParams = new URLSearchParams();
-      queryParams.append('offset', offset.toString());
-      queryParams.append('limit', limit.toString());
-
-      if (filters) {
-        if (filters.orderId) queryParams.append('order_id', filters.orderId.toString());
-        if (filters.userId) queryParams.append('user_id', filters.userId.toString());
-        if (filters.startDate) queryParams.append('start_date', filters.startDate);
-        if (filters.endDate) queryParams.append('end_date', filters.endDate);
-        if (filters.search) queryParams.append('search', filters.search);
+      const response = await api.get<InvoicesResponse>(`/invoice/?offset=${offset}&limit=${limit}`);
+      
+      // Handle both paginated and direct array responses for backward compatibility
+      if (response.data && typeof response.data === 'object' && 'items' in response.data) {
+        // New paginated format
+        const { total, items } = response.data;
+        return {
+          data: items,
+          total: total,
+          hasNext: offset + limit < total
+        };
+      } else {
+        // Fallback for direct array response
+        const items = Array.isArray(response.data) ? response.data : [];
+        return {
+          data: items,
+          total: items.length,
+          hasNext: false
+        };
       }
-
-      const response = await api.get<ApiPaginatedResponse<Invoice>>(`${API_URL}/invoice?${queryParams.toString()}`);
-      return {
-        data: response.data.items,
-        total: response.data.total,
-        hasNext: (response.data.offset + response.data.limit) < response.data.total
-      };
     } catch (error) {
       console.error('Error fetching invoices:', error);
       throw error;
     }
-  },
+  }
 
-  getById: async (id: number): Promise<Invoice> => {
+  async getById(id: number): Promise<Invoice> {
     try {
-      const response = await api.get<Invoice>(`${API_URL}/invoice/${id}`);
+      const response = await api.get<Invoice>(`/invoice/${id}`);
       return response.data;
     } catch (error) {
       console.error('Error fetching invoice:', error);
       throw error;
     }
-  },
+  }
 
-  create: async (orderId: number): Promise<Invoice> => {
+  // Method to download PDF from API endpoint
+  async downloadPDF(invoice: Invoice): Promise<void> {
     try {
-      const response = await api.post<Invoice>(`${API_URL}/invoice`, { order_id: orderId });
-      return response.data;
-    } catch (error) {
-      console.error('Error creating invoice:', error);
-      throw error;
-    }
-  },
-
-  delete: async (id: number): Promise<void> => {
-    try {
-      await api.delete(`${API_URL}/invoice/${id}`);
-    } catch (error) {
-      console.error('Error deleting invoice:', error);
-      throw error;
-    }
-  },
-
-  downloadPdf: async (id: number): Promise<Blob> => {
-    try {
-      const response = await api.get(`${API_URL}/invoice/${id}/pdf`, {
-        responseType: 'blob'
+      const response = await api.get(`/invoice/report/${invoice.id_key}`, {
+        responseType: 'blob' // Important for binary data
       });
-      return response.data;
+      
+      // Create blob URL and download
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      
+      // Create temporary download link
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${invoice.type === 'factura' ? 'factura' : 'nota-credito'}-${invoice.number}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      
+      // Cleanup
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Error downloading invoice PDF:', error);
+      console.error('Error downloading PDF:', error);
       throw error;
     }
-  },
-};
+  }
 
+  // Method to cancel invoice (create credit note)
+  async cancelInvoice(invoiceId: number): Promise<Invoice> {
+    try {
+      const response = await api.post<Invoice>(`/invoice/credit-note/${invoiceId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error canceling invoice:', error);
+      throw error;
+    }
+  }
+
+  // Method to find and download invoice PDF by order ID
+  async downloadInvoiceByOrderId(orderId: number): Promise<{ success: boolean; message: string }> {
+    try {
+      let offset = 0;
+      const limit = 100;
+      let foundInvoice: Invoice | null = null;
+
+      while (!foundInvoice) {
+        const result = await this.getAll(offset, limit);
+        
+        foundInvoice = result.data.find(invoice => invoice.order.id_key === orderId) || null;
+        
+        if (!foundInvoice && !result.hasNext) {
+          return {
+            success: false,
+            message: `No se encontró factura para la orden ${orderId}`
+          };
+        }
+        
+        if (!foundInvoice && result.hasNext) {
+          offset += limit;
+        }
+      }
+
+      if (foundInvoice) {
+        await this.downloadPDF(foundInvoice);
+        return {
+          success: true,
+          message: `Factura ${foundInvoice.number} descargada exitosamente para la orden ${orderId}`
+        };
+      }
+
+      return {
+        success: false,
+        message: `No se encontró factura para la orden ${orderId}`
+      };
+
+    } catch (error) {
+      console.error('Error searching and downloading invoice by order ID:', error);
+      return {
+        success: false,
+        message: `Error al buscar factura para la orden ${orderId}: ${error instanceof Error ? error.message : 'Error desconocido'}`
+      };
+    }
+  }
+
+  // Utility methods for formatting
+  formatInvoiceNumber(number: string): string {
+    return number;
+  }
+
+  formatDate(dateString: string): string {
+    return new Date(dateString).toLocaleDateString('es-AR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+  }
+
+  formatCurrency(amount: number): string {
+    return new Intl.NumberFormat('es-AR', {
+      style: 'currency',
+      currency: 'ARS'
+    }).format(amount);
+  }
+
+  getPaymentMethodDisplay(method: string): string {
+    const methods: Record<string, string> = {
+      'cash': 'Efectivo',
+      'card': 'Tarjeta',
+      'transfer': 'Transferencia',
+      'mercadopago': 'MercadoPago'
+    };
+    return methods[method] || method;
+  }
+
+  getDeliveryMethodDisplay(method: string): string {
+    const methods: Record<string, string> = {
+      'pickup': 'Retiro en local',
+      'delivery': 'Delivery',
+      'table': 'Mesa'
+    };
+    return methods[method] || method;
+  }
+
+  getStatusDisplay(status: string): string {
+    const statuses: Record<string, string> = {
+      'facturado': 'Facturado',
+      'pendiente': 'Pendiente',
+      'cancelado': 'Cancelado',
+      'a_confirmar': 'A confirmar',
+      'en_preparacion': 'En preparación',
+      'en_delivery': 'En delivery',
+      'entregado': 'Entregado'
+    };
+    return statuses[status] || status;
+  }
+
+  getInvoiceTypeDisplay(type: string): string {
+    const types: Record<string, string> = {
+      'factura': 'Factura',
+      'nota_credito': 'Nota de Crédito'
+    };
+    return types[type] || type;
+  }
+
+  getStatusColor(status: string): string {
+    const colors: Record<string, string> = {
+      'facturado': 'success',
+      'pendiente': 'warning',
+      'cancelado': 'danger',
+      'a_confirmar': 'secondary',
+      'en_preparacion': 'info',
+      'en_delivery': 'primary',
+      'entregado': 'success'
+    };
+    return colors[status] || 'secondary';
+  }
+}
+
+const invoiceService = new InvoiceService();
 export default invoiceService; 
