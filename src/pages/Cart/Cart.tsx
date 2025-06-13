@@ -55,6 +55,9 @@ const Cart = () => {
 
   const handleDeliveryMethodChange = (method: DeliveryMethod) => {
     setDeliveryMethod(method);
+    if (method === 'delivery' && paymentMethod === 'cash') {
+      setPaymentMethod('mercado_pago');
+    }
     if (method === 'delivery' && !selectedAddress) {
       setShowAddressModal(true);
     }
@@ -281,9 +284,10 @@ const Cart = () => {
                     id="cash"
                     checked={paymentMethod === 'cash'}
                     onChange={() => setPaymentMethod('cash')}
+                    disabled={deliveryMethod === 'delivery'}
                   />
-                  <label className="form-check-label" htmlFor="cash">
-                    Efectivo
+                  <label className={`form-check-label ${deliveryMethod === 'delivery' ? 'text-muted' : ''}`} htmlFor="cash">
+                    Efectivo {deliveryMethod === 'delivery' && <small>(No disponible para envío a domicilio)</small>}
                   </label>
                 </div>
                 <div className="form-check">

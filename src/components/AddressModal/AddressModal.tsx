@@ -218,57 +218,57 @@ const AddressModal: React.FC<AddressModalProps> = ({
 
                   <div className="mb-3">
                     <label className="form-label">País</label>
-                    <select
-                      className="form-select"
-                      value={selectedCountry ?? ''}
-                      onChange={e => {
+                  <select
+                    className="form-select"
+                    value={selectedCountry ?? ''}
+                    onChange={e => {
                         setSelectedCountry(Number(e.target.value) || null);
-                        setSelectedProvince(null);
-                        setFormData(f => ({ ...f, locality_id: 0 }));
-                      }}
-                      required
-                    >
-                      <option value="">Selecciona un país</option>
+                      setSelectedProvince(null);
+                      setFormData(f => ({ ...f, locality_id: 0 }));
+                    }}
+                    required
+                  >
+                    <option value="">Selecciona un país</option>
                       {countries.map(c => (
-                        <option key={c.id_key} value={c.id_key}>{c.name}</option>
-                      ))}
-                    </select>
+                      <option key={c.id_key} value={c.id_key}>{c.name}</option>
+                    ))}
+                  </select>
                   </div>
 
                   <div className="mb-3">
                     <label className="form-label">Provincia</label>
-                    <select
+                  <select
                       className="form-select"
-                      value={selectedProvince ?? ''}
-                      onChange={e => {
+                    value={selectedProvince ?? ''}
+                    onChange={e => {
                         setSelectedProvince(Number(e.target.value) || null);
-                        setFormData(f => ({ ...f, locality_id: 0 }));
-                      }}
-                      disabled={!selectedCountry}
-                      required
-                    >
-                      <option value="">Selecciona una provincia</option>
+                      setFormData(f => ({ ...f, locality_id: 0 }));
+                    }}
+                    disabled={!selectedCountry}
+                    required
+                  >
+                    <option value="">Selecciona una provincia</option>
                       {provinces.map(p => (
-                        <option key={p.id_key} value={p.id_key}>{p.name}</option>
-                      ))}
-                    </select>
+                      <option key={p.id_key} value={p.id_key}>{p.name}</option>
+                    ))}
+                  </select>
                   </div>
 
                   <div className="mb-3">
                     <label className="form-label">Localidad</label>
-                    <select
+                  <select
                       className="form-select"
                       name="locality_id"
-                      value={formData.locality_id}
+                    value={formData.locality_id}
                       onChange={handleChange}
-                      disabled={!selectedProvince}
-                      required
-                    >
-                      <option value="">Selecciona una localidad</option>
+                    disabled={!selectedProvince}
+                    required
+                  >
+                    <option value="">Selecciona una localidad</option>
                       {localities.map(l => (
-                        <option key={l.id_key} value={l.id_key}>{l.name}</option>
-                      ))}
-                    </select>
+                      <option key={l.id_key} value={l.id_key}>{l.name}</option>
+                    ))}
+                  </select>
                   </div>
 
                   {error && (
