@@ -94,7 +94,7 @@ const invoiceService = {
         if (filters.search) queryParams.append('search', filters.search);
       }
 
-      const response = await api.get<ApiPaginatedResponse<Invoice>>(`${API_URL}/invoices?${queryParams.toString()}`);
+      const response = await api.get<ApiPaginatedResponse<Invoice>>(`${API_URL}/invoice?${queryParams.toString()}`);
       return {
         data: response.data.items,
         total: response.data.total,
@@ -108,7 +108,7 @@ const invoiceService = {
 
   getById: async (id: number): Promise<Invoice> => {
     try {
-      const response = await api.get<Invoice>(`${API_URL}/invoices/${id}`);
+      const response = await api.get<Invoice>(`${API_URL}/invoice/${id}`);
       return response.data;
     } catch (error) {
       console.error('Error fetching invoice:', error);
@@ -118,7 +118,7 @@ const invoiceService = {
 
   create: async (orderId: number): Promise<Invoice> => {
     try {
-      const response = await api.post<Invoice>(`${API_URL}/invoices`, { order_id: orderId });
+      const response = await api.post<Invoice>(`${API_URL}/invoice`, { order_id: orderId });
       return response.data;
     } catch (error) {
       console.error('Error creating invoice:', error);
@@ -128,7 +128,7 @@ const invoiceService = {
 
   delete: async (id: number): Promise<void> => {
     try {
-      await api.delete(`${API_URL}/invoices/${id}`);
+      await api.delete(`${API_URL}/invoice/${id}`);
     } catch (error) {
       console.error('Error deleting invoice:', error);
       throw error;
@@ -137,7 +137,7 @@ const invoiceService = {
 
   downloadPdf: async (id: number): Promise<Blob> => {
     try {
-      const response = await api.get(`${API_URL}/invoices/${id}/pdf`, {
+      const response = await api.get(`${API_URL}/invoice/${id}/pdf`, {
         responseType: 'blob'
       });
       return response.data;
@@ -146,15 +146,6 @@ const invoiceService = {
       throw error;
     }
   },
-
-  sendByEmail: async (id: number, email: string): Promise<void> => {
-    try {
-      await api.post(`${API_URL}/invoices/${id}/send-email`, { email });
-    } catch (error) {
-      console.error('Error sending invoice by email:', error);
-      throw error;
-    }
-  }
 };
 
 export default invoiceService; 
