@@ -6,9 +6,14 @@ interface InventoryFormFieldsProps {
   selectedDetails: any[];
   availableIngredients: any[];
   measurementUnits: any[];
+  categories: any[];
+  selectedCategory: any;
+  availableSubcategories: any[];
   imagePreview: string | null;
   onInputChange: (field: string, value: any) => void;
   onProductTypeChange: (productType: string) => void;
+  onCategorySelection: (categoryId: string) => void;
+  onSubcategorySelection: (subcategoryId: string) => void;
   onImageChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onRemoveImage: () => void;
   onAddIngredient: () => void;
@@ -22,36 +27,111 @@ const InventoryFormFields: React.FC<InventoryFormFieldsProps> = ({
   selectedDetails,
   availableIngredients,
   measurementUnits,
+  categories,
+  selectedCategory,
+  availableSubcategories,
   imagePreview,
   onInputChange,
   onProductTypeChange,
+  onCategorySelection,
+  onSubcategorySelection,
   onImageChange,
   onRemoveImage,
   onAddIngredient,
   onRemoveIngredient,
   onUpdateIngredientDetail
 }) => {
+  // Función para detectar el tipo de producto basándose en sus propiedades
+  const getProductType = (item: any): 'manufactured' | 'inventory' | null => {
+    if (!item) return null;
+    
+    // Primero verificar si ya tiene la propiedad type o product_type
+    if (item.type) return item.type;
+    if (item.product_type) return item.product_type;
+    
+    // Si no, detectar basándose en las propiedades únicas de cada tipo
+    // Los productos manufacturados tienen preparation_time y recipe
+    if ('preparation_time' in item || 'recipe' in item) {
+      return 'manufactured';
+    }
+    
+    // Los productos de inventario tienen current_stock, minimum_stock, purchase_cost
+    if ('current_stock' in item || 'minimum_stock' in item || 'purchase_cost' in item) {
+      return 'inventory';
+    }
+    
+    return null;
+  };
+
+  const selectedItemType = getProductType(selectedItem);
+
   return (
     <>
-      {/* Product type select field for new inventory items */}
-      {!selectedItem && (
-        <div className="mb-3">
-          <label className="form-label">Tipo de Producto</label>
-          <select
-            className="form-select"
-            value={formData.product_type || ''}
-            onChange={(e) => onProductTypeChange(e.target.value)}
+      {/* Product type field - for new items (selector) or existing items (readonly) */}
+      <div className="mb-3">
+        <label className="form-label">Tipo de Producto</label>
+        {!selectedItem ? (
+          // Selector for new products
+          <>
+            <select
+              className="form-select"
+              value={formData.product_type || ''}
+              onChange={(e) => onProductTypeChange(e.target.value)}
+              required
+            >
+              <option value="">Seleccione el tipo...</option>
+              <option value="manufactured">Producto Manufacturado</option>
+              <option value="inventory">Producto de Inventario</option>
+            </select>
+            <div className="form-text">
+              Seleccione si es un producto manufacturado (se fabrica) o un producto de inventario (se compra)
+            </div>
+          </>
+        ) : (
+          // Read-only display for existing products
+          <>
+            <div className="form-control-plaintext border rounded p-2 bg-light">
+              <i className={`bi ${selectedItemType === 'manufactured' ? 'bi-tools' : 'bi-box'} me-2`}></i>
+              {selectedItemType === 'manufactured' ? 'Producto Manufacturado' : 
+               selectedItemType === 'inventory' ? 'Producto de Inventario' : 'Tipo desconocido'}
+            </div>
+            <div className="form-text text-muted">
+              El tipo de producto no se puede modificar después de la creación
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Name field */}
+      <div className="mb-3">
+        <label className="form-label">Nombre del Producto <span className="text-danger">*</span></label>
+        <input
+          type="text"
+          className="form-control"
+          value={formData.name || ''}
+          onChange={(e) => onInputChange('name', e.target.value)}
+          placeholder="Ingrese el nombre del producto..."
+          required
+        />
+      </div>
+
+      {/* Price field */}
+      <div className="mb-3">
+        <label className="form-label">Precio <span className="text-danger">*</span></label>
+        <div className="input-group">
+          <span className="input-group-text">$</span>
+          <input
+            type="number"
+            className="form-control"
+            min="0"
+            step="0.01"
+            value={formData.price || ''}
+            onChange={(e) => onInputChange('price', parseFloat(e.target.value) || '')}
+            placeholder="0.00"
             required
-          >
-            <option value="">Seleccione el tipo...</option>
-            <option value="manufactured">Producto Manufacturado</option>
-            <option value="inventory">Producto de Inventario</option>
-          </select>
-          <div className="form-text">
-            Seleccione si es un producto manufacturado (se fabrica) o un producto de inventario (se compra)
-          </div>
+          />
         </div>
-      )}
+      </div>
 
       {/* Description field */}
       <div className="mb-3">
@@ -65,8 +145,62 @@ const InventoryFormFields: React.FC<InventoryFormFieldsProps> = ({
         />
       </div>
 
+      {/* Category selection fields */}
+      {(formData.product_type || selectedItemType) && (
+        <>
+          {/* Category select field */}
+          <div className="mb-3">
+            <label className="form-label">
+              Categoría <span className="text-danger">*</span>
+              {selectedCategory && availableSubcategories.length > 0 && ' (Seleccione subcategoría abajo)'}
+            </label>
+            <select
+              className="form-select"
+              value={selectedCategory ? selectedCategory.id_key : ''}
+              onChange={(e) => onCategorySelection(e.target.value)}
+              required={availableSubcategories.length === 0}
+            >
+              <option value="">Seleccione una categoría...</option>
+              {Array.isArray(categories) && categories.map((category) => (
+                <option key={category.id_key} value={category.id_key}>
+                  {category.name}
+                  {category.subcategories && category.subcategories.length > 0 && ' (tiene subcategorías)'}
+                </option>
+              ))}
+            </select>
+            {selectedCategory && availableSubcategories.length === 0 && (
+              <div className="form-text text-success">
+                ✓ Categoría seleccionada: {selectedCategory.name}
+              </div>
+            )}
+          </div>
+
+          {/* Subcategory select field */}
+          {availableSubcategories.length > 0 && (
+            <div className="mb-3">
+              <label className="form-label">
+                Subcategoría de "{selectedCategory.name}" <span className="text-danger">*</span>
+              </label>
+              <select
+                className="form-select"
+                value={formData.category_id || ''}
+                onChange={(e) => onSubcategorySelection(e.target.value)}
+                required
+              >
+                <option value="">Seleccione una subcategoría...</option>
+                {Array.isArray(availableSubcategories) && availableSubcategories.map((subcategory) => (
+                  <option key={subcategory.id_key} value={subcategory.id_key}>
+                    {subcategory.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </>
+      )}
+
       {/* Recipe field - only for manufactured products */}
-      {(selectedItem?.product_type === 'manufactured' || (!selectedItem && formData.product_type === 'manufactured')) && (
+      {(selectedItemType === 'manufactured' || (!selectedItem && formData.product_type === 'manufactured')) && (
         <>
           <div className="mb-3">
             <label className="form-label">Receta</label>
@@ -95,7 +229,7 @@ const InventoryFormFields: React.FC<InventoryFormFieldsProps> = ({
       )}
 
       {/* Stock fields - only for inventory products */}
-      {(selectedItem?.product_type === 'inventory' || (!selectedItem && formData.product_type === 'inventory')) && (
+      {(selectedItemType === 'inventory' || (!selectedItem && formData.product_type === 'inventory')) && (
         <>
           <div className="mb-3">
             <label className="form-label">Stock Actual</label>
@@ -183,7 +317,7 @@ const InventoryFormFields: React.FC<InventoryFormFieldsProps> = ({
       </div>
 
       {/* Ingredients management for inventory items - only for manufactured products */}
-      {(selectedItem?.product_type === 'manufactured' || (!selectedItem && formData.product_type === 'manufactured')) && (
+      {(selectedItemType === 'manufactured' || (!selectedItem && formData.product_type === 'manufactured')) && (
         <div className="mb-4">
           <div className="d-flex justify-content-between align-items-center mb-3">
             <label className="form-label mb-0">

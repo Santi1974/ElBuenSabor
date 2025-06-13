@@ -329,16 +329,6 @@ const Movements: React.FC = () => {
                 <div className="card-body">
                   <div className="mb-3">
                     <div className="d-flex justify-content-between align-items-center mb-1">
-                      <span className="text-muted">Ingresos</span>
-                      <span className="fw-bold text-success">100%</span>
-                    </div>
-                    <div className="progress" style={{ height: '8px' }}>
-                      <div className="progress-bar bg-success" style={{ width: '100%' }}></div>
-                    </div>
-                  </div>
-
-                  <div className="mb-3">
-                    <div className="d-flex justify-content-between align-items-center mb-1">
                       <span className="text-muted">Gastos</span>
                       <span className="fw-bold text-danger">
                         {formatPercentage((revenueData.total_expenses / revenueData.revenue) * 100)}

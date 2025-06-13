@@ -260,7 +260,6 @@ const Invoices: React.FC = () => {
                 <option value="listo">Listo</option>
                 <option value="en_delivery">En delivery</option>
                 <option value="entregado">Entregado</option>
-                <option value="facturado">Facturado</option>
               </select>
             </div>
             <div className="col-md-2">
