@@ -6,9 +6,10 @@ import categoryService from '../../services/categoryService';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../hooks/useAuth';
 import ClientLayout from '../../components/ClientLayout/ClientLayout';
-import { handleError, ERROR_MESSAGES } from '../../utils/errorHandler';
+import { handleError } from '../../utils/errorHandler';
 import './Home.css';
 //import logo from '../../assets/logo.svg'; // Cambia por tu logo real si lo tienes
+
 
 interface Category {
   name: string;

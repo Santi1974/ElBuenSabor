@@ -154,6 +154,25 @@ const invoiceService = {
       console.error('Error sending invoice by email:', error);
       throw error;
     }
+  },
+
+  getStatusColor: (status: string): string => {
+    switch (status.toLowerCase()) {
+      case 'entregado':
+        return 'success';
+      case 'en_cocina':
+        return 'warning';
+      case 'listo':
+        return 'success';
+      case 'en_delivery':
+        return 'info';
+      case 'a_confirmar':
+        return 'secondary';
+      case 'facturado':
+        return 'primary';
+      default:
+        return 'secondary';
+    }
   }
 };
 

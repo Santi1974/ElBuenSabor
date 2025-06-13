@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import addressService, { type Address, type AddressFormData } from '../../services/addressService';
 import api from '../../services/api';
-import { handleError, ERROR_MESSAGES } from '../../utils/errorHandler';
+import { handleError } from '../../utils/errorHandler';
 
 interface Country {
   id_key: number;

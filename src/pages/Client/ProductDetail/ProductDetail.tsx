@@ -74,10 +74,6 @@ const ProductDetail = () => {
     fetchProduct();
   }, [id, productType]);
 
-  const handleBack = () => {
-    navigate(-1);
-  };
-
   const handleQuantityChange = (delta: number) => {
     setQuantity(prev => Math.max(1, prev + delta));
   };

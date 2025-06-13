@@ -256,12 +256,11 @@ const Invoices: React.FC = () => {
               >
                 <option value="">Todos</option>
                 <option value="a_confirmar">A confirmar</option>
-                <option value="en_preparacion">En preparación</option>
+                <option value="en_cocina">En cocina</option>
+                <option value="listo">Listo</option>
                 <option value="en_delivery">En delivery</option>
                 <option value="entregado">Entregado</option>
                 <option value="facturado">Facturado</option>
-                <option value="pendiente">Pendiente</option>
-                <option value="cancelado">Cancelado</option>
               </select>
             </div>
             <div className="col-md-2">

@@ -107,57 +107,39 @@ const OrderDetail = () => {
     navigate('/orders');
   };
 
-  // Format date to display in a readable format
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('es-AR', {
+      style: 'currency',
+      currency: 'ARS'
+    }).format(amount);
+  };
+
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-AR', {
-      day: '2-digit',
-      month: '2-digit',
+    return new Date(dateString).toLocaleDateString('es-AR', {
       year: 'numeric',
+      month: 'long',
+      day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
     });
   };
 
-  // Translate status to Spanish
-  const translateStatus = (status: string) => {
+  const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'a_confirmar':
-        return 'A confirmar';
-      case 'en_preparacion':
-        return 'En preparación';
-      case 'en_delivery':
-        return 'En camino';
       case 'entregado':
-        return 'Entregado';
-      case 'cancelado':
-        return 'Cancelado';
+        return 'btn-success';
+      case 'en_cocina':
+        return 'btn-warning';
+      case 'listo':
+        return 'btn-success';
+      case 'en_delivery':
+        return 'btn-info';
+      case 'a_confirmar':
+        return 'btn-secondary';
+      case 'facturado':
+        return 'btn-primary';
       default:
-        return status;
-    }
-  };
-
-  // Translate delivery method to Spanish
-  const translateDeliveryMethod = (method: string) => {
-    switch (method.toLowerCase()) {
-      case 'delivery':
-        return 'Envío a domicilio';
-      case 'pickup':
-        return 'Retiro en local';
-      default:
-        return method;
-    }
-  };
-
-  // Translate payment method to Spanish
-  const translatePaymentMethod = (method: string) => {
-    switch (method.toLowerCase()) {
-      case 'cash':
-        return 'Efectivo';
-      case 'mercado_pago':
-        return 'Mercado Pago';
-      default:
-        return method;
+        return 'btn-secondary';
     }
   };
 
@@ -230,7 +212,7 @@ const OrderDetail = () => {
                       <div className="col-8">
                         <h6 className="mb-1 fw-bold">{detail.manufactured_item?.name || 'Producto'}</h6>
                         <p className="text-muted mb-0 small">
-                          ${detail.manufactured_item?.price?.toFixed(2) || '0.00'}
+                          {formatCurrency(detail.manufactured_item?.price || 0)}
                         </p>
                       </div>
                       <div className="col-4 text-end">
@@ -251,7 +233,7 @@ const OrderDetail = () => {
                       <div className="col-8">
                         <h6 className="mb-1 fw-bold">{detail.inventory_item?.name || 'Producto'}</h6>
                         <p className="text-muted mb-0 small">
-                          ${detail.unit_price?.toFixed(2) || detail.inventory_item?.price?.toFixed(2) || '0.00'}
+                          {formatCurrency(detail.unit_price || detail.inventory_item?.price || 0)}
                         </p>
                       </div>
                       <div className="col-4 text-end">
@@ -286,18 +268,18 @@ const OrderDetail = () => {
                 <div className="total-section mb-4">
                   <div className="d-flex justify-content-between align-items-center mb-2">
                     <span className="text-muted">Subtotal:</span>
-                    <span>${order.total.toFixed(2)}</span>
+                    <span>{formatCurrency(order.total)}</span>
                   </div>
                   {order.discount > 0 && (
                     <div className="d-flex justify-content-between align-items-center mb-2">
                       <span className="text-success">Descuento:</span>
-                      <span className="text-success">-${order.discount.toFixed(2)}</span>
+                      <span className="text-success">- {formatCurrency(order.discount)}</span>
                     </div>
                   )}
                   <hr className="my-3" />
                   <div className="d-flex justify-content-between align-items-center">
                     <h5 className="fw-bold mb-0">Total</h5>
-                    <h5 className="fw-bold mb-0 text-primary">${order.final_total.toFixed(2)}</h5>
+                    <h5 className="fw-bold mb-0 text-primary">{formatCurrency(order.final_total)}</h5>
                   </div>
                 </div>
 
@@ -375,10 +357,10 @@ const OrderDetail = () => {
               <div className="card-body text-center py-4">
                 <h4 className="fw-bold mb-3">Estado del Pedido</h4>
                 <button 
-                  className={`btn btn-lg px-5 ${getStatusButtonClass(order.status)}`}
+                  className={`btn btn-lg px-5 ${getStatusColor(order.status)}`}
                   disabled
                 >
-                  {translateStatus(order.status)}
+                  {order.status}
                 </button>
                 
                 {/* Order Info */}
@@ -425,24 +407,6 @@ const OrderDetail = () => {
       </div>
     </ClientLayout>
   );
-};
-
-// Helper function for status button classes
-const getStatusButtonClass = (status: string) => {
-  switch (status.toLowerCase()) {
-    case 'entregado':
-      return 'btn-success';
-    case 'en_preparacion':
-      return 'btn-warning';
-    case 'en_delivery':
-      return 'btn-info';
-    case 'a_confirmar':
-      return 'btn-secondary';
-    case 'cancelado':
-      return 'btn-danger';
-    default:
-      return 'btn-secondary';
-  }
 };
 
 export default OrderDetail; 

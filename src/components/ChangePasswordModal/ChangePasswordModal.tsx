@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { authService } from '../../services/api';
 import PasswordField from '../PasswordField/PasswordField';
-import { handleError, ERROR_MESSAGES } from '../../utils/errorHandler';
+import { handleError } from '../../utils/errorHandler';
 
 interface ChangePasswordModalProps {
   onPasswordChanged: () => void;

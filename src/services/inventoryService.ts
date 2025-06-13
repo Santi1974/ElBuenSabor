@@ -1,6 +1,5 @@
 import api from './api';
 import type { ManufacturedItem, InventoryItem, ProductResponse } from '../types/product';
-import type { Category } from '../types/category';
 import type { PaginatedResponse, ApiPaginatedResponse } from '../types/common';
 
 const API_URL = 'http://localhost:8000';

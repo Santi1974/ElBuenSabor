@@ -71,9 +71,19 @@ interface Order {
 }
 
 const cashierService = {
-  getAllOrders: async (offset: number = 0, limit: number = 10) => {
+  getAllOrders: async (offset: number = 0, limit: number = 10, statusFilter?: string) => {
     try {
-      const response = await api.get(`${API_URL}/order/?offset=${offset}&limit=${limit}`);
+      let url;
+      
+      if (statusFilter) {
+        // Si hay filtro de status, usar el endpoint específico
+        url = `${API_URL}/order/status/${statusFilter}?offset=${offset}&limit=${limit}`;
+      } else {
+        // Si no hay filtro, usar el endpoint general
+        url = `${API_URL}/order/?offset=${offset}&limit=${limit}`;
+      }
+      
+      const response = await api.get(url);
       
       // Handle both old and new response formats
       if (response.data && response.data.items !== undefined) {

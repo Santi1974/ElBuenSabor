@@ -6,7 +6,7 @@ import inventoryService from '../services/inventoryService';
 import categoryService from '../services/categoryService';
 import ingredientService from '../services/ingredientService';
 import inventoryPurchaseService from '../services/inventoryPurchaseService';
-import { handleError, ERROR_MESSAGES } from '../utils/errorHandler';
+import { handleError } from '../utils/errorHandler';
 
 interface FormDataState {
   formData: any;
@@ -17,7 +17,7 @@ interface FormDataState {
   passwordError?: string;
 }
 
-export const useFormData = (type: ABMType, onSuccess: () => void, reloadCategories?: () => Promise<void>) => {
+export const useFormData = (type: ABMType, onSuccess: () => void) => {
   const [state, setState] = useState<FormDataState>({
     formData: {},
     selectedItem: null,

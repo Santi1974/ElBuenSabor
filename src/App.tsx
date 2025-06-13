@@ -9,20 +9,6 @@ import AdminRoutes from './routes/AdminRoutes';
 import DeliveryRoutes from './routes/DeliveryRoutes';
 import CashierRoutes from './routes/CashierRoutes';
 import CookRoutes from './routes/CookRoutes';
- 
-function RoleRoute({ children, role }: { children: ReactNode; role: string }) {
-  const user = authService.getCurrentUser();
-  if (!user) return <Navigate to="/login" replace />;
-  if (user.role !== role) {
-    // Si el rol no coincide, redirigir a la ruta correspondiente
-    if (user.role === 'administrador') return <Navigate to="/admin" replace />;
-    if (user.role === 'delivery') return <Navigate to="/delivery" replace />;
-    if (user.role === 'cajero') return <Navigate to="/cashier" replace />;
-    if (user.role === 'cocinero') return <Navigate to="/cook" replace />;
-    return <Navigate to="/" replace />;
-  }
-  return <>{children}</>;
-}
 
 // Nueva función para rutas públicas que redirige usuarios autenticados según su rol
 function PublicRoute({ children }: { children: ReactNode }) {
@@ -34,7 +20,7 @@ function PublicRoute({ children }: { children: ReactNode }) {
     if (user.role === 'delivery') return <Navigate to="/delivery" replace />;
     if (user.role === 'cajero') return <Navigate to="/cashier" replace />;
     if (user.role === 'cocinero') return <Navigate to="/cook" replace />;
-    // Solo los clientes pueden acceder a las rutas públicas
+ 
     if (user.role !== 'cliente') return <Navigate to="/login" replace />;
   }
   

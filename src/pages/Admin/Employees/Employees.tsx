@@ -18,7 +18,14 @@ export const Employees: React.FC = () => {
       ]
     },
     { field: 'phone_number', headerName: 'Teléfono', width: 150 },
-    { field: 'password', headerName: 'Contraseña Inicial', width: 200, type: 'password' as const, createOnly: true }
+    { 
+      field: 'password', 
+      headerName: 'Contraseña Inicial', 
+      width: 200, 
+      type: 'password' as const, 
+      createOnly: true,
+      viewOnly: false
+    }
   ];
 
   return (

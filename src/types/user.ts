@@ -10,6 +10,25 @@ export interface User {
   image_url?: string | null;
 }
 
+export interface LoginData {
+  email: string;
+  password: string;
+}
+
+export interface RegisterData {
+  full_name: string;
+  email: string;
+  password: string;
+  phone_number: string;
+  role?: string;
+}
+
+export interface LoginResponse {
+  access_token: string;
+  first_login?: boolean;
+  user: User;
+}
+
 export interface AuthResponse {
   access_token: string;
   first_login?: boolean;

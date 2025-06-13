@@ -1,7 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Cook from '../pages/Cook/Cook';
 import CookOrders from '../pages/Cook/CookOrders/CookOrders';
-import Clients from '../pages/Admin/Clients/Clients';
 import Inventory from '../pages/Admin/Inventory/Inventory';
 import Categories from '../pages/Admin/Categories/Categories';
 import Ingredients from '../pages/Admin/Ingredients/Ingredients';

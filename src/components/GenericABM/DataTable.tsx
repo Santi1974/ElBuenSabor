@@ -7,6 +7,7 @@ interface Column {
   type?: 'text' | 'number' | 'date' | 'select' | 'password';
   options?: { value: string; label: string }[];
   createOnly?: boolean;
+  viewOnly?: boolean;
 }
 
 interface DataTableProps {

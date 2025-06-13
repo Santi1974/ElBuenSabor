@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import reportService from '../../../services/reportService';
-import type { TopProduct, TopCustomer, ReportParams } from '../../../services/reportService';
+import type { TopProduct, TopCustomer } from '../../../services/reportService';
 
 const Rankings: React.FC = () => {
   const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
@@ -23,8 +23,7 @@ const Rankings: React.FC = () => {
     setError(null);
     
     try {
-      const params: ReportParams = {
-        limit,
+      const params: any = {
         ...(startDate && { start_date: startDate }),
         ...(endDate && { end_date: endDate })
       };
@@ -53,10 +52,6 @@ const Rankings: React.FC = () => {
       style: 'currency',
       currency: 'ARS'
     }).format(amount);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-AR');
   };
 
   const clearFilters = () => {
@@ -233,11 +228,11 @@ const Rankings: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {topProducts.map((product, index) => {
+                      {topProducts.map((product: any, index) => {
                         const position = index + 1;
                         const medalStyle = getMedalStyle(position);
                         return (
-                          <tr key={product.id} className={position <= 3 ? 'table-warning' : ''}>
+                          <tr key={product.id || index} className={position <= 3 ? 'table-warning' : ''}>
                             <td>
                               <div className="d-flex align-items-center">
                                 <i 
@@ -314,11 +309,11 @@ const Rankings: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {topCustomers.map((customer, index) => {
+                      {topCustomers.map((customer: any, index) => {
                         const position = index + 1;
                         const medalStyle = getMedalStyle(position);
                         return (
-                          <tr key={customer.id} className={position <= 3 ? 'table-warning' : ''}>
+                          <tr key={customer.id || index} className={position <= 3 ? 'table-warning' : ''}>
                             <td>
                               <div className="d-flex align-items-center">
                                 <i 
@@ -366,4 +361,4 @@ const Rankings: React.FC = () => {
   );
 };
 
-export default Rankings; 
+export default Rankings;

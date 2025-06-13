@@ -4,7 +4,7 @@ import clientService from '../services/clientService';
 import inventoryService from '../services/inventoryService';
 import categoryService from '../services/categoryService';
 import ingredientService from '../services/ingredientService';
-import { handleError, ERROR_MESSAGES } from '../utils/errorHandler';
+import { handleError } from '../utils/errorHandler';
 export type ABMType = 'employee' | 'client' | 'rubro' | 'inventario' | 'ingrediente';
 
 export const useABMData = (type: ABMType, reloadCategories?: () => Promise<void>) => {

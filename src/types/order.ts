@@ -4,6 +4,15 @@ import type { ManufacturedItem, InventoryItem } from './product';
 
 export type DeliveryMethod = 'pickup' | 'delivery';
 export type PaymentMethod = 'cash' | 'mercado_pago';
+export type OrderStatus = 'pending' | 'confirmed' | 'in_preparation' | 'ready' | 'delivered' | 'cancelled';
+
+export interface OrderItem {
+  id_key: number;
+  quantity: number;
+  subtotal: number;
+  manufactured_item?: ManufacturedItem;
+  inventory_item?: InventoryItem;
+}
 
 export interface OrderDetail {
   quantity: number;
@@ -17,6 +26,19 @@ export interface InventoryDetail {
   subtotal: number;
   inventory_item: InventoryItem;
   id_key: number;
+}
+
+export interface OrderFilters {
+  status?: OrderStatus;
+  date_from?: string;
+  date_to?: string;
+  user_id?: number;
+  delivery_method?: DeliveryMethod;
+  payment_method?: PaymentMethod;
+  userId?: number;
+  startDate?: string;
+  endDate?: string;
+  search?: string;
 }
 
 export interface Order {

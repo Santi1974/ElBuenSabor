@@ -31,13 +31,6 @@ const Cook = () => {
     setExpandedMenu(expandedMenu === path ? null : path);
   };
 
-  const getCurrentTitle = () => {
-    const currentPath = location.pathname.split('/').pop();
-    const currentItem = menuItems.find(item => item.path === currentPath || 
-      (item.submenu && item.submenu.some(subItem => subItem.path === currentPath)));
-    return currentItem ? currentItem.label : 'Cocinero';
-  };
-
   return (
     <div className="container-fluid min-vh-100 d-flex flex-row p-0" style={{ width: '100vw', height: '100vh' }}>
       {/* Sidebar */}

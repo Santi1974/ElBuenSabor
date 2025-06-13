@@ -11,15 +11,14 @@ import { handleError } from '../../utils/errorHandler';
 const Cart = () => {
   const navigate = useNavigate();
   const { items, updateQuantity, removeItem, clearCart } = useCart();
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
+  const [showAddressModal, setShowAddressModal] = useState(false);
   const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>('pickup');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
+  const [error, setError] = useState<string | null>(null);
   const [notes, setNotes] = useState('');
-  const [showAddressModal, setShowAddressModal] = useState(false);
-  const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
-  const [addresses, setAddresses] = useState<Address[]>([]);
-  const [loadingAddresses, setLoadingAddresses] = useState(false);
   const [loadingOrder, setLoadingOrder] = useState(false);
-  const [orderError, setOrderError] = useState('');
 
   const subtotal = items.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
   const cashDiscount = paymentMethod === 'cash' ? subtotal * 0.1 : 0; // 10% descuento en efectivo
@@ -27,23 +26,15 @@ const Cart = () => {
 
   useEffect(() => {
     if (deliveryMethod === 'delivery') {
-      setLoadingAddresses(true);
       api.get('/address/user/addresses')
         .then(res => {
-          const mapped = res.data.items.map((addr: any) => ({
-            id_key: addr.id_key,
-            street: addr.street,
-            street_number: addr.street_number,
-            zip_code: addr.zip_code,
-            name: addr.name,
-            locality_id: addr.locality?.id_key,
-            locality_name: addr.locality?.name,
-            user_id: addr.user_id
-          }));
-          setAddresses(mapped);
+          if (res.data && res.data.items) {
+            setAddresses(res.data.items);
+          } else {
+            setAddresses([]);
+          }
         })
-        .catch(() => setAddresses([]))
-        .finally(() => setLoadingAddresses(false));
+        .catch(() => setAddresses([]));
     }
   }, [deliveryMethod]);
 
@@ -76,17 +67,6 @@ const Cart = () => {
     localStorage.setItem('addresses', JSON.stringify(updatedAddresses));
     setSelectedAddress(newAddress);
     setShowAddressModal(false);
-  };
-
-  const getUserId = () => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) return null;
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      return payload.user_id || payload.sub || null;
-    } catch {
-      return null;
-    }
   };
 
   const buildOrderPayload = () => {
@@ -125,7 +105,7 @@ const Cart = () => {
       return;
     }
     setLoadingOrder(true);
-    setOrderError('');
+    setError('');
     try {
       const orderPayload = buildOrderPayload();
       const response = await api.post('/order/generate', orderPayload);
@@ -143,7 +123,7 @@ const Cart = () => {
         navigate(`/order/${order.id_key}`);
       }
     } catch (err: any) {
-      setOrderError(handleError(err, 'create order'));
+      setError(handleError(err, 'create order'));
     } finally {
       setLoadingOrder(false);
     }
@@ -330,8 +310,8 @@ const Cart = () => {
                 <span className="h5 mb-0">${total}</span>
               </div>
 
-              {orderError && (
-                <div className="alert alert-danger mb-3">{orderError}</div>
+              {error && (
+                <div className="alert alert-danger mb-3">{error}</div>
               )}
               <button
                 className="btn btn-primary w-100"

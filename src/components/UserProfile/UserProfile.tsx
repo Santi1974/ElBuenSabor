@@ -4,7 +4,7 @@ import userProfileService from '../../services/userProfileService';
 import type { UpdateProfileData } from '../../services/userProfileService';
 import AddressManager from '../AddressManager/AddressManager';
 import PasswordField from '../PasswordField/PasswordField';
-import { handleError, ERROR_MESSAGES } from '../../utils/errorHandler';
+import { handleError } from '../../utils/errorHandler';
 
 interface UserProfileProps {
   isOpen: boolean;
