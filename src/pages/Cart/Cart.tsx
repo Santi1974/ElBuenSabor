@@ -22,8 +22,8 @@ const Cart = () => {
   const [orderError, setOrderError] = useState('');
 
   const subtotal = items.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
-  const cashDiscount = paymentMethod === 'cash' ? subtotal * 0.1 : 0; // 10% descuento en efectivo
-  const total = subtotal - cashDiscount;
+  const deliveryMethodDiscount = deliveryMethod === 'pickup' ? subtotal * 0.1 : 0; // 10% descuento en efectivo
+  const total = subtotal - deliveryMethodDiscount;
 
   useEffect(() => {
     if (deliveryMethod === 'delivery') {
@@ -320,11 +320,11 @@ const Cart = () => {
                 </div>
               </div>
 
-              {paymentMethod === 'cash' && (
+              {deliveryMethod === 'pickup' && (
                 <div className="alert alert-success mb-4">
                   <div className="d-flex justify-content-between">
-                    <span>Descuento efectivo:</span>
-                    <span>-${cashDiscount}</span>
+                    <span>Descuento retiro en el local:</span>
+                    <span>-${deliveryMethodDiscount}</span>
                   </div>
                 </div>
               )}
