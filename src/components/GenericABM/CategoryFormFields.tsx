@@ -82,14 +82,18 @@ const CategoryFormFields: React.FC<CategoryFormFieldsProps> = ({
         </>
       )}
 
-      {/* Category type select field for new rubro items - LOCAL STATE ONLY */}
+      {/* Category type select field for new rubro items */}
       {type === 'rubro' && !selectedItem && (
         <div className="mb-3">
           <label className="form-label">Tipo de Categoría <span className="text-danger">*</span></label>
           <select
             className="form-select"
             value={localCategoryType}
-            onChange={(e) => setLocalCategoryType(e.target.value)}
+            onChange={(e) => {
+              setLocalCategoryType(e.target.value);
+              // Also send to formData so it can be used in the backend logic
+              onInputChange('category_type', e.target.value);
+            }}
             required
           >
             <option value="">Seleccione el tipo...</option>
