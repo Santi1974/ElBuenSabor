@@ -8,6 +8,7 @@ import DataTable from './DataTable';
 import PaginationControls from './PaginationControls';
 import FormFields from './FormFields';
 import InventoryFormFields from './InventoryFormFields';
+import IngredientFormFields from './IngredientFormFields';
 import CategoryFormFields from './CategoryFormFields';
 import ViewModal from './ViewModal';
 import AddInventoryModal from '../AddInventoryModal';
@@ -288,6 +289,21 @@ const GenericABM: React.FC<GenericABMProps> = ({
                       onAddIngredient={addIngredient}
                       onRemoveIngredient={removeIngredient}
                       onUpdateIngredientDetail={updateIngredientDetail}
+                    />
+                  ) : type === 'ingrediente' ? (
+                    <IngredientFormFields
+                      formData={formData}
+                      selectedItem={selectedItem}
+                      measurementUnits={measurementUnits}
+                      categories={categories}
+                      selectedCategory={selectedCategory}
+                      availableSubcategories={availableSubcategories}
+                      imagePreview={imagePreview}
+                      onInputChange={handleInputChange}
+                      onCategorySelection={handleCategorySelectionWithForm}
+                      onSubcategorySelection={handleSubcategorySelectionWithForm}
+                      onImageChange={handleImageChange}
+                      onRemoveImage={removeImage}
                     />
                   ) : type === 'rubro' ? (
                     <CategoryFormFields

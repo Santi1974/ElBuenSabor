@@ -261,7 +261,27 @@ export const useFormData = (type: ABMType, onSuccess: () => void, reloadCategori
             break;
           case 'ingrediente':
             const { category: ingCategory, measurement_unit, ...ingredientData } = formData;
-            await ingredientService.create(ingredientData);
+            const createdIngredient = await ingredientService.create(ingredientData);
+            
+            // Si hay stock inicial, crear un registro de compra automáticamente
+            if (formData.current_stock > 0 && formData.purchase_cost > 0) {
+              const inventoryPurchase = {
+                inventory_item_id: createdIngredient.id_key,
+                quantity: formData.current_stock,
+                unit_cost: formData.purchase_cost,
+                total_cost: formData.current_stock * formData.purchase_cost,
+                notes: `Stock inicial - ${formData.current_stock} unidades - Creación de ingrediente`,
+                purchase_date: new Date().toISOString()
+              };
+              
+              try {
+                await inventoryPurchaseService.create(inventoryPurchase);
+                console.log('Inventory purchase created for new ingredient:', createdIngredient.id_key);
+              } catch (purchaseError) {
+                console.error('Error creating inventory purchase for new ingredient:', purchaseError);
+                // No interrumpir el proceso si falla la creación de la compra
+              }
+            }
             break;
           case 'rubro':
             await categoryService.create(formData);
