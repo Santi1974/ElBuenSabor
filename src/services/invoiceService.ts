@@ -174,7 +174,7 @@ class InvoiceService {
   async downloadInvoiceByOrderId(orderId: number): Promise<{ success: boolean; message: string }> {
     try {
       let offset = 0;
-      const limit = 100;
+      const limit = 10;
       let foundInvoice: Invoice | null = null;
 
       while (!foundInvoice) {
@@ -257,7 +257,6 @@ class InvoiceService {
 
   getStatusDisplay(status: string): string {
     const statuses: Record<string, string> = {
-      'facturado': 'Facturado',
       'pendiente': 'Pendiente',
       'cancelado': 'Cancelado',
       'a_confirmar': 'A confirmar',

@@ -94,7 +94,6 @@ const Orders = () => {
     listo: false,
     en_delivery: false,
     entregado: false,
-    facturado: false
   });
 
   // Calculate total pages for pagination
@@ -196,8 +195,6 @@ const Orders = () => {
         return 'En camino';
       case 'entregado':
         return 'Entregado';
-      case 'facturado':
-        return 'Facturado';
       default:
         return status;
     }
@@ -242,8 +239,6 @@ const Orders = () => {
         return 'primary';
       case 'a_confirmar':
         return 'secondary';
-      case 'facturado':
-        return 'dark';
       default:
         return 'secondary';
     }
@@ -356,18 +351,7 @@ const Orders = () => {
                     </label>
             </div>
 
-                  <div className="form-check">
-                    <input 
-                      className="form-check-input" 
-                      type="checkbox" 
-                      id="facturado" 
-                      checked={statusFilters.facturado}
-                      onChange={() => handleFilterChange('facturado')}
-                    />
-                    <label className="form-check-label" htmlFor="facturado">
-                      Facturado
-                    </label>
-                  </div>
+                  
                 </div>
             </div>
           </div>

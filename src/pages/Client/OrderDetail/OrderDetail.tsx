@@ -132,8 +132,6 @@ const OrderDetail = () => {
         return 'En camino';
       case 'entregado':
         return 'Entregado';
-      case 'facturado':
-        return 'Facturado';
       default:
         return status;
     }
@@ -442,8 +440,6 @@ const getStatusButtonClass = (status: string) => {
       return 'btn-primary';
     case 'a_confirmar':
       return 'btn-secondary';
-    case 'facturado':
-      return 'btn-dark';
     default:
       return 'btn-secondary';
   }

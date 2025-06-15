@@ -1,10 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import reportService from '../../../services/reportService';
-import type { RevenueReport, ReportParams } from '../../../services/reportService';
+import type { ReportParams } from '../../../services/reportService';
+
+// Tipo específico para la respuesta de movimientos
+interface MovementsReport {
+  revenue: number;
+  total_expenses: number;
+  profit: number;
+  profit_margin_percentage: number;
+  total_invoices: number;
+  total_inventory_purchases: number;
+  start_date: string;
+  end_date: string;
+}
 
 const Movements: React.FC = () => {
-  const [revenueData, setRevenueData] = useState<RevenueReport | null>(null);
+  const [revenueData, setRevenueData] = useState<MovementsReport | null>(null);
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -12,13 +24,29 @@ const Movements: React.FC = () => {
   // Get today's date in YYYY-MM-DD format
   const today = new Date().toISOString().split('T')[0];
   
-  // Filter states - default to today's date
-  const [startDate, setStartDate] = useState(today);
-  const [endDate, setEndDate] = useState(today);
+  // Filter states - no default dates for initial load
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   useEffect(() => {
-    loadRevenueData();
+    loadInitialData();
   }, []);
+
+  const loadInitialData = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Load data without any date filters for initial load
+      const data = await reportService.getRevenueReport({});
+      setRevenueData(data as unknown as MovementsReport);
+    } catch (err) {
+      setError('Error al cargar los datos de movimientos');
+      console.error('Error loading revenue data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadRevenueData = async () => {
     setLoading(true);
@@ -31,7 +59,7 @@ const Movements: React.FC = () => {
       };
 
       const data = await reportService.getRevenueReport(params);
-      setRevenueData(data);
+      setRevenueData(data as unknown as MovementsReport);
     } catch (err) {
       setError('Error al cargar los datos de movimientos');
       console.error('Error loading revenue data:', err);
@@ -45,10 +73,10 @@ const Movements: React.FC = () => {
   };
 
   const clearFilters = () => {
-    setStartDate(today);
-    setEndDate(today);
-    // Load data with today's date
-    setTimeout(() => loadRevenueData(), 100);
+    setStartDate('');
+    setEndDate('');
+    // Load data without date filters
+    setTimeout(() => loadInitialData(), 100);
   };
 
   const handleDownloadExcel = async () => {
@@ -200,11 +228,12 @@ const Movements: React.FC = () => {
       {/* Revenue Data */}
       {hasData && !loading && (
         <>
-          {/* Date Range Info */}
+        {startDate && endDate && (
           <div className="alert alert-info mb-4">
             <i className="bi bi-calendar-range me-2"></i>
             <strong>Período de análisis:</strong> {formatDate(revenueData.start_date)} hasta {formatDate(revenueData.end_date)}
           </div>
+        )}
 
           {/* Main Financial Cards */}
           <div className="row mb-4">

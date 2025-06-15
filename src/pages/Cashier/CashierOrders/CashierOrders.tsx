@@ -141,8 +141,6 @@ const CashierOrders = () => {
         return 'En delivery';
       case 'entregado':
         return 'Entregado';
-      case 'facturado':
-        return 'Facturado';
       default:
         return status;
     }
@@ -161,8 +159,6 @@ const CashierOrders = () => {
         return 'bg-primary';
       case 'entregado':
         return 'bg-secondary';
-      case 'facturado':
-        return 'bg-dark';
       default:
         return 'bg-light text-dark';
     }
@@ -326,7 +322,6 @@ const CashierOrders = () => {
             <option value="listo">Listo</option>
             <option value="en_delivery">En delivery</option>
             <option value="entregado">Entregado</option>
-            <option value="facturado">Facturado</option>
           </select>
         </div>
         <div className="col-md-5 d-flex justify-content-end align-items-center">
