@@ -132,7 +132,32 @@ class InvoiceService {
     }
   }
 
-  // Method to download PDF from API endpoint
+  async downloadPDFId(id: number): Promise<void> {
+    try {
+      const response = await api.get(`/invoice/report/${id}`, {
+        responseType: 'blob'
+      });
+      
+      // Create blob URL and download
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      
+      // Create temporary download link
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `factura-${id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      
+      // Cleanup
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      throw error;
+    }
+  }
+
   async downloadPDF(invoice: Invoice): Promise<void> {
     try {
       const response = await api.get(`/invoice/report/${invoice.id_key}`, {
@@ -170,51 +195,6 @@ class InvoiceService {
     }
   }
 
-  // Method to find and download invoice PDF by order ID
-  async downloadInvoiceByOrderId(orderId: number): Promise<{ success: boolean; message: string }> {
-    try {
-      let offset = 0;
-      const limit = 10;
-      let foundInvoice: Invoice | null = null;
-
-      while (!foundInvoice) {
-        const result = await this.getAll(offset, limit);
-        
-        foundInvoice = result.data.find(invoice => invoice.order.id_key === orderId) || null;
-        
-        if (!foundInvoice && !result.hasNext) {
-          return {
-            success: false,
-            message: `No se encontró factura para la orden ${orderId}`
-          };
-        }
-        
-        if (!foundInvoice && result.hasNext) {
-          offset += limit;
-        }
-      }
-
-      if (foundInvoice) {
-        await this.downloadPDF(foundInvoice);
-        return {
-          success: true,
-          message: `Factura ${foundInvoice.number} descargada exitosamente para la orden ${orderId}`
-        };
-      }
-
-      return {
-        success: false,
-        message: `No se encontró factura para la orden ${orderId}`
-      };
-
-    } catch (error) {
-      console.error('Error searching and downloading invoice by order ID:', error);
-      return {
-        success: false,
-        message: `Error al buscar factura para la orden ${orderId}: ${error instanceof Error ? error.message : 'Error desconocido'}`
-      };
-    }
-  }
 
   // Utility methods for formatting
   formatInvoiceNumber(number: string): string {

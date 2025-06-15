@@ -71,6 +71,7 @@ interface Order {
   details: OrderDetail[];
   inventory_details: InventoryDetail[];
   id_key: number;
+  invoice_id: number;
 }
 
 const Orders = () => {
@@ -712,7 +713,7 @@ const Orders = () => {
                   <button
                     type="button"
                     className="btn btn-primary"
-                    onClick={() => invoiceService.downloadInvoiceByOrderId(selectedOrder.id_key)}
+                    onClick={() => invoiceService.downloadPDFId(selectedOrder.invoice_id)}
                   >
                     <i className="bi bi-download me-2"></i>
                     Descargar Factura
