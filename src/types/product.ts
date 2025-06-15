@@ -7,6 +7,7 @@ export interface BaseProduct {
   price: number;
   image_url: string;
   active: boolean;
+  is_available?: boolean;
   category_id: number;
   category?: Category;
 }

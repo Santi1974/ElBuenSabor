@@ -24,6 +24,7 @@ interface ManufacturedItem {
   category: Category;
   details: any[];
   id_key: number;
+  is_available?: boolean;
 }
 
 interface InventoryItem {
@@ -37,6 +38,7 @@ interface InventoryItem {
   purchase_cost: number;
   category: Category;
   id_key: number;
+  is_available?: boolean;
 }
 
 type Product = ManufacturedItem | InventoryItem;
@@ -60,7 +62,7 @@ const ProductDetail = () => {
         setLoading(true);
         const endpoint = productType === 'inventory' 
           ? `/inventory_item/${id}` 
-          : `/manufactured_item/${id}`;
+          : `/manufactured_item/products/${id}`;
         const response = await api.get(endpoint);
         setProduct(response.data);
       } catch (err: any) {
@@ -102,7 +104,7 @@ const ProductDetail = () => {
     return 'preparation_time' in product;
   };
 
-  const isOutOfStock = product ? !isManufacturedItem(product) && ('current_stock' in product) && product.current_stock <= 0 : false;
+  const isOutOfStock = product ? product.is_available === false : false;
 
   const getButtonText = () => {
     if (!isAuthenticated) {

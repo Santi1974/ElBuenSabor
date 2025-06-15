@@ -7,46 +7,16 @@ import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../hooks/useAuth';
 import ClientLayout from '../../components/ClientLayout/ClientLayout';
 import { handleError, ERROR_MESSAGES } from '../../utils/errorHandler';
+import type { ManufacturedItem, InventoryItem } from '../../types/product';
+import type { Category } from '../../types/category';
 import './Home.css';
 //import logo from '../../assets/logo.svg'; // Cambia por tu logo real si lo tienes
 
-interface Category {
-  name: string;
-  description: string;
-  active: boolean;
-  id_key: number;
-}
-
-interface ManufacturedItem {
-  name: string;
-  description: string;
-  preparation_time: number;
-  price: number;
-  image_url: string;
-  recipe: string;
-  active: boolean;
-  category: Category;
-  details: any[];
-  id_key: number;
-  type?: 'manufactured';
-}
-
-interface InventoryItem {
-  name: string;
-  description: string;
-  price: number;
-  image_url: string;
-  active: boolean;
-  current_stock: number;
-  minimum_stock: number;
-  purchase_cost: number;
-  category: Category;
-  id_key: number;
-  type?: 'inventory';
-}
-
-// Union type for all products
-type Product = ManufacturedItem | InventoryItem;
+// Union type for all products with extended properties
+type Product = (ManufacturedItem | InventoryItem) & { 
+  type?: 'manufactured' | 'inventory';
+  is_available?: boolean;
+};
 
 
 
@@ -134,15 +104,15 @@ const Home = () => {
       // Handle manufactured categories
       if (Array.isArray(manufacturedResponse)) {
         allCategories.push(...manufacturedResponse);
-      } else if (manufacturedResponse?.items) {
-        allCategories.push(...manufacturedResponse.items);
+      } else if (manufacturedResponse && typeof manufacturedResponse === 'object' && 'items' in manufacturedResponse) {
+        allCategories.push(...(manufacturedResponse as any).items);
       }
       
       // Handle inventory categories
       if (Array.isArray(inventoryResponse)) {
         allCategories.push(...inventoryResponse);
-      } else if (inventoryResponse?.items) {
-        allCategories.push(...inventoryResponse.items);
+      } else if (inventoryResponse && typeof inventoryResponse === 'object' && 'items' in inventoryResponse) {
+        allCategories.push(...(inventoryResponse as any).items);
       }
       
       // Remove duplicates by id_key
@@ -224,6 +194,10 @@ const Home = () => {
     if (!isAuthenticated) {
       return 'No disponible';
     }
+    // Verificar si el producto está marcado como no disponible
+    if (product.is_available === false) {
+      return 'Sin stock';
+    }
     if (!isManufacturedItem(product) && (product.current_stock ?? 0) <= 0) {
       return 'Sin stock';
     }
@@ -236,6 +210,10 @@ const Home = () => {
     }
     if (!isAuthenticated) {
       return true; // Deshabilitar botón cuando no está autenticado
+    }
+    // Verificar si el producto está marcado como no disponible
+    if (product.is_available === false) {
+      return true;
     }
     return !isManufacturedItem(product) && (product.current_stock ?? 0) <= 0;
   };
