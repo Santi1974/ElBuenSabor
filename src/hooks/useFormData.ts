@@ -106,8 +106,7 @@ export const useFormData = (type: ABMType, onSuccess: () => void, reloadCategori
           setFormData({
             name: '',
             description: '',
-            active: true,
-            parent_id: 0
+            active: true
           });
       }
     }
@@ -200,7 +199,13 @@ export const useFormData = (type: ABMType, onSuccess: () => void, reloadCategori
             await ingredientService.update(selectedItem.id_key, ingredientUpdateData);
             break;
           case 'rubro':
-            await categoryService.update(selectedItem.id_key, formData);
+            // Filter out undefined values and zeros to avoid sending unnecessary fields
+            const rubroUpdateData = Object.fromEntries(
+              Object.entries(formData).filter(([key, value]) => 
+                value !== undefined && !(key === 'parent_id' && (value === 0 || value === null))
+              )
+            );
+            await categoryService.update(selectedItem.id_key, rubroUpdateData as any);
             break;
         }
       } else {
@@ -284,7 +289,13 @@ export const useFormData = (type: ABMType, onSuccess: () => void, reloadCategori
             }
             break;
           case 'rubro':
-            await categoryService.create(formData);
+            // Filter out undefined values and zeros to avoid sending unnecessary fields
+            const rubroCreateData = Object.fromEntries(
+              Object.entries(formData).filter(([key, value]) => 
+                value !== undefined && !(key === 'parent_id' && (value === 0 || value === null))
+              )
+            );
+            await categoryService.create(rubroCreateData as any);
             break;
         }
       }

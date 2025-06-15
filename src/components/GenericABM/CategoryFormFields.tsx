@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { ABMType } from '../../hooks/useABMData';
 
 interface CategoryFormFieldsProps {
@@ -34,16 +34,62 @@ const CategoryFormFields: React.FC<CategoryFormFieldsProps> = ({
   onImageChange,
   onRemoveImage
 }) => {
+  // Local state for category type - only used for filtering parent categories, not sent in form
+  const [localCategoryType, setLocalCategoryType] = useState<string>('');
+
   return (
     <>
-      {/* Category type select field for new rubro items */}
+      {/* Basic fields for rubro (categories) */}
+      {type === 'rubro' && (
+        <>
+          {/* Name field */}
+          <div className="mb-3">
+            <label className="form-label">Nombre de la Categoría <span className="text-danger">*</span></label>
+            <input
+              type="text"
+              className="form-control"
+              value={formData.name || ''}
+              onChange={(e) => onInputChange('name', e.target.value)}
+              placeholder="Ingrese el nombre de la categoría..."
+              required
+            />
+          </div>
+
+          {/* Description field */}
+          <div className="mb-3">
+            <label className="form-label">Descripción</label>
+            <textarea
+              className="form-control"
+              rows={3}
+              value={formData.description || ''}
+              onChange={(e) => onInputChange('description', e.target.value)}
+              placeholder="Describe la categoría..."
+            />
+          </div>
+
+          {/* Active status field */}
+          <div className="mb-3">
+            <label className="form-label">Estado</label>
+            <select
+              className="form-select"
+              value={formData.active !== undefined ? formData.active.toString() : 'true'}
+              onChange={(e) => onInputChange('active', e.target.value === 'true')}
+            >
+              <option value="true">Habilitado</option>
+              <option value="false">Deshabilitado</option>
+            </select>
+          </div>
+        </>
+      )}
+
+      {/* Category type select field for new rubro items - LOCAL STATE ONLY */}
       {type === 'rubro' && !selectedItem && (
         <div className="mb-3">
-          <label className="form-label">Tipo de Categoría</label>
+          <label className="form-label">Tipo de Categoría <span className="text-danger">*</span></label>
           <select
             className="form-select"
-            value={formData.category_type || ''}
-            onChange={(e) => onInputChange('category_type', e.target.value)}
+            value={localCategoryType}
+            onChange={(e) => setLocalCategoryType(e.target.value)}
             required
           >
             <option value="">Seleccione el tipo...</option>
@@ -62,25 +108,33 @@ const CategoryFormFields: React.FC<CategoryFormFieldsProps> = ({
           <label className="form-label">Categoría Padre (opcional)</label>
           <select
             className="form-select"
-            value={formData.parent_id || ''}
-            onChange={(e) =>
-              onInputChange('parent_id', e.target.value ? parseInt(e.target.value) : null)
-            }
+            value={formData.parent_id && formData.parent_id !== 0 ? formData.parent_id : ''}
+            onChange={(e) => {
+              if (e.target.value && e.target.value !== '0') {
+                onInputChange('parent_id', parseInt(e.target.value));
+              } else {
+                // Remove parent_id from formData by setting to undefined
+                onInputChange('parent_id', undefined);
+              }
+            }}
           >
             <option value="">Sin categoría padre</option>
             {parentCategories
               .filter(cat => {
                 if (cat.id_key === formData.id_key) return false;
                 
+                // Use selectedItem category_type when editing
                 if (selectedItem && selectedItem.category_type) {
                   return cat.category_type === selectedItem.category_type;
                 }
                 
-                if (!selectedItem && formData.category_type) {
-                  return cat.category_type === formData.category_type;
+                // Use local category type when creating new
+                if (!selectedItem && localCategoryType) {
+                  return cat.category_type === localCategoryType;
                 }
                 
-                if (!selectedItem && !formData.category_type) {
+                // Don't show any parent categories if no type selected
+                if (!selectedItem && !localCategoryType) {
                   return false;
                 }
                 
@@ -99,12 +153,12 @@ const CategoryFormFields: React.FC<CategoryFormFieldsProps> = ({
                 <br />Mostrando solo categorías de tipo: {selectedItem.category_type === 'manufactured' ? 'Producto' : 'Ingrediente'}
               </span>
             )}
-            {!selectedItem && formData.category_type && (
+            {!selectedItem && localCategoryType && (
               <span className="text-info">
-                <br />Mostrando solo categorías de tipo: {formData.category_type === 'manufactured' ? 'Producto' : 'Ingrediente'}
+                <br />Mostrando solo categorías de tipo: {localCategoryType === 'manufactured' ? 'Producto' : 'Ingrediente'}
               </span>
             )}
-            {!selectedItem && !formData.category_type && (
+            {!selectedItem && !localCategoryType && (
               <span className="text-warning">
                 <br />Primero seleccione el tipo de categoría para ver las opciones de categoría padre
               </span>
