@@ -25,7 +25,12 @@ const inventoryPurchaseService = {
     try {
       const { inventory_item_id, quantity, unit_cost, notes } = purchase;
       const response = await api.post(
-        `${API_URL}/inventory_purchase/add-stock/${inventory_item_id}?quantity=${quantity}&unit_cost=${unit_cost}&notes=${notes}`
+        `${API_URL}/inventory_purchase/add-stock/${inventory_item_id}`,
+        {
+          quantity,
+          unit_cost,
+          notes,
+        }
       );
       return response.data;
     } catch (error) {
@@ -38,7 +43,12 @@ const inventoryPurchaseService = {
     try {
       const { inventory_item_id, quantity, unit_cost, notes } = params;
       const response = await api.post(
-        `${API_URL}/inventory_purchase/add-stock/${inventory_item_id}?quantity=${quantity}&unit_cost=${unit_cost}&notes=${notes}`
+        `${API_URL}/inventory_purchase/add-stock/${inventory_item_id}`,
+        {
+          quantity,
+          unit_cost,
+          notes,
+        }
       );
       return response.data;
     } catch (error) {
