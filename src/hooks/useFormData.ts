@@ -161,13 +161,7 @@ export const useFormData = (type: ABMType, onSuccess: () => void, reloadCategori
             // selectedItem.product_type o selectedItem.type indica si es 'inventory' o 'manufactured'
             const isInventoryProduct = selectedItem.product_type === 'inventory' || selectedItem.type === 'inventory';
             
-            console.log('Updating inventory item with selectedItem:', selectedItem);
-            console.log('Is inventory product:', isInventoryProduct);
-            console.log('selectedItem.product_type:', selectedItem.product_type);
-            console.log('selectedItem.type:', selectedItem.type);
-            
             if (isInventoryProduct) {
-              console.log('Using updateInventoryProduct endpoint');
               await inventoryService.updateInventoryProduct(selectedItem.id_key, invFormattedData);
               
               // Si se incrementó el stock, crear un registro de compra por la diferencia
@@ -190,11 +184,10 @@ export const useFormData = (type: ABMType, onSuccess: () => void, reloadCategori
                   // No interrumpir el proceso si falla la creación de la compra
                 }
               }
-            } else {
-              // Es un producto manufacturado, usar el endpoint correcto
-              console.log('Using update manufactured_item endpoint');
-              await inventoryService.update(selectedItem.id_key, invFormattedData);
-            }
+                          } else {
+                // Es un producto manufacturado, usar el endpoint correcto
+                await inventoryService.update(selectedItem.id_key, invFormattedData);
+              }
             break;
           case 'ingrediente':
             const { category: ingCategory, measurement_unit, ...ingredientData } = formData;
@@ -212,9 +205,6 @@ export const useFormData = (type: ABMType, onSuccess: () => void, reloadCategori
                 value !== undefined && !(key === 'parent_id' && (value === 0 || value === null))
               )
             );
-            
-            console.log('Updating category with selectedItem.category_type:', selectedItem.category_type);
-            console.log('Update data:', rubroUpdateData);
             
             // Use the correct endpoint based on the existing category type
             if (selectedItem.category_type === 'inventory') {
@@ -253,13 +243,8 @@ export const useFormData = (type: ABMType, onSuccess: () => void, reloadCategori
               }))
             };
             
-            console.log('Creating inventory item with product_type:', formData.product_type);
-            console.log('FormData:', formData);
-            console.log('Formatted data:', invFormattedData);
-            
             let createdInventoryItem;
             if (formData.product_type === 'inventory') {
-              console.log('Using inventory_item endpoint');
               createdInventoryItem = await inventoryService.createInventoryProduct(invFormattedData);
               
               // Si hay stock inicial, crear un registro de compra
@@ -281,13 +266,11 @@ export const useFormData = (type: ABMType, onSuccess: () => void, reloadCategori
                   // No interrumpir el proceso si falla la creación de la compra
                 }
               }
-            } else if (formData.product_type === 'manufactured') {
-              console.log('Using manufactured_item endpoint');
-              createdInventoryItem = await inventoryService.create(invFormattedData);
-            } else {
-              console.error('Invalid or missing product_type:', formData.product_type);
-              throw new Error('Debe seleccionar un tipo de producto válido');
-            }
+                          } else if (formData.product_type === 'manufactured') {
+                createdInventoryItem = await inventoryService.create(invFormattedData);
+              } else {
+                throw new Error('Debe seleccionar un tipo de producto válido');
+              }
             break;
           case 'ingrediente':
             const { category: ingCategory, measurement_unit, ...ingredientData } = formData;
@@ -323,9 +306,6 @@ export const useFormData = (type: ABMType, onSuccess: () => void, reloadCategori
             
             // Remove category_type from data to send (it's not a field in the API)
             const { category_type, ...finalRubroData } = rubroCreateData;
-            
-            console.log('Creating category with type:', category_type);
-            console.log('Category data:', finalRubroData);
             
             // Use the correct endpoint based on category type
             if (category_type === 'inventory') {

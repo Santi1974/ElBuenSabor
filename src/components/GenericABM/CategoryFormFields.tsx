@@ -79,6 +79,25 @@ const CategoryFormFields: React.FC<CategoryFormFieldsProps> = ({
               <option value="false">Deshabilitado</option>
             </select>
           </div>
+
+          {/* Public field - only for ingredient categories */}
+          {((selectedItem && selectedItem.category_type === 'inventory') || 
+            (!selectedItem && localCategoryType === 'inventory')) && (
+            <div className="mb-3">
+              <label className="form-label">Visible en Home</label>
+              <select
+                className="form-select"
+                value={formData.public === true ? 'true' : 'false'}
+                onChange={(e) => onInputChange('public', e.target.value === 'true')}
+              >
+                <option value="true">Sí</option>
+                <option value="false">No</option>
+              </select>
+              <div className="form-text">
+                Seleccione si esta categoría de ingrediente debe ser visible en la página de inicio
+              </div>
+            </div>
+          )}
         </>
       )}
 

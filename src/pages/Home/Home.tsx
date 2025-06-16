@@ -92,37 +92,19 @@ const Home = () => {
     try {
       setCategoriesLoading(true);
       
-      // Get both manufactured and inventory categories
-      const [manufacturedResponse, inventoryResponse] = await Promise.all([
-        categoryService.getTopLevelAll('manufactured'),
-        categoryService.getTopLevelAll('inventory')
-      ]);
+      // Get all public subcategories using the new endpoint
+      const publicSubcategories = await categoryService.getPublicSubcategories();
       
-      // Combine both types of categories
-      const allCategories: Category[] = [];
-      
-      // Handle manufactured categories
-      if (Array.isArray(manufacturedResponse)) {
-        allCategories.push(...manufacturedResponse);
-      } else if (manufacturedResponse && typeof manufacturedResponse === 'object' && 'items' in manufacturedResponse) {
-        allCategories.push(...(manufacturedResponse as any).items);
+      // Ensure we always have an array
+      if (Array.isArray(publicSubcategories)) {
+        setCategories(publicSubcategories);
+      } else {
+        console.warn('Public subcategories is not an array:', publicSubcategories);
+        setCategories([]);
       }
-      
-      // Handle inventory categories
-      if (Array.isArray(inventoryResponse)) {
-        allCategories.push(...inventoryResponse);
-      } else if (inventoryResponse && typeof inventoryResponse === 'object' && 'items' in inventoryResponse) {
-        allCategories.push(...(inventoryResponse as any).items);
-      }
-      
-      // Remove duplicates by id_key
-      const uniqueCategories = allCategories.filter((category, index, self) => 
-        index === self.findIndex(c => c.id_key === category.id_key)
-      );
-      
-      setCategories(uniqueCategories);
     } catch (err) {
-      console.error('Error fetching categories:', err);
+      console.error('Error fetching public subcategories:', err);
+      setCategories([]);
     } finally {
       setCategoriesLoading(false);
     }
@@ -281,15 +263,19 @@ const Home = () => {
               {categoriesLoading ? (
                 <div className="categories-loading">Cargando categorías...</div>
               ) : (
-                categories.map(category => (
-                  <button
-                    key={category.id_key}
-                    className={`category-btn ${selectedCategoryId === category.id_key ? 'active' : ''}`}
-                    onClick={() => handleCategoryChange(category.id_key)}
-                  >
-                    {category.name}
-                  </button>
-                ))
+                Array.isArray(categories) && categories.length > 0 ? (
+                  categories.map(category => (
+                    <button
+                      key={category.id_key}
+                      className={`category-btn ${selectedCategoryId === category.id_key ? 'active' : ''}`}
+                      onClick={() => handleCategoryChange(category.id_key)}
+                    >
+                      {category.name}
+                    </button>
+                  ))
+                ) : (
+                  <div className="no-categories">No hay categorías disponibles</div>
+                )
               )}
             </div>
           </div>

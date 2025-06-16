@@ -154,6 +154,32 @@ const categoryService = {
       console.error(`Error deleting inventory category ${id}:`, error);
       throw error;
     }
+  },
+
+  // Get all public subcategories for Home filtering
+  getPublicSubcategories: async (): Promise<Category[]> => {
+    try {
+      const response = await api.get<{
+        manufactured_item_categories: Category[];
+        inventory_item_categories: Category[];
+      }>(`${API_URL}/manufactured_item_category/public-subcategories/all`);
+      
+      // Handle the specific response format
+      if (response.data && typeof response.data === 'object') {
+        const { manufactured_item_categories = [], inventory_item_categories = [] } = response.data;
+        
+        // Combine both arrays
+        const allCategories = [...manufactured_item_categories, ...inventory_item_categories];
+        
+        return allCategories;
+      } else {
+        console.warn('Unexpected response format from public subcategories endpoint:', response.data);
+        return [];
+      }
+    } catch (error) {
+      console.error('Error fetching public subcategories:', error);
+      throw error;
+    }
   }
 };
 

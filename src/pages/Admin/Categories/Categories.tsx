@@ -15,6 +15,16 @@ const Categories: React.FC = () => {
         { value: 'true', label: 'Sí' },
         { value: 'false', label: 'No' }
       ]
+    },
+    { 
+      field: 'public', 
+      headerName: 'Visible en Home', 
+      width: 130,
+      type: 'select' as const,
+      options: [
+        { value: 'true', label: 'Sí' },
+        { value: 'false', label: 'No' }
+      ]
     }
   ];
 
