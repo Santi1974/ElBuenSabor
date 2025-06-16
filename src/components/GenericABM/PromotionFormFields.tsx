@@ -114,7 +114,7 @@ const PromotionFormFields: React.FC<PromotionFormFieldsProps> = ({
           rows={3}
           value={formData.description || ''}
           onChange={(e) => onInputChange('description', e.target.value)}
-          placeholder="Describe la promoción..."
+          placeholder="Describe la promoción... (Producto, cantidad)"
         />
       </div>
 

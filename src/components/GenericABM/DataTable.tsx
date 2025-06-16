@@ -59,11 +59,26 @@ const DataTable: React.FC<DataTableProps> = ({
       const currentStock = item.current_stock || 0;
       const minimumStock = item.minimum_stock || 0;
       const isLow = currentStock <= minimumStock;
+      const isApproachingMinimum = currentStock > minimumStock && currentStock <= minimumStock * 1.2;
+      
+      let badgeClass = 'bg-success';
+      let icon = null;
+      let title = 'Stock normal';
+      
+      if (isLow) {
+        badgeClass = 'bg-danger';
+        icon = <i className="bi bi-exclamation-triangle ms-1" title="Stock bajo"></i>;
+        title = 'Stock bajo - Por debajo del stock mínimo';
+      } else if (isApproachingMinimum) {
+        badgeClass = 'bg-warning';
+        icon = <i className="bi bi-exclamation-circle ms-1" title="Stock próximo al mínimo"></i>;
+        title = 'Stock próximo al mínimo - 20% sobre el stock mínimo';
+      }
       
       return (
-        <span className={`badge ${isLow ? 'bg-danger' : 'bg-success'}`}>
+        <span className={`badge ${badgeClass}`} title={title}>
           {currentStock}
-          {isLow && <i className="bi bi-exclamation-triangle ms-1" title="Stock bajo"></i>}
+          {icon}
         </span>
       );
     }
@@ -94,13 +109,36 @@ const DataTable: React.FC<DataTableProps> = ({
     return false;
   };
 
+  // Function to determine if an item is approaching minimum stock (20% above minimum)
+  const isApproachingMinimumStock = (item: any) => {
+    // Check if it's an ingredient or inventory item with stock information
+    if (type === 'ingrediente' || (type === 'inventario' && item.product_type === 'inventory')) {
+      const currentStock = item.current_stock || 0;
+      const minimumStock = item.minimum_stock || 0;
+      return currentStock > minimumStock && currentStock <= minimumStock * 1.2;
+    }
+    return false;
+  };
+
   // Function to get row class based on stock status
   const getRowClasses = (item: any) => {
     let classes = '';
     if (isLowStock(item)) {
-      classes += 'table-warning'; // Bootstrap warning color (yellow/amber)
+      classes += 'table-danger'; // Red background for critical low stock
+    } else if (isApproachingMinimumStock(item)) {
+      classes += 'table-warning'; // Yellow background for approaching minimum
     }
     return classes;
+  };
+
+  // Function to get the appropriate tooltip message
+  const getRowTooltip = (item: any) => {
+    if (isLowStock(item)) {
+      return 'Stock bajo - Por debajo del stock mínimo';
+    } else if (isApproachingMinimumStock(item)) {
+      return 'Stock próximo al mínimo - 20% sobre el stock mínimo';
+    }
+    return '';
   };
 
   return (
@@ -123,7 +161,7 @@ const DataTable: React.FC<DataTableProps> = ({
               onClick={() => onView(item)}
               style={{ cursor: 'pointer' }}
               className={getRowClasses(item)}
-              title={isLowStock(item) ? 'Stock bajo - Por debajo del stock mínimo' : ''}
+              title={getRowTooltip(item)}
             >
               {columns.filter(column => column.type !== 'password').map((column) => (
                 <td key={column.field}>
