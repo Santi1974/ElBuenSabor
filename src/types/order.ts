@@ -19,6 +19,13 @@ export interface InventoryDetail {
   id_key: number;
 }
 
+export interface PromotionDetail {
+  quantity: number;
+  subtotal: number;
+  promotion_id: number;
+  id_key: number;
+}
+
 export interface Order {
   id_key: number;
   date: string;
@@ -36,6 +43,7 @@ export interface Order {
   address: Address | null;
   details: OrderDetail[];
   inventory_details: InventoryDetail[];
+  promotion_details: PromotionDetail[];
 }
 
 export interface OrderResponse {

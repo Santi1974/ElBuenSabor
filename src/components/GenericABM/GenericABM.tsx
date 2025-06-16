@@ -10,6 +10,7 @@ import FormFields from './FormFields';
 import InventoryFormFields from './InventoryFormFields';
 import IngredientFormFields from './IngredientFormFields';
 import CategoryFormFields from './CategoryFormFields';
+import PromotionFormFields from './PromotionFormFields';
 import ViewModal from './ViewModal';
 import AddInventoryModal from '../AddInventoryModal';
 import { authService } from '../../services/api';
@@ -321,6 +322,12 @@ const GenericABM: React.FC<GenericABMProps> = ({
                       onSubcategorySelection={handleSubcategorySelectionWithForm}
                       onImageChange={handleImageChange}
                       onRemoveImage={removeImage}
+                    />
+                  ) : type === 'promotion' ? (
+                    <PromotionFormFields
+                      formData={formData}
+                      selectedItem={selectedItem}
+                      onInputChange={handleInputChange}
                     />
                   ) : (
                     <FormFields

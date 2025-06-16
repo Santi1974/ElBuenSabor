@@ -25,6 +25,7 @@ const Admin = () => {
 
     { path: 'rankings', label: 'Rankings', icon: 'bi-graph-up' },
     { path: 'movements', label: 'Movimientos', icon: 'bi-arrow-left-right' },
+    { path: 'promotions', label: 'Promociones', icon: 'bi-tag-fill' },
     { path: 'settings', label: 'Configuración', icon: 'bi-gear-fill' }
   ];
 

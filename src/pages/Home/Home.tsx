@@ -3,19 +3,30 @@ import { useNavigate } from 'react-router-dom';
 import { authService } from '../../services/api';
 import inventoryService from '../../services/inventoryService';
 import categoryService from '../../services/categoryService';
+import promotionService from '../../services/promotionService';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../hooks/useAuth';
 import ClientLayout from '../../components/ClientLayout/ClientLayout';
 import { handleError, ERROR_MESSAGES } from '../../utils/errorHandler';
 import type { ManufacturedItem, InventoryItem } from '../../types/product';
 import type { Category } from '../../types/category';
+import type { Promotion } from '../../services/promotionService';
 import './Home.css';
 //import logo from '../../assets/logo.svg'; // Cambia por tu logo real si lo tienes
 
 // Union type for all products with extended properties
-type Product = (ManufacturedItem | InventoryItem) & { 
-  type?: 'manufactured' | 'inventory';
+type Product = {
+  id_key: number;
+  name: string;
+  description: string;
+  price: number;
+  image_url: string;
+  type: 'manufactured' | 'inventory' | 'promotion';
   is_available?: boolean;
+  current_stock?: number;
+  category?: Category;
+  discount_percentage?: number;
+  active?: boolean;
 };
 
 
@@ -72,12 +83,64 @@ const Home = () => {
       setError('');
       const offset = (currentPage - 1) * itemsPerPage;
       
-      // Use the unified service instead of separate calls
-      const response = await inventoryService.getAllProducts(offset, itemsPerPage);
+      // Fetch products and promotions in parallel
+      const [productsResponse, promotionsResponse] = await Promise.all([
+        inventoryService.getAllProducts(offset, itemsPerPage),
+        promotionService.getAll(0, 100) // Get active promotions
+      ]);
       
-      setProducts(response.data || []);
-      setTotalItems(response.total || 0);
-      setHasNext(response.hasNext || false);
+      // Transform products
+      const productsWithType = (productsResponse.data || []).map(product => ({
+        ...product,
+        type: (product as any).type || ('preparation_time' in product ? 'manufactured' : 'inventory') as 'manufactured' | 'inventory'
+      }));
+      
+      // Helper function to calculate promotion price
+      const calculatePromotionPrice = (promo: any): number => {
+        let totalPrice = 0;
+        
+        // Calculate price from manufactured items
+        if (promo.manufactured_item_details) {
+          promo.manufactured_item_details.forEach((detail: any) => {
+            const productPrice = detail.manufactured_item?.price || 0;
+            totalPrice += productPrice * detail.quantity;
+          });
+        }
+        
+        // Calculate price from inventory items
+        if (promo.inventory_item_details) {
+          promo.inventory_item_details.forEach((detail: any) => {
+            const productPrice = detail.inventory_item?.price || 0;
+            totalPrice += productPrice * detail.quantity;
+          });
+        }
+        
+        // Apply discount
+        const discountAmount = totalPrice * (promo.discount_percentage / 100);
+        return Math.max(0, totalPrice - discountAmount);
+      };
+
+      // Transform active promotions to look like products
+      const activePromotions = (promotionsResponse.data || [])
+        .filter(promo => promo.active && promo.id_key)
+        .map(promo => ({
+          id_key: promo.id_key!,
+          name: promo.name,
+          description: promo.description,
+          price: calculatePromotionPrice(promo),
+          image_url: 'https://images.unsplash.com/photo-1607083206968-13611e3d76db?auto=format&fit=crop&w=400&q=80',
+          type: 'promotion' as const,
+          is_available: true,
+          discount_percentage: promo.discount_percentage,
+          active: promo.active
+        }));
+      
+      // Combine products and promotions
+      const allItems = [...productsWithType, ...activePromotions];
+      
+      setProducts(allItems);
+      setTotalItems(productsResponse.total + activePromotions.length);
+      setHasNext(productsResponse.hasNext);
       
     } catch (err: any) {
       console.error('Error fetching products:', err);
@@ -118,6 +181,9 @@ const Home = () => {
     if (!isAuthenticated) {
       return;
     }
+    if(isPromotion(product)){
+      return;
+    }
     const productType = isManufacturedItem(product) ? 'manufactured' : 'inventory';
     navigate(`/product/${product.id_key}?type=${productType}`);
   };
@@ -135,13 +201,16 @@ const Home = () => {
       return;
     }
 
-    const productType = 'type' in product && product.type ? product.type : 
-                       ('preparation_time' in product ? 'manufactured' : 'inventory');
+    const productType = product.type || ('preparation_time' in product ? 'manufactured' : 'inventory');
+    const productPrice = 'price' in product ? product.price || 0 : 0;
+    const discountPercentage = 'discount_percentage' in product ? product.discount_percentage : undefined;
+    
     addItem({ 
       id_key: product.id_key, 
       name: product.name || 'Producto sin nombre', 
-      price: product.price || 0, 
-      type: productType 
+      price: productPrice, 
+      type: productType,
+      discount_percentage: discountPercentage
     });
   };
 
@@ -164,9 +233,17 @@ const Home = () => {
     }
   };
 
-  // Helper function to check if product is manufactured
-  const isManufacturedItem = (product: Product): product is ManufacturedItem => {
-    return 'preparation_time' in product;
+  // Helper functions to check product types
+  const isManufacturedItem = (product: Product): boolean => {
+    return product.type === 'manufactured';
+  };
+
+  const isInventoryProduct = (product: Product): boolean => {
+    return product.type === 'inventory' && product.current_stock !== undefined;
+  };
+
+  const isPromotion = (product: Product): boolean => {
+    return product.type === 'promotion';
   };
 
   const getButtonText = (product: Product) => {
@@ -180,7 +257,7 @@ const Home = () => {
     if (product.is_available === false) {
       return 'Sin stock';
     }
-    if (!isManufacturedItem(product) && (product.current_stock ?? 0) <= 0) {
+    if (isInventoryProduct(product) && (product.current_stock ?? 0) <= 0) {
       return 'Sin stock';
     }
     return 'Agregar al carrito';
@@ -197,7 +274,7 @@ const Home = () => {
     if (product.is_available === false) {
       return true;
     }
-    return !isManufacturedItem(product) && (product.current_stock ?? 0) <= 0;
+    return isInventoryProduct(product) && (product.current_stock ?? 0) <= 0;
   };
 
   // Filter products based on search term and selected category
@@ -212,8 +289,9 @@ const Home = () => {
       const matchesSearch = name.toLowerCase().includes(searchTerm) ||
              description.toLowerCase().includes(searchTerm);
       
-      // Category filter
+      // Category filter - skip for promotions since they don't have categories
       const matchesCategory = selectedCategoryId === null || 
+                             isPromotion(product) ||
                              product?.category?.id_key === selectedCategoryId;
       
       return matchesSearch && matchesCategory;
@@ -295,7 +373,7 @@ const Home = () => {
               // Safe rendering with null checks
               const productName = product?.name || 'Producto sin nombre';
               const productDescription = product?.description || 'Sin descripción';
-              const productPrice = typeof product?.price === 'number' ? product.price : 0;
+              const productPrice = product?.price || 0;
               const productImageUrl = product?.image_url || 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=400&q=80';
               
               return (
@@ -317,7 +395,17 @@ const Home = () => {
                   <div className="product-info">
                     <h3 className="product-title">{productName}</h3>
                     <p className="product-description">{productDescription}</p>
-                    <span className="product-price">${productPrice.toFixed(2)}</span>
+                    {isPromotion(product) ? (
+                      <div>
+                        <span className="product-price">${productPrice.toFixed(2)}</span>
+                        <div className="text-success fw-bold">
+                          <i className="bi bi-tag-fill me-1"></i>
+                          {product.discount_percentage}% OFF
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="product-price">${productPrice.toFixed(2)}</span>
+                    )}
                     <button 
                       className="add-button"
                       onClick={(e) => handleAddToCart(e, product)}

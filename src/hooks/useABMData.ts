@@ -4,8 +4,9 @@ import clientService from '../services/clientService';
 import inventoryService from '../services/inventoryService';
 import categoryService from '../services/categoryService';
 import ingredientService from '../services/ingredientService';
+import promotionService from '../services/promotionService';
 import { handleError, ERROR_MESSAGES } from '../utils/errorHandler';
-export type ABMType = 'employee' | 'client' | 'rubro' | 'inventario' | 'ingrediente';
+export type ABMType = 'employee' | 'client' | 'rubro' | 'inventario' | 'ingrediente' | 'promotion';
 
 export const useABMData = (type: ABMType, reloadCategories?: () => Promise<void>) => {
   const [data, setData] = useState<any[]>([]);
@@ -76,6 +77,12 @@ export const useABMData = (type: ABMType, reloadCategories?: () => Promise<void>
           const hasNextFromEither = manufacturedCatsResponse.hasNext || inventoryCatsResponse.hasNext;
           setHasNext(hasNextFromEither);
           break;
+        case 'promotion':
+          response = await promotionService.getAll(offset, itemsPerPage);
+          setData(response.data);
+          setTotalItems(response.total);
+          setHasNext(response.hasNext);
+          break;
         default:
           setData([]);
           setTotalItems(0);
@@ -125,6 +132,9 @@ export const useABMData = (type: ABMType, reloadCategories?: () => Promise<void>
             if (reloadCategories) {
               await reloadCategories();
             }
+            break;
+          case 'promotion':
+            await promotionService.delete(id);
             break;
         }
         await loadData();

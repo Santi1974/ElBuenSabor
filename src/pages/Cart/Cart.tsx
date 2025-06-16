@@ -21,7 +21,11 @@ const Cart = () => {
   const [loadingOrder, setLoadingOrder] = useState(false);
   const [orderError, setOrderError] = useState('');
 
-  const subtotal = items.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+  const subtotal = items.reduce((sum, item) => {
+    // For promotions, use the calculated discounted price
+    const itemPrice = item.product.price || 0;
+    return sum + (itemPrice * item.quantity);
+  }, 0);
   const deliveryMethodDiscount = deliveryMethod === 'pickup' ? subtotal * 0.1 : 0; // 10% descuento en efectivo
   const total = subtotal - deliveryMethodDiscount;
 
@@ -47,9 +51,9 @@ const Cart = () => {
     }
   }, [deliveryMethod]);
 
-  const handleQuantityChange = (id: number, newQuantity: number) => {
+  const handleQuantityChange = (id: number, newQuantity: number, type?: 'manufactured' | 'inventory' | 'promotion') => {
     if (newQuantity >= 0) {
-      updateQuantity(id, newQuantity);
+      updateQuantity(id, newQuantity, type);
     }
   };
 
@@ -96,9 +100,10 @@ const Cart = () => {
     const now = new Date().toISOString();
     const isDelivery = deliveryMethod === 'delivery';
     
-    // Separar productos manufacturados de inventario
+    // Separar productos manufacturados, de inventario y promociones
     const manufacturedItems = items.filter(item => item.product.type === 'manufactured');
     const inventoryItems = items.filter(item => item.product.type === 'inventory');
+    const promotionItems = items.filter(item => item.product.type === 'promotion');
     
     const payload: any = {
       date: now,
@@ -112,6 +117,10 @@ const Cart = () => {
       inventory_details: inventoryItems.map(item => ({
         quantity: item.quantity,
         inventory_item_id: item.product.id_key
+      })),
+      promotion_details: promotionItems.map(item => ({
+        quantity: item.quantity,
+        promotion_id: item.product.id_key
       }))
     };
     
@@ -160,17 +169,34 @@ const Cart = () => {
           <div className="col-12 col-lg-8">
             <div className="bg-white rounded-3 shadow-sm p-4">
               {items.map(item => (
-                <div key={item.product.id_key} className="d-flex align-items-center mb-3 pb-3 border-bottom">
+                <div key={`${item.product.id_key}-${item.product.type}`} className="d-flex align-items-center mb-3 pb-3 border-bottom">
                   <div className="flex-grow-1">
-                    <h3 className="h5 mb-1">{item.product.name}</h3>
-                    <div className="text-primary fw-bold">${item.product.price}</div>
+                    <h3 className="h5 mb-1">
+                      {item.product.name}
+                      {item.product.type === 'promotion' && (
+                        <span className="badge bg-warning text-dark ms-2">
+                          <i className="bi bi-tag-fill me-1"></i>
+                          {item.product.discount_percentage}% OFF
+                        </span>
+                      )}
+                    </h3>
+                    <div className="text-primary fw-bold">
+                      {item.product.type === 'promotion' ? (
+                        <div>
+                          <div>${item.product.price.toFixed(2)}</div>
+                          <small className="text-success">Con {item.product.discount_percentage}% descuento</small>
+                        </div>
+                      ) : (
+                        `$${item.product.price.toFixed(2)}`
+                      )}
+                    </div>
                   </div>
                   <div className="d-flex align-items-center gap-3">
                     <div className="input-group input-group-sm" style={{ width: '120px' }}>
                       <button
                         className="btn btn-outline-secondary"
                         type="button"
-                        onClick={() => handleQuantityChange(item.product.id_key, item.quantity - 1)}
+                        onClick={() => handleQuantityChange(item.product.id_key, item.quantity - 1, item.product.type)}
                       >
                         <i className="bi bi-dash"></i>
                       </button>
@@ -180,14 +206,14 @@ const Cart = () => {
                       <button
                         className="btn btn-outline-secondary"
                         type="button"
-                        onClick={() => handleQuantityChange(item.product.id_key, item.quantity + 1)}
+                        onClick={() => handleQuantityChange(item.product.id_key, item.quantity + 1, item.product.type)}
                       >
                         <i className="bi bi-plus"></i>
                       </button>
                     </div>
                     <button
                       className="btn btn-sm btn-outline-danger"
-                      onClick={() => removeItem(item.product.id_key)}
+                      onClick={() => removeItem(item.product.id_key, item.product.type)}
                     >
                       <i className="bi bi-trash"></i>
                     </button>

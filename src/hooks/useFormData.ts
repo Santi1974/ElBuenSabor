@@ -6,6 +6,7 @@ import inventoryService from '../services/inventoryService';
 import categoryService from '../services/categoryService';
 import ingredientService from '../services/ingredientService';
 import inventoryPurchaseService from '../services/inventoryPurchaseService';
+import promotionService from '../services/promotionService';
 import { handleError, ERROR_MESSAGES } from '../utils/errorHandler';
 
 export const useFormData = (type: ABMType, onSuccess: () => void, reloadCategories?: () => Promise<void>) => {
@@ -40,6 +41,23 @@ export const useFormData = (type: ABMType, onSuccess: () => void, reloadCategori
         setFormData({
           ...item,
           password: '' // Keep password empty for security when editing
+        });
+      } else if (type === 'promotion') {
+        // Transform promotion data for editing
+        const transformedManufacturedDetails = (item.manufactured_item_details || []).map((detail: any) => ({
+          manufactured_item_id: detail.manufactured_item?.id_key || detail.manufactured_item_id || '',
+          quantity: detail.quantity || 1
+        }));
+        
+        const transformedInventoryDetails = (item.inventory_item_details || []).map((detail: any) => ({
+          inventory_item_id: detail.inventory_item?.id_key || detail.inventory_item_id || '',
+          quantity: detail.quantity || 1
+        }));
+        
+        setFormData({
+          ...item,
+          manufactured_item_details: transformedManufacturedDetails,
+          inventory_item_details: transformedInventoryDetails
         });
       } else {
         setFormData(item);
@@ -101,6 +119,17 @@ export const useFormData = (type: ABMType, onSuccess: () => void, reloadCategori
             password: '',
             active: true
           });
+          break;
+        case 'promotion':
+          setFormData({
+            name: '',
+            description: '',
+            discount_percentage: 0,
+            active: true,
+            manufactured_item_details: [],
+            inventory_item_details: []
+          });
+          setSelectedDetails([]);
           break;
         default:
           setFormData({
@@ -213,6 +242,9 @@ export const useFormData = (type: ABMType, onSuccess: () => void, reloadCategori
               await categoryService.update(selectedItem.id_key, rubroUpdateData as any);
             }
             break;
+          case 'promotion':
+            await promotionService.update(selectedItem.id_key, formData);
+            break;
         }
       } else {
         switch (type) {
@@ -315,6 +347,9 @@ export const useFormData = (type: ABMType, onSuccess: () => void, reloadCategori
             } else {
               throw new Error('Debe seleccionar un tipo de categoría válido');
             }
+            break;
+          case 'promotion':
+            await promotionService.create(formData);
             break;
         }
       }

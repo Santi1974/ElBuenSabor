@@ -2,7 +2,8 @@ export interface CartProduct {
   id_key: number;
   name: string;
   price: number;
-  type: 'manufactured' | 'inventory'; // Distinguir entre productos manufacturados e inventario
+  type: 'manufactured' | 'inventory' | 'promotion'; // Distinguir entre productos manufacturados, inventario y promociones
+  discount_percentage?: number; // Para promociones
 }
 
 export interface CartItem {
@@ -13,9 +14,9 @@ export interface CartItem {
 export interface CartContextType {
   items: CartItem[];
   addItem: (product: CartProduct, showLoginPrompt?: boolean) => boolean;
-  removeItem: (id: number) => void;
-  updateQuantity: (id: number, quantity: number) => void;
-  getItemQuantity: (id: number) => number;
+  removeItem: (id: number, type?: 'manufactured' | 'inventory' | 'promotion') => void;
+  updateQuantity: (id: number, quantity: number, type?: 'manufactured' | 'inventory' | 'promotion') => void;
+  getItemQuantity: (id: number, type?: 'manufactured' | 'inventory' | 'promotion') => number;
   clearCart: () => void;
   totalItems: number;
   isAuthenticated: boolean;

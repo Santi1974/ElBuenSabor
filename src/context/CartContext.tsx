@@ -41,10 +41,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     setItems(currentItems => {
-      const existingItem = currentItems.find(item => item.product.id_key === product.id_key);
+      const existingItem = currentItems.find(item => 
+        item.product.id_key === product.id_key && item.product.type === product.type
+      );
       if (existingItem) {
         return currentItems.map(item =>
-          item.product.id_key === product.id_key 
+          item.product.id_key === product.id_key && item.product.type === product.type
             ? { ...item, quantity: item.quantity + 1 } 
             : item
         );
@@ -54,27 +56,33 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return true;
   };
 
-  const removeItem = (id: number) => {
+  const removeItem = (id: number, type?: 'manufactured' | 'inventory' | 'promotion') => {
     if (!isAuthenticated) return;
-    setItems(currentItems => currentItems.filter(item => item.product.id_key !== id));
+    setItems(currentItems => currentItems.filter(item => 
+      !(item.product.id_key === id && (type ? item.product.type === type : true))
+    ));
   };
 
-  const updateQuantity = (id: number, quantity: number) => {
+  const updateQuantity = (id: number, quantity: number, type?: 'manufactured' | 'inventory' | 'promotion') => {
     if (!isAuthenticated) return;
     if (quantity <= 0) {
-      removeItem(id);
+      removeItem(id, type);
       return;
     }
     setItems(currentItems =>
       currentItems.map(item =>
-        item.product.id_key === id ? { ...item, quantity } : item
+        item.product.id_key === id && (type ? item.product.type === type : true) 
+          ? { ...item, quantity } 
+          : item
       )
     );
   };
 
-  const getItemQuantity = (id: number) => {
+  const getItemQuantity = (id: number, type?: 'manufactured' | 'inventory' | 'promotion') => {
     if (!isAuthenticated) return 0;
-    return items.find(item => item.product.id_key === id)?.quantity || 0;
+    return items.find(item => 
+      item.product.id_key === id && (type ? item.product.type === type : true)
+    )?.quantity || 0;
   };
 
   const clearCart = () => {
