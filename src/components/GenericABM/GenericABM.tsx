@@ -38,6 +38,7 @@ const GenericABM: React.FC<GenericABMProps> = ({
   const [selectedStockItem, setSelectedStockItem] = useState<any>(null);
   const [viewItem, setViewItem] = useState<any>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [isFormValid, setIsFormValid] = useState(true);
 
   const {
     categories,
@@ -114,6 +115,7 @@ const GenericABM: React.FC<GenericABMProps> = ({
     resetForm();
     resetCategorySelection();
     setFormError(null);
+    setIsFormValid(true);
   };
 
   const handleOpenViewModal = (item: any) => {
@@ -336,6 +338,7 @@ const GenericABM: React.FC<GenericABMProps> = ({
                       onInputChange={handleInputChange}
                       type={type}
                       isEditing={!!selectedItem}
+                      onValidationChange={setIsFormValid}
                     />
                   )}
                   
@@ -347,7 +350,11 @@ const GenericABM: React.FC<GenericABMProps> = ({
                     >
                       Cancelar
                     </button>
-                    <button type="submit" className="btn btn-primary">
+                    <button 
+                      type="submit" 
+                      className="btn btn-primary"
+                      disabled={type === 'employee' && !selectedItem && !isFormValid}
+                    >
                       {selectedItem ? 'Guardar' : 'Agregar'}
                     </button>
                   </div>

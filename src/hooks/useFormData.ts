@@ -107,6 +107,7 @@ export const useFormData = (type: ABMType, onSuccess: () => void, reloadCategori
             role: '',
             phone_number: '',
             password: '',
+            confirmPassword: '',
             active: true
           });
           break;
@@ -250,7 +251,15 @@ export const useFormData = (type: ABMType, onSuccess: () => void, reloadCategori
         switch (type) {
           case 'employee':
             try {
-              await employeeService.create(formData);
+              // Validar confirmación de contraseña antes de enviar
+              if (formData.password !== formData.confirmPassword) {
+                throw new Error('Las contraseñas no coinciden');
+              }
+              
+              // Remover confirmPassword antes de enviar al servidor
+              const { confirmPassword, ...employeeData } = formData;
+              await employeeService.create(employeeData);
+              
               // Mostrar mensaje con las credenciales
               alert(`Empleado creado exitosamente!\n\nCredenciales de acceso:\nEmail: ${formData.email}\nContraseña: ${formData.password}\n\nEl empleado deberá cambiar su contraseña en el primer login.`);
             } catch (err: any) {
