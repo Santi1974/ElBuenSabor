@@ -154,11 +154,30 @@ const Orders = () => {
   };
 
   const handleFilterChange = (filterName: string) => {
-    setStatusFilters(prev => ({
-      ...prev,
-      [filterName]: !prev[filterName as keyof typeof prev]
-    }));
-    setCurrentPage(1); // Resetear a la primera página cuando cambian los filtros
+    setStatusFilters(prev => {
+      const currentValue = prev[filterName as keyof typeof prev];
+      
+      // Si el filtro actual está activo, lo desactivamos (dejando todos desactivados)
+      if (currentValue) {
+        return {
+          a_confirmar: false,
+          en_cocina: false,
+          listo: false,
+          en_delivery: false,
+          entregado: false,
+        };
+      }
+      
+      // Si el filtro actual no está activo, lo activamos y desactivamos todos los demás
+      return {
+        a_confirmar: filterName === 'a_confirmar',
+        en_cocina: filterName === 'en_cocina',
+        listo: filterName === 'listo',
+        en_delivery: filterName === 'en_delivery',
+        entregado: filterName === 'entregado',
+      };
+    });
+    setCurrentPage(1);
   };
 
   const handleOrderClick = (order: Order) => {

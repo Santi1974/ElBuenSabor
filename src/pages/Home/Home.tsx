@@ -44,6 +44,7 @@ const Home = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
+  const [showPromotionsOnly, setShowPromotionsOnly] = useState(false);
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -289,10 +290,13 @@ const Home = () => {
       const matchesSearch = name.toLowerCase().includes(searchTerm) ||
              description.toLowerCase().includes(searchTerm);
       
-      // Category filter - skip for promotions since they don't have categories
+      if (showPromotionsOnly) {
+        return matchesSearch && isPromotion(product);
+      }
+      
       const matchesCategory = selectedCategoryId === null || 
-                             isPromotion(product) ||
-                             product?.category?.id_key === selectedCategoryId;
+        isPromotion(product) ||
+        product?.category?.id_key === selectedCategoryId;
       
       return matchesSearch && matchesCategory;
     } catch (error) {
@@ -303,6 +307,13 @@ const Home = () => {
 
   const handleCategoryChange = (categoryId: number | null) => {
     setSelectedCategoryId(categoryId);
+    setShowPromotionsOnly(false); // Reset promotions filter when selecting category
+    setCurrentPage(1); // Reset to first page when filter changes
+  };
+
+  const handlePromotionsFilter = () => {
+    setShowPromotionsOnly(!showPromotionsOnly);
+    setSelectedCategoryId(null); // Reset category filter when selecting promotions
     setCurrentPage(1); // Reset to first page when filter changes
   };
 
@@ -333,10 +344,22 @@ const Home = () => {
             </h5>
             <div className="category-buttons">
               <button
-                className={`category-btn ${selectedCategoryId === null ? 'active' : ''}`}
+                className={`category-btn ${selectedCategoryId === null && !showPromotionsOnly ? 'active' : ''}`}
                 onClick={() => handleCategoryChange(null)}
               >
                 Todas las categorías
+              </button>
+              <button
+                className={`category-btn ${showPromotionsOnly ? 'active' : ''}`}
+                onClick={handlePromotionsFilter}
+                style={{ 
+                  backgroundColor: showPromotionsOnly ? '#28a745' : '', 
+                  color: showPromotionsOnly ? 'white' : '',
+                  borderColor: showPromotionsOnly ? '#28a745' : ''
+                }}
+              >
+                <i className="bi bi-tag-fill me-2"></i>
+                Promociones
               </button>
               {categoriesLoading ? (
                 <div className="categories-loading">Cargando categorías...</div>
