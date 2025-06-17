@@ -5,6 +5,7 @@ import ClientLayout from '../../../components/ClientLayout/ClientLayout';
 import './OrderDetail.css';
 
 interface OrderDetail {
+  unit_price: any;
   id_key: number;
   quantity: number;
   subtotal: number;
@@ -230,7 +231,7 @@ const OrderDetail = () => {
                       <div className="col-8">
                         <h6 className="mb-1 fw-bold">{detail.manufactured_item?.name || 'Producto'}</h6>
                         <p className="text-muted mb-0 small">
-                          ${detail.manufactured_item?.price?.toFixed(2) || '0.00'}
+                          ${detail.unit_price?.toFixed(2) || '0.00'}
                         </p>
                       </div>
                       <div className="col-4 text-end">
