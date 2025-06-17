@@ -28,6 +28,7 @@ const UserProfileComponent: React.FC<UserProfileProps> = ({ isOpen, onClose, isM
   });
   
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   useEffect(() => {
@@ -65,6 +66,27 @@ const UserProfileComponent: React.FC<UserProfileProps> = ({ isOpen, onClose, isM
       ...prev,
       [field]: value
     }));
+
+    // Validar coincidencia de contraseñas en tiempo real
+    if (field === 'password' && confirmPassword && value !== confirmPassword) {
+      setPasswordError('Las contraseñas no coinciden');
+    } else if (field === 'password' && confirmPassword && value === confirmPassword) {
+      setPasswordError('');
+    }
+  };
+
+  const handleConfirmPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setConfirmPassword(value);
+    
+    // Validar coincidencia de contraseñas en tiempo real
+    if (formData.password && value && formData.password !== value) {
+      setPasswordError('Las contraseñas no coinciden');
+    } else if (formData.password && value && formData.password === value) {
+      setPasswordError('');
+    } else if (!value) {
+      setPasswordError('');
+    }
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -103,6 +125,23 @@ const UserProfileComponent: React.FC<UserProfileProps> = ({ isOpen, onClose, isM
     }));
   };
 
+  // Password validation function (same as PasswordField component)
+  const validatePassword = (password: string): { isValid: boolean; message?: string } => {
+    if (password.length < 8) {
+      return { isValid: false, message: 'La contraseña debe tener al menos 8 caracteres' };
+    }
+    if (!/[A-Z]/.test(password)) {
+      return { isValid: false, message: 'La contraseña debe contener al menos una letra mayúscula' };  
+    }
+    if (!/[a-z]/.test(password)) {
+      return { isValid: false, message: 'La contraseña debe contener al menos una letra minúscula' };
+    }
+    if (!/[^A-Za-z]/.test(password)) {
+      return { isValid: false, message: 'La contraseña debe contener al menos un símbolo o número' };
+    }
+    return { isValid: true };
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -111,16 +150,13 @@ const UserProfileComponent: React.FC<UserProfileProps> = ({ isOpen, onClose, isM
 
     try {
       // Validaciones
-      if (formData.password && formData.password.length < 6) {
-        setError('La contraseña debe tener al menos 6 caracteres');
-        setLoading(false);
-        return;
-      }
-
-      if (formData.password && !/(?=.*[a-zA-Z])(?=.*\d)/.test(formData.password)) {
-        setError('La contraseña debe contener al menos una letra y un número');
-        setLoading(false);
-        return;
+      if (formData.password) {
+        const passwordValidation = validatePassword(formData.password);
+        if (!passwordValidation.isValid) {
+          setError(passwordValidation.message!);
+          setLoading(false);
+          return;
+        }
       }
 
       if (formData.password && formData.password !== confirmPassword) {
@@ -152,6 +188,7 @@ const UserProfileComponent: React.FC<UserProfileProps> = ({ isOpen, onClose, isM
         password: ''
       }));
       setConfirmPassword('');
+      setPasswordError('');
       
     } catch (error: any) {
       setError(handleError(error, 'update profile'));
@@ -365,8 +402,9 @@ const UserProfileComponent: React.FC<UserProfileProps> = ({ isOpen, onClose, isM
                   placeholder="Dejar vacío para mantener actual"
                   className={`form-control ${loading ? 'disabled' : ''}`}
                   id="password"
+                  showValidation={formData.password ? true : false}
                 />
-                <small className="text-muted">Mínimo 6 caracteres, con letras y números</small>
+                <small className="text-muted">Mínimo 8 caracteres, con mayúsculas, minúsculas y símbolos/números</small>
               </div>
             </div>
 
@@ -378,11 +416,17 @@ const UserProfileComponent: React.FC<UserProfileProps> = ({ isOpen, onClose, isM
                 </label>
                 <PasswordField
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onChange={handleConfirmPasswordChange}
                   placeholder="Repetir nueva contraseña"
                   className={`form-control ${loading ? 'disabled' : ''}`}
                   id="confirmPassword"
                 />
+                {passwordError && (
+                  <div className="text-danger mt-1 small">
+                    <i className="bi bi-exclamation-triangle me-1"></i>
+                    {passwordError}
+                  </div>
+                )}
               </div>
             </div>
           </div>
