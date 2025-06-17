@@ -41,15 +41,13 @@ export const useABMData = (type: ABMType, reloadCategories?: () => Promise<void>
             setTotalItems(response.total);
             setHasNext(response.hasNext);
           } else if (filterType === 'inventory') {
-            response = await inventoryService.getAllProducts(offset, itemsPerPage);
+            response = await inventoryService.getInventoryProducts(offset, itemsPerPage);
             // Filtrar solo productos de inventario en el servidor si es posible
             // Por ahora mantenemos el filtro local hasta que el backend lo soporte
-            let filteredData = response.data.filter((item: any) => 
-              item.product_type === 'inventory' || item.type === 'inventory'
-            );
-            setData(filteredData);
-            setTotalItems(filteredData.length);
-            setHasNext(false);
+            setData(response.data);
+            // Mantener la paginación funcionando correctamente
+            setTotalItems(response.total);
+            setHasNext(response.hasNext);
           } else {
             // Sin filtro, obtener todos los productos con paginación
             response = await inventoryService.getAllProducts(offset, itemsPerPage);
