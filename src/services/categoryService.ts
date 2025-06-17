@@ -107,6 +107,9 @@ const categoryService = {
 
   update: async (id: number, categoryData: Omit<Category, 'id_key' | 'subcategories'>): Promise<Category> => {
     try {
+      if (categoryData.parent_id === undefined) {
+        categoryData.parent_id = null;
+      }
       const response = await api.put<Category>(`${API_URL}/manufactured_item_category/${id}`, categoryData);
       return response.data;
     } catch (error) {
@@ -139,6 +142,9 @@ const categoryService = {
 
   updateInventoryCategory: async (id: number, categoryData: Omit<Category, 'id_key' | 'subcategories'>): Promise<Category> => {
     try {
+      if (categoryData.parent_id === undefined) {
+        categoryData.parent_id = null;
+      }
       const response = await api.put<Category>(`${API_URL}/inventory_item_category/${id}`, categoryData);
       return response.data;
     } catch (error) {
