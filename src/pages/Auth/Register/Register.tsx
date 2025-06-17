@@ -100,7 +100,7 @@ const Register = () => {
   };
 
   return (
-    <div className="container-fluid vh-100 overflow-auto">
+    <div className="container-fluid vh-100 min-vw-100 overflow-auto">
       <div className="row h-100">
         {/* Left side - Image */}
         <div className="col-md-6 d-none d-md-block p-0">

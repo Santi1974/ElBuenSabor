@@ -22,7 +22,7 @@ const Delivery = () => {
   };
 
   return (
-    <div className="container-fluid min-vh-100 d-flex flex-row p-0">
+    <div className="container-fluid min-vh-100 min-vw-100 d-flex flex-row p-0">
       {/* Sidebar */}
       <aside className="text-white d-flex flex-column justify-content-start align-items-start p-4" style={{width: 250, backgroundColor: '#747474'}}>
         <nav className="w-100">

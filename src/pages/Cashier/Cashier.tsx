@@ -22,7 +22,7 @@ const Cashier = () => {
   };
 
   return (
-    <div className="container-fluid min-vh-100 d-flex flex-row p-0" style={{ width: '100vw', height: '100vh' }}>
+      <div className="container-fluid min-vh-100 min-vw-100 d-flex flex-row p-0">
       {/* Sidebar */}
       <aside className="text-white d-flex flex-column justify-content-start align-items-start p-4" style={{width: 250, backgroundColor: '#747474', minHeight: '100vh', flexShrink: 0}}>
         <nav className="w-100">
