@@ -35,8 +35,21 @@ const DataTable: React.FC<DataTableProps> = ({
       return '••••••••';
     }
     
-    if (column.type === 'select' && column.field === 'active') {
-      return item[column.field] ? 'Sí' : 'No';
+    if (column.type === 'select' && column.options) {
+      const value = item[column.field];
+      
+      // Handle special cases for null and undefined
+      if (value === undefined) {
+        return 'N/A';
+      }
+      if (value === null) {
+        return 'No';
+      }
+      
+      // Convert value to string for comparison with options
+      const stringValue = value.toString();
+      const option = column.options.find(opt => opt.value === stringValue);
+      return option ? option.label : value;
     }
     
     if (column.field === 'image_url' && item[column.field]) {

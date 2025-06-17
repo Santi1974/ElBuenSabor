@@ -482,7 +482,8 @@ const CashierOrders = () => {
                                     e.stopPropagation();
                                     handleMoveToDelivered(order.id_key);
                                   }}
-                                  disabled={processingOrderId === order.id_key}
+                                  disabled={processingOrderId === order.id_key || !order.is_paid}
+                                  title={!order.is_paid ? 'El pedido debe estar pagado para poder marcarlo como entregado' : ''}
                                 >
                                   <i className="bi bi-check-circle me-1"></i>
                                   {processingOrderId === order.id_key ? 'Procesando...' : 'Marcar Entregado'}
@@ -790,7 +791,8 @@ const CashierOrders = () => {
                     type="button" 
                     className="btn btn-warning"
                     onClick={() => handleMoveToDelivered(selectedOrder.id_key)}
-                    disabled={processingOrderId === selectedOrder.id_key}
+                    disabled={processingOrderId === selectedOrder.id_key || !selectedOrder.is_paid}
+                    title={!selectedOrder.is_paid ? 'El pedido debe estar pagado para poder marcarlo como entregado' : ''}
                   >
                     <i className="bi bi-check-circle me-2"></i>
                     {processingOrderId === selectedOrder.id_key ? 'Procesando...' : 'Marcar Entregado'}

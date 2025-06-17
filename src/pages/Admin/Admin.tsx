@@ -103,20 +103,14 @@ const Admin = () => {
       {/* Main content */}
       <div className="flex-grow-1 d-flex flex-column">
         {/* Header */}
-        <header className="d-flex align-items-center bg-white px-5" style={{height: 90, boxShadow: '0 2px 12px rgba(0,0,0,0.06)'}}>
-          <button 
-            className="btn btn-link text-dark fs-2 me-3 p-0" 
-            style={{textDecoration: 'none'}}
-            onClick={() => navigate(-1)}
-          >
-            <i className="bi bi-arrow-left"></i>
+        <header className="bg-white p-3 border-bottom d-flex align-items-center justify-content-between">
+          <h1 className="h4 mb-0 text-dark fw-bold">
+            <i className="bi bi-person-badge me-2"></i>
+             Administrador
+          </h1>
+          <button className="btn btn-link text-dark fs-2 me-3 p-0" style={{textDecoration: 'none'}} onClick={() => authService.logout()}>
+            <i className="bi bi-box-arrow-right text-danger"></i>
           </button>
-          <span className="fs-2 fw-bold flex-grow-1 text-dark">{getCurrentTitle()}</span>
-          <div className="d-flex align-items-center">
-            <button className="btn btn-link text-dark fs-2 me-3 p-0" style={{textDecoration: 'none'}} onClick={() => authService.logout()}>
-              <i className="bi bi-box-arrow-right text-danger"></i>
-            </button>
-          </div>
         </header>
         {/* Content */}
         <main className="flex-grow-1 d-flex flex-column w-100 h-100 bg-light overflow-auto">

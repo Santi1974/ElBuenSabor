@@ -74,6 +74,15 @@ const ViewModal: React.FC<ViewModalProps> = ({
       return column.field.split('.').reduce((obj, key) => obj?.[key], viewItem) || 'No especificado';
     }
     
+    if(column.field === 'public'){
+      if(value === null){
+        return 'No';
+      }
+      if(value === undefined){
+        return 'No aplicable';
+      }
+      return value ? 'Sí' : 'No';
+    }
     return value || 'No especificado';
   };
 
