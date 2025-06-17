@@ -98,7 +98,7 @@ const DataTable: React.FC<DataTableProps> = ({
       );
     }
     
-    if (column.field === 'minimum_stock' && (type === 'ingrediente' || (type === 'inventario' && (item.product_type === 'inventory' || item.type === 'inventory')))) {
+    if (column.field === 'minimum_stock') {
       return (
         <span className="badge bg-info">
           {item.minimum_stock || 0}

@@ -42,10 +42,9 @@ export const useABMData = (type: ABMType, reloadCategories?: () => Promise<void>
             setHasNext(response.hasNext);
           } else if (filterType === 'inventory') {
             response = await inventoryService.getInventoryProducts(offset, itemsPerPage);
-            // Filtrar solo productos de inventario en el servidor si es posible
-            // Por ahora mantenemos el filtro local hasta que el backend lo soporte
-            setData(response.data);
-            // Mantener la paginación funcionando correctamente
+            // Agregar el tipo 'inventory' a cada item para que el DataTable pueda aplicar los indicadores de stock
+            const dataWithType = response.data.map((item: any) => ({ ...item, type: 'inventory' }));
+            setData(dataWithType);
             setTotalItems(response.total);
             setHasNext(response.hasNext);
           } else {
