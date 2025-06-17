@@ -35,24 +35,28 @@ export const useABMData = (type: ABMType, reloadCategories?: () => Promise<void>
           setHasNext(response.hasNext);
           break;
         case 'inventario':
-          const inventoryResponse = await inventoryService.getAllProducts(offset, itemsPerPage);
-          let filteredData = inventoryResponse.data;
-          
-          // Filtrar por tipo si se especifica
-          if (filterType) {
-            filteredData = inventoryResponse.data.filter((item: any) => {
-              if (filterType === 'manufactured') {
-                return item.product_type === 'manufactured' || item.type === 'manufactured';
-              } else if (filterType === 'inventory') {
-                return item.product_type === 'inventory' || item.type === 'inventory';
-              }
-              return true;
-            });
+          if (filterType === 'manufactured') {
+            response = await inventoryService.getAll(offset, itemsPerPage);
+            setData(response.data);
+            setTotalItems(response.total);
+            setHasNext(response.hasNext);
+          } else if (filterType === 'inventory') {
+            response = await inventoryService.getAllProducts(offset, itemsPerPage);
+            // Filtrar solo productos de inventario en el servidor si es posible
+            // Por ahora mantenemos el filtro local hasta que el backend lo soporte
+            let filteredData = response.data.filter((item: any) => 
+              item.product_type === 'inventory' || item.type === 'inventory'
+            );
+            setData(filteredData);
+            setTotalItems(filteredData.length);
+            setHasNext(false);
+          } else {
+            // Sin filtro, obtener todos los productos con paginación
+            response = await inventoryService.getAllProducts(offset, itemsPerPage);
+            setData(response.data);
+            setTotalItems(response.total);
+            setHasNext(response.hasNext);
           }
-          
-          setData(filteredData);
-          setTotalItems(filteredData.length);
-          setHasNext(false); // Ya que estamos filtrando localmente
           break;
         case 'ingrediente':
           const ingredientResponse = await ingredientService.getAll(offset, itemsPerPage);
@@ -62,40 +66,73 @@ export const useABMData = (type: ABMType, reloadCategories?: () => Promise<void>
           break;
 
         case 'rubro':
-          const [manufacturedCatsResponse, inventoryCatsResponse] = await Promise.all([
-            categoryService.getAll(offset, itemsPerPage),
-            categoryService.getInventoryCategories(offset, itemsPerPage)
-          ]);
-          
-          const allCats = [
-            ...(Array.isArray(manufacturedCatsResponse.data) ? manufacturedCatsResponse.data : []).map((cat: any) => ({ ...cat, category_type: 'manufactured' })),
-            ...(Array.isArray(inventoryCatsResponse.data) ? inventoryCatsResponse.data : []).map((cat: any) => ({ ...cat, category_type: 'inventory' }))
-          ];
-          
-          const categoriesWithParent = allCats.map((category: any) => {
-            let parentCategoryName = 'Sin categoría padre';
-            if (category.parent_id) {
-              const parentCategory = allCats.find((cat: any) => cat.id_key === category.parent_id);
-              parentCategoryName = parentCategory ? parentCategory.name : 'Categoría padre no encontrada';
-            }
-            return {
-              ...category,
-              parent_category_name: parentCategoryName,
-              type_label: category.category_type === 'manufactured' ? 'Producto' : 'Ingrediente'
-            };
-          });
-          
-          // Filtrar por tipo si se especifica
-          let filteredCategories = categoriesWithParent;
-          if (filterType) {
-            filteredCategories = categoriesWithParent.filter((category: any) => {
-              return category.category_type === filterType;
+          if (filterType === 'manufactured') {
+            response = await categoryService.getAll(offset, itemsPerPage);
+            const categoriesWithParent = response.data.map((category: any) => {
+              let parentCategoryName = 'Sin categoría padre';
+              if (category.parent_id) {
+                // Nota: Esto requiere una segunda llamada para obtener datos del padre
+                // Idealmente el backend debería incluir esta información
+                parentCategoryName = 'Categoría padre';
+              }
+              return {
+                ...category,
+                parent_category_name: parentCategoryName,
+                category_type: 'manufactured',
+                type_label: 'Producto'
+              };
             });
+            setData(categoriesWithParent);
+            setTotalItems(response.total);
+            setHasNext(response.hasNext);
+          } else if (filterType === 'inventory') {
+            response = await categoryService.getInventoryCategories(offset, itemsPerPage);
+            const categoriesWithParent = response.data.map((category: any) => {
+              let parentCategoryName = 'Sin categoría padre';
+              if (category.parent_id) {
+                // Nota: Esto requiere una segunda llamada para obtener datos del padre
+                // Idealmente el backend debería incluir esta información
+                parentCategoryName = 'Categoría padre';
+              }
+              return {
+                ...category,
+                parent_category_name: parentCategoryName,
+                category_type: 'inventory',
+                type_label: 'Ingrediente'
+              };
+            });
+            setData(categoriesWithParent);
+            setTotalItems(response.total);
+            setHasNext(response.hasNext);
+          } else {
+            // Sin filtro, necesitamos hacer ambas llamadas y combinar
+            const [manufacturedResponse, inventoryResponse] = await Promise.all([
+              categoryService.getAll(offset, itemsPerPage),
+              categoryService.getInventoryCategories(offset, itemsPerPage)
+            ]);
+            
+            const allCats = [
+              ...manufacturedResponse.data.map((cat: any) => ({ ...cat, category_type: 'manufactured' })),
+              ...inventoryResponse.data.map((cat: any) => ({ ...cat, category_type: 'inventory' }))
+            ];
+            
+            const categoriesWithParent = allCats.map((category: any) => {
+              let parentCategoryName = 'Sin categoría padre';
+              if (category.parent_id) {
+                const parentCategory = allCats.find((cat: any) => cat.id_key === category.parent_id);
+                parentCategoryName = parentCategory ? parentCategory.name : 'Categoría padre no encontrada';
+              }
+              return {
+                ...category,
+                parent_category_name: parentCategoryName,
+                type_label: category.category_type === 'manufactured' ? 'Producto' : 'Ingrediente'
+              };
+            });
+            
+            setData(categoriesWithParent);
+            setTotalItems(manufacturedResponse.total + inventoryResponse.total);
+            setHasNext(manufacturedResponse.hasNext || inventoryResponse.hasNext);
           }
-          
-          setData(filteredCategories);
-          setTotalItems(filteredCategories.length);
-          setHasNext(false); // Ya que estamos filtrando localmente
           break;
         case 'promotion':
           response = await promotionService.getAll(offset, itemsPerPage);

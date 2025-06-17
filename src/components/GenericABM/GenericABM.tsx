@@ -217,6 +217,7 @@ const GenericABM: React.FC<GenericABMProps> = ({
           <button
             className="btn btn-primary"
             onClick={() => handleOpenModal()}
+            disabled={type === 'client'}
           >
             <i className="bi bi-plus-lg me-2"></i>
             Agregar
