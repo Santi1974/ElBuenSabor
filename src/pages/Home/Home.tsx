@@ -83,7 +83,7 @@ const Home = () => {
       
       // Obtener productos y promociones en paralelo
       const [productsResponse, promotionsResponse] = await Promise.all([
-        inventoryService.getAllProducts(offset, itemsPerPage),
+        inventoryService.getAllProducts(0, 100),
         promotionService.getAll(0, 100)
       ]);
       
@@ -134,7 +134,7 @@ const Home = () => {
       
       setProducts(allItems);
       setTotalItems(productsResponse.total + activePromotions.length);
-      setHasNext(productsResponse.hasNext);
+      setHasNext(false);
       
     } catch (err: any) {
       console.error('Error fetching products:', err);
@@ -341,7 +341,7 @@ const Home = () => {
               </div>
               <div className="d-none d-md-block">
                 <span className="badge fs-6" style={{backgroundColor: '#d87d4d'}}>
-                  Página {currentPage} de {totalPages}
+                  Página {currentPage} de {currentPage}
                 </span>
               </div>
             </div>
