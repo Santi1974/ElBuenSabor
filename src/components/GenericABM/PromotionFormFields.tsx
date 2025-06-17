@@ -30,7 +30,7 @@ const PromotionFormFields: React.FC<PromotionFormFieldsProps> = ({
   const loadProducts = async () => {
     try {
       setLoading(true);
-      const response = await inventoryService.getAllProducts(0, 1000); // Get all products
+      const response = await inventoryService.getAllProducts(0, 100); // Get all products
       // Map the response to include the type property
       const productsWithType = response.data.map(product => ({
         id_key: product.id_key,

@@ -67,8 +67,8 @@ export const useCategories = (type: ABMType) => {
     if (type === 'rubro') {
       try {
         const [manufacturedCategoriesResponse, inventoryCategoriesResponse] = await Promise.all([
-          categoryService.getAll(0, 1000),
-          categoryService.getInventoryCategories(0, 1000)
+          categoryService.getAll(0, 100),
+          categoryService.getInventoryCategories(0, 100)
         ]);
         
         const allCategories = [

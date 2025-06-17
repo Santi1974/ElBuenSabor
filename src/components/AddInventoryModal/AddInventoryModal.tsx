@@ -56,11 +56,11 @@ const AddInventoryModal: React.FC<AddInventoryModalProps> = ({
       setLoading(true);
       
       // Cargar productos de inventario
-      const inventoryResponse = await inventoryService.getAll(0, 1000);
+      const inventoryResponse = await inventoryService.getAll(0, 100);
       const inventoryItems = Array.isArray(inventoryResponse.data) ? inventoryResponse.data : inventoryResponse;
       
       // Cargar ingredientes
-      const ingredientsResponse = await ingredientService.getAll(0, 1000);
+      const ingredientsResponse = await ingredientService.getAll(0, 100);
       const ingredients = Array.isArray(ingredientsResponse.data) ? ingredientsResponse.data : ingredientsResponse;
       
       // Combinar ambos tipos y filtrar solo productos de inventario

@@ -66,7 +66,7 @@ export const useABMData = (type: ABMType, reloadCategories?: () => Promise<void>
           if (filterType === 'manufactured') {
             response = await categoryService.getAll(offset, itemsPerPage);
             // También obtenemos todas las categorías manufactured para buscar padres
-            const allManufacturedResponse = await categoryService.getAll(0, 1000);
+            const allManufacturedResponse = await categoryService.getAll(0, 100);
             
             const categoriesWithParent = response.data.map((category: any) => {
               let parentCategoryName = 'Sin categoría padre';
@@ -92,7 +92,7 @@ export const useABMData = (type: ABMType, reloadCategories?: () => Promise<void>
           } else if (filterType === 'inventory') {
             response = await categoryService.getInventoryCategories(offset, itemsPerPage);
             // También obtenemos todas las categorías inventory para buscar padres
-            const allInventoryResponse = await categoryService.getInventoryCategories(0, 1000);
+            const allInventoryResponse = await categoryService.getInventoryCategories(0, 100);
             
             const categoriesWithParent = response.data.map((category: any) => {
               let parentCategoryName = 'Sin categoría padre';
