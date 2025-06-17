@@ -192,28 +192,12 @@ export const useFormData = (type: ABMType, onSuccess: () => void, reloadCategori
             const isInventoryProduct = selectedItem.product_type === 'inventory' || selectedItem.type === 'inventory';
             
             if (isInventoryProduct) {
-              await inventoryService.updateInventoryProduct(selectedItem.id_key, invFormattedData);
-              
-              // Si se incrementó el stock, crear un registro de compra por la diferencia
-              if (formData.current_stock > selectedItem.current_stock) {
-                const stockDifference = formData.current_stock - selectedItem.current_stock;
-                const inventoryPurchase = {
-                  inventory_item_id: selectedItem.id_key,
-                  quantity: stockDifference,
-                  unit_cost: formData.purchase_cost || 0,
-                  total_cost: stockDifference * (formData.purchase_cost || 0),
-                  notes: `Actualización de stock - Incremento: ${stockDifference} unidades`,
-                  purchase_date: new Date().toISOString()
-                };
-                
-                try {
-                  await inventoryPurchaseService.create(inventoryPurchase);
-                  console.log('Inventory purchase created for inventory product stock update:', selectedItem.id_key);
-                } catch (purchaseError) {
-                  console.error('Error creating inventory purchase for inventory product stock update:', purchaseError);
-                  // No interrumpir el proceso si falla la creación de la compra
-                }
-              }
+              // Para productos de inventario, mantener el stock actual sin cambios
+              const inventoryUpdateData = {
+                ...invFormattedData,
+                current_stock: selectedItem.current_stock // Mantener el stock actual sin cambios
+              };
+              await inventoryService.updateInventoryProduct(selectedItem.id_key, inventoryUpdateData);
                           } else {
                 // Es un producto manufacturado, usar el endpoint correcto
                 await inventoryService.update(selectedItem.id_key, invFormattedData);

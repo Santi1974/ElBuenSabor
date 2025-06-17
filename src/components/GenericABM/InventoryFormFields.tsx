@@ -133,17 +133,19 @@ const InventoryFormFields: React.FC<InventoryFormFieldsProps> = ({
         </div>
       </div>
 
-      {/* Description field */}
-      <div className="mb-3">
-        <label className="form-label">Descripción</label>
-        <textarea
-          className="form-control"
-          rows={3}
-          value={formData.description || ''}
-          onChange={(e) => onInputChange('description', e.target.value)}
-          placeholder="Describe el producto..."
-        />
-      </div>
+      {/* Description field - only for manufactured products */}
+      {(selectedItemType === 'manufactured' || (!selectedItem && formData.product_type === 'manufactured')) && (
+        <div className="mb-3">
+          <label className="form-label">Descripción</label>
+          <textarea
+            className="form-control"
+            rows={3}
+            value={formData.description || ''}
+            onChange={(e) => onInputChange('description', e.target.value)}
+            placeholder="Describe el producto..."
+          />
+        </div>
+      )}
 
       {/* Category selection fields */}
       {(formData.product_type || selectedItemType) && (
@@ -232,14 +234,28 @@ const InventoryFormFields: React.FC<InventoryFormFieldsProps> = ({
       {(selectedItemType === 'inventory' || (!selectedItem && formData.product_type === 'inventory')) && (
         <>
           <div className="mb-3">
-            <label className="form-label">Stock Actual</label>
+            <label className="form-label">
+              Stock Actual
+              {selectedItem && (
+                <small className="text-muted ms-2">(Solo lectura - Use "Agregar Inventario")</small>
+              )}
+            </label>
             <input
               type="number"
-              className="form-control"
+              className={`form-control ${selectedItem ? 'bg-light' : ''}`}
               min="0"
               value={formData.current_stock || 0}
               onChange={(e) => onInputChange('current_stock', parseInt(e.target.value) || 0)}
+              placeholder="0"
+              readOnly={!!selectedItem}
+              disabled={!!selectedItem}
             />
+            {selectedItem && (
+              <div className="form-text text-info">
+                <i className="bi bi-info-circle me-1"></i>
+                Para modificar el stock use el botón "Agregar Inventario"
+              </div>
+            )}
           </div>
           <div className="mb-3">
             <label className="form-label">Stock Mínimo</label>
