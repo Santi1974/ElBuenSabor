@@ -65,6 +65,7 @@ const ingredientService = {
   },
 
   create: async (ingredient: Omit<Ingredient, 'id_key'>) => {
+    ingredient.current_stock = 0;
     const response = await api.post(`${API_URL}/inventory_item/`, ingredient);
     return response.data;
   },
