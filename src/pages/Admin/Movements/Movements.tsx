@@ -344,35 +344,58 @@ const Movements: React.FC = () => {
                   </h5>
                 </div>
                 <div className="card-body">
-                  <div className="mb-3">
-                    <div className="d-flex justify-content-between align-items-center mb-1">
-                      <span className="text-muted">Gastos</span>
-                      <span className="fw-bold text-danger">
-                        {formatPercentage((revenueData.total_expenses / revenueData.revenue) * 100)}
-                      </span>
-                    </div>
-                    <div className="progress" style={{ height: '8px' }}>
-                      <div 
-                        className="progress-bar bg-danger" 
-                        style={{ width: `${(revenueData.total_expenses / revenueData.revenue) * 100}%` }}
-                      ></div>
-                    </div>
-                  </div>
+                  {revenueData.revenue > 0 ? (
+                    <>
+                      <div className="mb-3">
+                        <div className="d-flex justify-content-between align-items-center mb-1">
+                          <span className="text-muted">Gastos</span>
+                          <span className="fw-bold text-danger">
+                            {formatPercentage(Math.min((revenueData.total_expenses / revenueData.revenue) * 100, 999))}
+                          </span>
+                        </div>
+                        <div className="progress" style={{ height: '8px' }}>
+                          <div 
+                            className="progress-bar bg-danger" 
+                            style={{ width: `${Math.min((revenueData.total_expenses / revenueData.revenue) * 100, 100)}%` }}
+                          ></div>
+                        </div>
+                        {revenueData.total_expenses > revenueData.revenue && (
+                          <small className="text-danger">
+                            <i className="bi bi-exclamation-triangle me-1"></i>
+                            Los gastos superan los ingresos
+                          </small>
+                        )}
+                      </div>
 
-                  <div>
-                    <div className="d-flex justify-content-between align-items-center mb-1">
-                      <span className="text-muted">Ganancia</span>
-                      <span className="fw-bold text-primary">
-                        {formatPercentage(revenueData.profit_margin_percentage)}
-                      </span>
+                      <div>
+                        <div className="d-flex justify-content-between align-items-center mb-1">
+                          <span className="text-muted">
+                            {revenueData.profit_margin_percentage >= 0 ? 'Ganancia' : 'Pérdida'}
+                          </span>
+                          <span className={`fw-bold ${revenueData.profit_margin_percentage >= 0 ? 'text-primary' : 'text-danger'}`}>
+                            {formatPercentage(Math.abs(revenueData.profit_margin_percentage))}
+                          </span>
+                        </div>
+                        <div className="progress" style={{ height: '8px' }}>
+                          <div 
+                            className={`progress-bar ${revenueData.profit_margin_percentage >= 0 ? 'bg-primary' : 'bg-danger'}`}
+                            style={{ width: `${Math.min(Math.abs(revenueData.profit_margin_percentage), 100)}%` }}
+                          ></div>
+                        </div>
+                        {revenueData.profit_margin_percentage < 0 && (
+                          <small className="text-danger">
+                            <i className="bi bi-trend-down me-1"></i>
+                            Operación con pérdidas
+                          </small>
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-center text-muted py-3">
+                      <i className="bi bi-calculator me-2"></i>
+                      No hay ingresos para calcular rentabilidad
                     </div>
-                    <div className="progress" style={{ height: '8px' }}>
-                      <div 
-                        className="progress-bar bg-primary" 
-                        style={{ width: `${revenueData.profit_margin_percentage}%` }}
-                      ></div>
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -416,18 +439,21 @@ const Movements: React.FC = () => {
                         -{formatCurrency(revenueData.total_expenses)}
                       </td>
                       <td className="text-end">
-                        -{formatPercentage((revenueData.total_expenses / revenueData.revenue) * 100)}
+                        {revenueData.revenue > 0 
+                          ? `-${formatPercentage(Math.min((revenueData.total_expenses / revenueData.revenue) * 100, 999))}`
+                          : 'N/A'
+                        }
                       </td>
                     </tr>
-                    <tr className="table-primary">
+                    <tr className={revenueData.profit >= 0 ? "table-primary" : "table-danger"}>
                       <td>
-                        <i className="bi bi-equals me-2 text-primary"></i>
-                        <strong>Ganancia Neta</strong>
+                        <i className={`bi ${revenueData.profit >= 0 ? 'bi-equals' : 'bi-dash-square'} me-2 ${revenueData.profit >= 0 ? 'text-primary' : 'text-danger'}`}></i>
+                        <strong>{revenueData.profit >= 0 ? 'Ganancia Neta' : 'Pérdida Neta'}</strong>
                       </td>
-                      <td className="text-end fw-bold text-primary fs-5">
+                      <td className={`text-end fw-bold fs-5 ${revenueData.profit >= 0 ? 'text-primary' : 'text-danger'}`}>
                         {formatCurrency(revenueData.profit)}
                       </td>
-                      <td className="text-end fw-bold fs-5">
+                      <td className={`text-end fw-bold fs-5 ${revenueData.profit >= 0 ? 'text-primary' : 'text-danger'}`}>
                         {formatPercentage(revenueData.profit_margin_percentage)}
                       </td>
                     </tr>

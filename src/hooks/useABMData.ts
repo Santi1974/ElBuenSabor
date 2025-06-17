@@ -68,9 +68,12 @@ export const useABMData = (type: ABMType, reloadCategories?: () => Promise<void>
             const categoriesWithParent = response.data.map((category: any) => {
               let parentCategoryName = 'Sin categoría padre';
               if (category.parent_id) {
-                // Nota: Esto requiere una segunda llamada para obtener datos del padre
-                // Idealmente el backend debería incluir esta información
-                parentCategoryName = 'Categoría padre';
+                if (category.parent && category.parent.name) {
+                  parentCategoryName = category.parent.name;
+                } else {
+                  const parentCategory = response.data.find((cat: any) => cat.id_key === category.parent_id);
+                  parentCategoryName = parentCategory ? parentCategory.name : 'Categoría padre no encontrada';
+                }
               }
               return {
                 ...category,
@@ -87,9 +90,12 @@ export const useABMData = (type: ABMType, reloadCategories?: () => Promise<void>
             const categoriesWithParent = response.data.map((category: any) => {
               let parentCategoryName = 'Sin categoría padre';
               if (category.parent_id) {
-                // Nota: Esto requiere una segunda llamada para obtener datos del padre
-                // Idealmente el backend debería incluir esta información
-                parentCategoryName = 'Categoría padre';
+                if (category.parent && category.parent.name) {
+                  parentCategoryName = category.parent.name;
+                } else {
+                  const parentCategory = response.data.find((cat: any) => cat.id_key === category.parent_id);
+                  parentCategoryName = parentCategory ? parentCategory.name : 'Categoría padre no encontrada';
+                }
               }
               return {
                 ...category,
@@ -115,7 +121,9 @@ export const useABMData = (type: ABMType, reloadCategories?: () => Promise<void>
             
             const categoriesWithParent = allCats.map((category: any) => {
               let parentCategoryName = 'Sin categoría padre';
-              if (category.parent_id) {
+              if (category.parent_id && category.parent) {
+                parentCategoryName = category.parent.name;
+              } else if (category.parent_id) {
                 const parentCategory = allCats.find((cat: any) => cat.id_key === category.parent_id);
                 parentCategoryName = parentCategory ? parentCategory.name : 'Categoría padre no encontrada';
               }
