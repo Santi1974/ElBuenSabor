@@ -27,6 +27,7 @@ const ClientHeader: React.FC<ClientHeaderProps> = ({
   const navigate = useNavigate();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
   const { user, isAuthenticated, logout } = useAuth();
 
@@ -81,17 +82,24 @@ const ClientHeader: React.FC<ClientHeaderProps> = ({
             <h1 className="navbar-brand h4 mb-0 text-white fw-bold">{title}</h1>
           </div>
 
-          {/* Center Section - Search Bar (Desktop) */}
+          {/* Center Section - Search Bar (Desktop and Medium screens) */}
           {showSearchBar && (
-            <div className="d-none d-lg-flex flex-grow-1 justify-content-center px-4">
-              <div className="w-100" style={{ maxWidth: '400px' }}>
+            <div className="d-none d-md-flex flex-grow-1 justify-content-center px-3 px-lg-4">
+              <div className="position-relative w-100" style={{ maxWidth: '450px' }}>
                 <input
                   type="text"
-                  className="form-control border-0 rounded-pill bg-white bg-opacity-90"
+                  className="form-control border-0 rounded-pill bg-white bg-opacity-95 pe-5 search-input"
                   placeholder={searchPlaceholder}
                   value={searchValue}
                   onChange={handleSearchChange}
+                  style={{ 
+                    fontSize: '0.95rem',
+                    padding: '0.75rem 1.25rem',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                    transition: 'all 0.2s ease'
+                  }}
                 />
+                <i className="bi bi-search position-absolute top-50 end-0 translate-middle-y pe-3 text-muted"></i>
               </div>
             </div>
           )}
@@ -101,13 +109,18 @@ const ClientHeader: React.FC<ClientHeaderProps> = ({
             {/* Mobile Search Toggle */}
             {showSearchBar && (
               <button 
-                className="btn btn-link text-white text-decoration-none p-2 d-lg-none border-0"
-                data-bs-toggle="collapse"
-                data-bs-target="#mobileSearch"
-                aria-expanded="false"
-                aria-controls="mobileSearch"
+                className="btn btn-link text-white text-decoration-none p-2 d-md-none border-0 mobile-search-toggle"
+                onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
+                style={{
+                  borderRadius: '50%',
+                  width: '40px',
+                  height: '40px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
               >
-                <i className="bi bi-search fs-5"></i>
+                <i className={`bi ${mobileSearchOpen ? 'bi-x' : 'bi-search'} fs-5`}></i>
               </button>
             )}
             
@@ -218,19 +231,29 @@ const ClientHeader: React.FC<ClientHeaderProps> = ({
           </div>
         </div>
 
-        {/* Mobile Search Collapse */}
-        {showSearchBar && (
-          <div className="collapse d-lg-none mt-3" id="mobileSearch">
-            <div className="container-fluid">
+        {/* Mobile Search */}
+        {showSearchBar && mobileSearchOpen && (
+          <div className="d-md-none mt-3 mobile-search-container">
+            <div className="container-fluid px-3">
               <div className="row">
                 <div className="col">
-                  <input
-                    type="text"
-                    className="form-control border-0 rounded-pill bg-white bg-opacity-90"
-                    placeholder={searchPlaceholder}
-                    value={searchValue}
-                    onChange={handleSearchChange}
-                  />
+                  <div className="position-relative">
+                    <input
+                      type="text"
+                      className="form-control border-0 rounded-pill bg-white bg-opacity-95 pe-5 mobile-search-input"
+                      placeholder={searchPlaceholder}
+                      value={searchValue}
+                      onChange={handleSearchChange}
+                      style={{ 
+                        fontSize: '16px', /* Evita zoom en iOS */
+                        padding: '0.875rem 1.25rem',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                        transition: 'all 0.3s ease'
+                      }}
+                      autoFocus
+                    />
+                    <i className="bi bi-search position-absolute top-50 end-0 translate-middle-y pe-3 text-muted"></i>
+                  </div>
                 </div>
               </div>
             </div>
