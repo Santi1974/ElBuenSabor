@@ -65,7 +65,6 @@ export const useABMData = (type: ABMType, reloadCategories?: () => Promise<void>
         case 'rubro':
           if (filterType === 'manufactured') {
             response = await categoryService.getAll(offset, itemsPerPage);
-            // También obtenemos todas las categorías manufactured para buscar padres
             const allManufacturedResponse = await categoryService.getAll(0, 100);
             
             const categoriesWithParent = response.data.map((category: any) => {
@@ -91,7 +90,6 @@ export const useABMData = (type: ABMType, reloadCategories?: () => Promise<void>
             setHasNext(response.hasNext);
           } else if (filterType === 'inventory') {
             response = await categoryService.getInventoryCategories(offset, itemsPerPage);
-            // También obtenemos todas las categorías inventory para buscar padres
             const allInventoryResponse = await categoryService.getInventoryCategories(0, 100);
             
             const categoriesWithParent = response.data.map((category: any) => {

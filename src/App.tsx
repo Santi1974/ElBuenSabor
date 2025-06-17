@@ -24,11 +24,9 @@ function RoleRoute({ children, role }: { children: ReactNode; role: string }) {
   return <>{children}</>;
 }
 
-// Nueva función para rutas públicas que redirige usuarios autenticados según su rol
 function PublicRoute({ children }: { children: ReactNode }) {
   const user = authService.getCurrentUser();
   
-  // Si el usuario está autenticado, redirigir según su rol
   if (user) {
     if (user.role === 'administrador') return <Navigate to="/admin" replace />;
     if (user.role === 'delivery') return <Navigate to="/delivery" replace />;
@@ -41,12 +39,10 @@ function PublicRoute({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-// Función para rutas que requieren autenticación obligatoria
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const user = authService.getCurrentUser();
   if (!user) return <Navigate to="/login" replace />;
   if (user.role !== 'cliente') {
-    // Si no es cliente, redirigir según su rol
     if (user.role === 'administrador') return <Navigate to="/admin" replace />;
     if (user.role === 'delivery') return <Navigate to="/delivery" replace />;
     if (user.role === 'cajero') return <Navigate to="/cashier" replace />;

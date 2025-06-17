@@ -114,10 +114,10 @@ const inventoryService = {
     }
   },
 
-  getIngredients: async (): Promise<InventoryItem[]> => {
+  getIngredients: async (limit: number = 50): Promise<InventoryItem[]> => {
     try {
       const response = await api.get<ApiPaginatedResponse<InventoryItem> | InventoryItem[]>(
-        `${API_URL}/inventory_item/ingredients/all`
+        `${API_URL}/inventory_item/ingredients/all?limit=${limit}`
       );
       
       // Handle both old and new response formats
