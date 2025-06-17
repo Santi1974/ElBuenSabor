@@ -729,14 +729,16 @@ const Orders = () => {
                   </div>
                 </div>
                 <div className="modal-footer">
-                  <button
-                    type="button"
-                    className="btn btn-primary"
-                    onClick={() => invoiceService.downloadPDFId(selectedOrder.invoice_id)}
-                  >
-                    <i className="bi bi-download me-2"></i>
-                    Descargar Factura
-                  </button>
+                  {selectedOrder.invoice_id && (
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={() => invoiceService.downloadPDFId(selectedOrder.invoice_id)}
+                    >
+                      <i className="bi bi-download me-2"></i>
+                      Descargar Factura
+                    </button>
+                  )}
                   <button
                     type="button"
                     className="btn btn-secondary"
