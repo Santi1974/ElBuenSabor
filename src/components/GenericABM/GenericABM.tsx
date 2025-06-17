@@ -25,12 +25,14 @@ interface GenericABMProps {
     options?: { value: string; label: string }[];
   }[];
   type?: ABMType;
+  onViewOrders?: (item: any) => void;
 }
 
 const GenericABM: React.FC<GenericABMProps> = ({
   title,
   columns,
-  type = 'employee'
+  type = 'employee',
+  onViewOrders
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -234,6 +236,7 @@ const GenericABM: React.FC<GenericABMProps> = ({
         onDelete={handleDelete}
         onView={handleOpenViewModal}
         onAddStock={handleOpenAddInventoryModal}
+        onViewOrders={onViewOrders}
         type={type}
       />
 

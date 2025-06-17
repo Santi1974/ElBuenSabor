@@ -1,7 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import GenericABM from '../../../components/GenericABM/GenericABM';
+import { ClientOrdersModal } from './components';
+import './Clients.css';
 
 const Clients: React.FC = () => {
+  const [showOrdersModal, setShowOrdersModal] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<any>(null);
+
   const columns = [
     { field: 'full_name', headerName: 'Nombre', width: 200 },
     { field: 'email', headerName: 'Email', width: 250 },
@@ -15,24 +20,33 @@ const Clients: React.FC = () => {
       ]
     },
     { field: 'phone_number', headerName: 'Teléfono', width: 150 },
-    //{ 
-    //  field: 'active', 
-    //  headerName: 'Estado', 
-    //  width: 100,
-    //  type: 'select' as const,
-    //  options: [
-    //    { value: 'true', label: 'Activo' },
-    //    { value: 'false', label: 'Inactivo' }
-    //  ]
-    //}
   ];
 
+  const handleViewClientOrders = (client: any) => {
+    setSelectedClient(client);
+    setShowOrdersModal(true);
+  };
+
+  const handleCloseOrdersModal = () => {
+    setShowOrdersModal(false);
+    setSelectedClient(null);
+  };
+
   return (
-    <GenericABM
-      title="Gestión de Clientes"
-      columns={columns}
-      type="client"
-    />
+    <>
+      <GenericABM
+        title="Gestión de Clientes"
+        columns={columns}
+        type="client"
+        onViewOrders={handleViewClientOrders}
+      />
+
+      <ClientOrdersModal
+        isOpen={showOrdersModal}
+        client={selectedClient}
+        onClose={handleCloseOrdersModal}
+      />
+    </>
   );
 };
 

@@ -16,6 +16,7 @@ interface DataTableProps {
   onDelete: (id: number) => void;
   onView: (item: any) => void;
   onAddStock?: (item: any) => void;
+  onViewOrders?: (item: any) => void;
   type?: string;
 }
 
@@ -26,6 +27,7 @@ const DataTable: React.FC<DataTableProps> = ({
   onDelete,
   onView,
   onAddStock,
+  onViewOrders,
   type
 }) => {
   const renderCellValue = (column: Column, item: any) => {
@@ -179,6 +181,18 @@ const DataTable: React.FC<DataTableProps> = ({
                     title="Agregar Stock"
                   >
                     <i className="bi bi-box-arrow-in-down"></i>
+                  </button>
+                )}
+                {type === 'client' && onViewOrders && (
+                  <button
+                    className="btn btn-sm btn-outline-info me-2"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onViewOrders(item);
+                    }}
+                    title="Ver Pedidos"
+                  >
+                    <i className="bi bi-receipt"></i>
                   </button>
                 )}
                 <button

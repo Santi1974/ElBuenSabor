@@ -131,7 +131,7 @@ const Home = () => {
           price: calculatePromotionPrice(promo),
           image_url: 'https://images.unsplash.com/photo-1607083206968-13611e3d76db?auto=format&fit=crop&w=400&q=80',
           type: 'promotion' as const,
-          is_available: true,
+          is_available: promo.is_available,
           discount_percentage: promo.discount_percentage,
           active: promo.active
         }));
@@ -398,7 +398,7 @@ const Home = () => {
               const productDescription = product?.description || 'Sin descripción';
               const productPrice = product?.price || 0;
               const productImageUrl = product?.image_url || 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=400&q=80';
-              
+            
               return (
                 <div 
                   className="product-card" 
@@ -423,7 +423,7 @@ const Home = () => {
                         <span className="product-price">${productPrice.toFixed(2)}</span>
                         <div className="text-success fw-bold">
                           <i className="bi bi-tag-fill me-1"></i>
-                          {product.discount_percentage}% OFF
+                          {product.is_available === false ? 'No disponible' : `${product.discount_percentage}% OFF`}
                         </div>
                       </div>
                     ) : (

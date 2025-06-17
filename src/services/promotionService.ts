@@ -13,6 +13,7 @@ export interface Promotion {
   description: string;
   discount_percentage: number;
   active: boolean;
+  is_available: boolean;
   manufactured_item_details: PromotionItemDetail[];
   inventory_item_details: PromotionItemDetail[];
 }
@@ -27,7 +28,7 @@ export interface PromotionResponse {
 const promotionService = {
   getAll: async (offset: number = 0, limit: number = 10): Promise<{ data: Promotion[], total: number, hasNext: boolean }> => {
     try {
-      const response = await api.get<PromotionResponse>(`${API_URL}/promotion/?offset=${offset}&limit=${limit}`);
+      const response = await api.get<PromotionResponse>(`${API_URL}/promotion/products/all?offset=${offset}&limit=${limit}`);
       return {
         data: response.data.items,
         total: response.data.total,
