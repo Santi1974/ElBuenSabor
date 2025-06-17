@@ -275,11 +275,20 @@ const CashierOrders = () => {
       
       alert('Pedido marcado como entregado exitosamente');
     } catch (err) {
-      console.error('Error marking order as delivered:', err);
+      console.error('Error moving order to delivered:', err);
       alert('Error al marcar el pedido como entregado. Por favor, intente nuevamente.');
     } finally {
       setProcessingOrderId(null);
     }
+  };
+
+  // Helper functions to determine order composition
+  const orderHasOnlyInventoryItems = (order: Order) => {
+    return order.details.length === 0 && order.inventory_details.length > 0;
+  };
+
+  const orderHasManufacturedItems = (order: Order) => {
+    return order.details.length > 0;
   };
 
   return (
@@ -739,24 +748,30 @@ const CashierOrders = () => {
                 )}
                 {selectedOrder.status.toLowerCase() === 'a_confirmar' && (
                   <>
-                    <button 
-                      type="button" 
-                      className="btn btn-info"
-                      onClick={() => handleMoveToKitchen(selectedOrder.id_key)}
-                      disabled={processingOrderId === selectedOrder.id_key}
-                    >
-                      <i className="bi bi-arrow-right me-2"></i>
-                      {processingOrderId === selectedOrder.id_key ? 'Procesando...' : 'Enviar a Cocina'}
-                    </button>
-                    <button 
-                      type="button" 
-                      className="btn btn-warning"
-                      onClick={() => handleMoveToReady(selectedOrder.id_key)}
-                      disabled={processingOrderId === selectedOrder.id_key}
-                    >
-                      <i className="bi bi-check-circle me-2"></i>
-                      {processingOrderId === selectedOrder.id_key ? 'Procesando...' : 'Marcar como Listo'}
-                    </button>
+                    {/* Solo mostrar "Enviar a Cocina" si NO es solo items de inventario (tiene productos manufacturados) */}
+                    {!orderHasOnlyInventoryItems(selectedOrder) && (
+                      <button 
+                        type="button" 
+                        className="btn btn-info"
+                        onClick={() => handleMoveToKitchen(selectedOrder.id_key)}
+                        disabled={processingOrderId === selectedOrder.id_key}
+                      >
+                        <i className="bi bi-arrow-right me-2"></i>
+                        {processingOrderId === selectedOrder.id_key ? 'Procesando...' : 'Enviar a Cocina'}
+                      </button>
+                    )}
+                    {/* Solo mostrar "Marcar como Listo" si NO tiene productos manufacturados */}
+                    {!orderHasManufacturedItems(selectedOrder) && (
+                      <button 
+                        type="button" 
+                        className="btn btn-warning"
+                        onClick={() => handleMoveToReady(selectedOrder.id_key)}
+                        disabled={processingOrderId === selectedOrder.id_key}
+                      >
+                        <i className="bi bi-check-circle me-2"></i>
+                        {processingOrderId === selectedOrder.id_key ? 'Procesando...' : 'Marcar como Listo'}
+                      </button>
+                    )}
                   </>
                 )}
                 {selectedOrder.status.toLowerCase() === 'listo' && selectedOrder.delivery_method.toLowerCase() === 'delivery' && (
