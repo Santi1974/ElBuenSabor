@@ -122,10 +122,10 @@ const CashierOrders = () => {
     return date.toLocaleDateString('es-AR', {
       day: '2-digit',
       month: '2-digit',
-      year: 'numeric',
+      year: '2-digit',
       hour: '2-digit',
       minute: '2-digit'
-    });
+    }).replace(/\s/, ', ');
   };
 
   // Translate status to Spanish
@@ -376,20 +376,19 @@ const CashierOrders = () => {
                 <table className="table table-hover mb-0">
                   <thead className="table-light">
                     <tr>
-                      <th className="border-0 fw-semibold text-muted px-4 py-3">Pedido</th>
-                      <th className="border-0 fw-semibold text-muted px-4 py-3">Cliente</th>
-                      <th className="border-0 fw-semibold text-muted px-4 py-3">Estado</th>
-                      <th className="border-0 fw-semibold text-muted px-4 py-3">Método</th>
-                      <th className="border-0 fw-semibold text-muted px-4 py-3">Total</th>
-                      <th className="border-0 fw-semibold text-muted px-4 py-3">Fecha</th>
-                      <th className="border-0 fw-semibold text-muted px-4 py-3">Pago</th>
-                      <th className="border-0 fw-semibold text-muted px-4 py-3">Acciones</th>
+                      <th className="border-0 fw-semibold text-muted px-3 py-2" style={{width: '120px'}}>Pedido</th>
+                      <th className="border-0 fw-semibold text-muted px-3 py-2" style={{width: '200px'}}>Cliente</th>
+                      <th className="border-0 fw-semibold text-muted px-3 py-2 text-center" style={{width: '100px'}}>Estado</th>
+                      <th className="border-0 fw-semibold text-muted px-3 py-2" style={{width: '150px'}}>Método</th>
+                      <th className="border-0 fw-semibold text-muted px-3 py-2 text-end" style={{width: '100px'}}>Total</th>
+                      <th className="border-0 fw-semibold text-muted px-3 py-2 text-center" style={{width: '120px'}}>Fecha/Pago</th>
+                      <th className="border-0 fw-semibold text-muted px-3 py-2 text-center" style={{width: '140px'}}>Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredOrders.length === 0 ? (
                       <tr>
-                        <td colSpan={8} className="text-center py-5 text-muted">
+                        <td colSpan={7} className="text-center py-5 text-muted">
                           <i className="bi bi-inbox fs-1 d-block mb-3"></i>
                           {searchTerm ? 'No se encontraron pedidos que coincidan con la búsqueda' : 'No hay pedidos'}
                         </td>
@@ -402,51 +401,62 @@ const CashierOrders = () => {
                           onClick={() => handleOrderClick(order)}
                           style={{cursor: 'pointer'}}
                         >
-                          <td className="px-4 py-3">
+                          <td className="px-3 py-2">
                             <div className="d-flex flex-column">
                               <span className="fw-semibold text-primary">#{order.id_key}</span>
                               <small className="text-muted">
-                                {order.estimated_time} min estimado
+                                <i className="bi bi-clock me-1"></i>
+                                {order.estimated_time}min
                               </small>
                             </div>
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-3 py-2">
                             <div className="d-flex flex-column">
-                              <span className="fw-semibold">{order.user.full_name}</span>
-                              <small className="text-muted">{order.user.phone_number}</small>
+                              <span className="fw-semibold text-truncate" style={{maxWidth: '180px'}} title={order.user.full_name}>
+                                {order.user.full_name}
+                              </span>
+                              <small className="text-muted">
+                                <i className="bi bi-telephone me-1"></i>
+                                {order.user.phone_number}
+                              </small>
                             </div>
                           </td>
-                          <td className="px-4 py-3">
-                            <span className={`badge ${getStatusBadgeColor(order.status)}`}>
+                          <td className="px-3 py-2 text-center">
+                            <span className={`badge ${getStatusBadgeColor(order.status)} small`}>
                               {translateStatus(order.status)}
                             </span>
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-3 py-2">
                             <div className="d-flex flex-column">
-                              <span>{translateDeliveryMethod(order.delivery_method)}</span>
-                              <small className="text-muted">{translatePaymentMethod(order.payment_method)}</small>
+                              <div className="d-flex align-items-center">
+                                <small>{translateDeliveryMethod(order.delivery_method)}</small>
+                              </div>
+                              <div className="d-flex align-items-center mt-1">
+                                <small className="text-muted">{translatePaymentMethod(order.payment_method)}</small>
+                              </div>
                             </div>
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-3 py-2 text-end">
                             <div className="d-flex flex-column">
                               <span className="fw-semibold">${order.final_total.toFixed(2)}</span>
                               {order.discount > 0 && (
                                 <small className="text-success">
-                                  Desc: ${order.discount.toFixed(2)}
+                                  -${order.discount.toFixed(2)}
                                 </small>
                               )}
                             </div>
                           </td>
-                          <td className="px-4 py-3">
-                            <span className="text-muted small">{formatDate(order.date)}</span>
+                          <td className="px-3 py-2 text-center">
+                            <div className="d-flex flex-column">
+                              <small className="text-muted">{formatDate(order.date).split(',')[0]}</small>
+                              <small className="text-muted">{formatDate(order.date).split(',')[1]}</small>
+                              <span className={`badge ${order.is_paid ? 'bg-success' : 'bg-warning'} mt-1`} style={{fontSize: '0.7rem'}}>
+                                {order.is_paid ? 'Pagado' : 'Pendiente'}
+                              </span>
+                            </div>
                           </td>
-                          <td className="px-4 py-3">
-                            <span className={`badge ${order.is_paid ? 'bg-success' : 'bg-warning'} small`}>
-                              {order.is_paid ? 'Pagado' : 'Pendiente'}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="d-flex gap-1">
+                          <td className="px-3 py-2">
+                            <div className="d-flex flex-column gap-1">
                               {!order.is_paid && (
                                 <button
                                   className="btn btn-success btn-sm"
@@ -455,9 +465,10 @@ const CashierOrders = () => {
                                     handleMarkAsPaid(order.id_key);
                                   }}
                                   disabled={processingOrderId === order.id_key}
+                                  style={{fontSize: '0.75rem', padding: '0.25rem 0.5rem'}}
                                 >
-                                  <i className="bi bi-cash me-1"></i>
-                                  {processingOrderId === order.id_key ? 'Procesando...' : 'Pagado'}
+                                  <i className="bi bi-cash"></i>
+                                  {processingOrderId === order.id_key ? '...' : ' Pagar'}
                                 </button>
                               )}
                               
@@ -469,9 +480,10 @@ const CashierOrders = () => {
                                     handleMoveToDelivery(order.id_key);
                                   }}
                                   disabled={processingOrderId === order.id_key}
+                                  style={{fontSize: '0.75rem', padding: '0.25rem 0.5rem'}}
                                 >
-                                  <i className="bi bi-truck me-1"></i>
-                                  {processingOrderId === order.id_key ? 'Procesando...' : 'Pasar a Delivery'}
+                                  <i className="bi bi-truck"></i>
+                                  {processingOrderId === order.id_key ? '...' : ' Delivery'}
                                 </button>
                               )}
                               
@@ -484,9 +496,10 @@ const CashierOrders = () => {
                                   }}
                                   disabled={processingOrderId === order.id_key || !order.is_paid}
                                   title={!order.is_paid ? 'El pedido debe estar pagado para poder marcarlo como entregado' : ''}
+                                  style={{fontSize: '0.75rem', padding: '0.25rem 0.5rem'}}
                                 >
-                                  <i className="bi bi-check-circle me-1"></i>
-                                  {processingOrderId === order.id_key ? 'Procesando...' : 'Marcar Entregado'}
+                                  <i className="bi bi-check-circle"></i>
+                                  {processingOrderId === order.id_key ? '...' : ' Entregar'}
                                 </button>
                               )}
                             </div>

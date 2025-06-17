@@ -248,9 +248,6 @@ const Movements: React.FC = () => {
                       </h6>
                       <h4 className="mb-0">{formatCurrency(revenueData.revenue)}</h4>
                     </div>
-                    <div className="align-self-center">
-                      <i className="bi bi-arrow-up-circle fs-1 opacity-75"></i>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -266,9 +263,6 @@ const Movements: React.FC = () => {
                         Gastos Totales
                       </h6>
                       <h4 className="mb-0">{formatCurrency(revenueData.total_expenses)}</h4>
-                    </div>
-                    <div className="align-self-center">
-                      <i className="bi bi-arrow-down-circle fs-1 opacity-75"></i>
                     </div>
                   </div>
                 </div>
@@ -286,9 +280,6 @@ const Movements: React.FC = () => {
                       </h6>
                       <h4 className="mb-0">{formatCurrency(revenueData.profit)}</h4>
                     </div>
-                    <div className="align-self-center">
-                      <i className="bi bi-trophy fs-1 opacity-75"></i>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -304,9 +295,6 @@ const Movements: React.FC = () => {
                         Margen de Ganancia
                       </h6>
                       <h4 className="mb-0">{formatPercentage(revenueData.profit_margin_percentage)}</h4>
-                    </div>
-                    <div className="align-self-center">
-                      <i className="bi bi-pie-chart fs-1 opacity-75"></i>
                     </div>
                   </div>
                 </div>

@@ -47,8 +47,8 @@ const Admin = () => {
   return (
     <div className="container-fluid min-vh-100 min-vw-100 d-flex flex-row p-0">
       {/* Sidebar */}
-      <aside className="text-white d-flex flex-column justify-content-start align-items-start p-4" style={{width: 250, backgroundColor: '#747474'}}>
-        <nav className="w-100">
+      <aside className="text-white d-flex flex-column justify-content-start align-items-start sidebar-container" style={{width: 250, backgroundColor: '#747474'}}>
+        <nav className="w-100 flex-grow-1 sidebar-nav">
           <div className="list-group list-group-flush">
             {menuItems.map((item) => (
               <div key={item.path}>
@@ -118,6 +118,37 @@ const Admin = () => {
         </main>
       </div>
       <style>{`
+        .sidebar-container {
+          height: 100vh;
+          position: sticky;
+          top: 0;
+          padding: 1rem;
+        }
+        
+        .sidebar-nav {
+          overflow-y: auto;
+          overflow-x: hidden;
+          max-height: calc(100vh - 2rem);
+          padding-right: 10px;
+          margin-right: -10px;
+        }
+        
+        /* Ocultar scrollbar en WebKit browsers (Chrome, Safari, Edge) */
+        .sidebar-nav::-webkit-scrollbar {
+          width: 0px;
+          background: transparent;
+        }
+        
+        /* Ocultar scrollbar en Firefox */
+        .sidebar-nav {
+          scrollbar-width: none;
+        }
+        
+        /* Mantener funcionalidad de scroll en IE */
+        .sidebar-nav {
+          -ms-overflow-style: none;
+        }
+        
         .hover-highlight:hover {
           background-color: rgba(255, 255, 255, 0.1) !important;
           cursor: pointer;
