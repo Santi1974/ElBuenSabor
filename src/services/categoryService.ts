@@ -156,7 +156,6 @@ const categoryService = {
     }
   },
 
-  // Get all public subcategories for Home filtering
   getPublicSubcategories: async (): Promise<Category[]> => {
     try {
       const response = await api.get<{
@@ -168,7 +167,18 @@ const categoryService = {
       if (response.data && typeof response.data === 'object') {
         const { manufactured_item_categories = [], inventory_item_categories = [] } = response.data;
         
-        // Combine both arrays
+        manufactured_item_categories.forEach(category => {
+          if (category.parent) {
+            console.log(`${category.name}: ${category.parent.name}`);
+          }
+        });
+        
+        inventory_item_categories.forEach(category => {
+          if (category.parent) {
+            console.log(`${category.name}: ${category.parent.name}`);
+          }
+        });
+        
         const allCategories = [...manufactured_item_categories, ...inventory_item_categories];
         
         return allCategories;

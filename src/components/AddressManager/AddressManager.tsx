@@ -379,7 +379,7 @@ const AddressManager: React.FC = () => {
                     <strong>{address.street} {address.street_number}</strong>
                   </p>
                   <p className="card-text mb-1">
-                    {address.locality_name ? address.locality_name : `Localidad ID: ${address.locality_id}`}
+                    {address.locality_name ? address.locality_name : null}
                   </p>
                   <small className="text-muted">CP: {address.zip_code}</small>
                 </div>

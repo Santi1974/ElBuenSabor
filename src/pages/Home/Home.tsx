@@ -289,14 +289,12 @@ const Home = () => {
       // Search filter
       const matchesSearch = name.toLowerCase().includes(searchTerm) ||
              description.toLowerCase().includes(searchTerm);
-      
       if (showPromotionsOnly) {
         return matchesSearch && isPromotion(product);
       }
       
       const matchesCategory = selectedCategoryId === null || 
-        isPromotion(product) ||
-        product?.category?.id_key === selectedCategoryId;
+        (!isPromotion(product) && product?.category?.id_key === selectedCategoryId);
       
       return matchesSearch && matchesCategory;
     } catch (error) {
@@ -304,6 +302,33 @@ const Home = () => {
       return false; // Exclude problematic products from results
     }
   });
+
+  // Agrupar productos por categoria padre
+  const groupedProducts = filteredProducts.reduce((groups, product) => {
+    let groupName = 'Promociones'; 
+    
+    if (!isPromotion(product) && product?.category?.id_key) {
+      // Encontrar la categoria en nuestra lista de categorias para obtener la info del padre
+      const categoryWithParent = categories.find(cat => cat.id_key === product.category!.id_key);
+      
+      if (categoryWithParent && categoryWithParent.parent?.name) {
+        groupName = categoryWithParent.parent.name;
+      } else {
+        groupName = 'Otros'; 
+      }
+    } else if (!isPromotion(product)) {
+      groupName = 'Otros'; 
+    }
+    
+    if (!groups[groupName]) {
+      groups[groupName] = [];
+    }
+    groups[groupName].push(product);
+    
+    return groups;
+  }, {} as Record<string, Product[]>);
+
+  const sortedGroupNames = Object.keys(groupedProducts).sort();
 
   const handleCategoryChange = (categoryId: number | null) => {
     setSelectedCategoryId(categoryId);
@@ -382,7 +407,7 @@ const Home = () => {
           </div>
         </div>
 
-        <div className="products-grid">
+        <div className="products-container">
           {loading ? (
             <div className="loading-message">Cargando productos...</div>
           ) : error ? (
@@ -392,54 +417,64 @@ const Home = () => {
               {search ? 'No se encontraron productos que coincidan con la búsqueda' : 'No hay productos disponibles'}
             </div>
           ) : (
-            filteredProducts.map(product => {
-              // Safe rendering with null checks
-              const productName = product?.name || 'Producto sin nombre';
-              const productDescription = product?.description || 'Sin descripción';
-              const productPrice = product?.price || 0;
-              const productImageUrl = product?.image_url || 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=400&q=80';
-            
-              return (
-                <div 
-                  className="product-card" 
-                  key={product?.id_key || Math.random()}
-                  //Si no esta logeado no se puede ver el detalle
-                  onClick={() => handleProductClick(product)}
-                >
-                  <img 
-                    src={productImageUrl} 
-                    alt={productName} 
-                    className="product-image" 
-                    onError={(e) => {
-                      // Fallback if image fails to load
-                      (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=400&q=80';
-                    }}
-                  />
-                  <div className="product-info">
-                    <h3 className="product-title">{productName}</h3>
-                    <p className="product-description">{productDescription}</p>
-                    {isPromotion(product) ? (
-                      <div>
-                        <span className="product-price">${productPrice.toFixed(2)}</span>
-                        <div className="text-success fw-bold">
-                          <i className="bi bi-tag-fill me-1"></i>
-                          {product.is_available === false ? 'No disponible' : `${product.discount_percentage}% OFF`}
+            sortedGroupNames.map(groupName => (
+              <div key={groupName} className="product-category-section">
+                <h2 className="category-title">
+                  <i className="bi bi-tag-fill me-2"></i>
+                  {groupName}
+                </h2>
+                <div className="products-grid">
+                  {groupedProducts[groupName].map(product => {
+                    // Safe rendering with null checks
+                    const productName = product?.name || 'Producto sin nombre';
+                    const productDescription = product?.description || 'Sin descripción';
+                    const productPrice = product?.price || 0;
+                    const productImageUrl = product?.image_url || 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=400&q=80';
+
+                    return (
+                      <div 
+                        className="product-card" 
+                        key={product?.id_key || Math.random()}
+                        //Si no esta logeado no se puede ver el detalle
+                        onClick={() => handleProductClick(product)}
+                      >
+                        <img 
+                          src={productImageUrl} 
+                          alt={productName} 
+                          className="product-image" 
+                          onError={(e) => {
+                            // Fallback if image fails to load
+                            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=400&q=80';
+                          }}
+                        />
+                        <div className="product-info">
+                          <h3 className="product-title">{productName}</h3>
+                          <p className="product-description">{productDescription}</p>
+                          {isPromotion(product) ? (
+                            <div>
+                              <span className="product-price">${productPrice.toFixed(2)}</span>
+                              <div className="text-success fw-bold">
+                                <i className="bi bi-tag-fill me-1"></i>
+                                {product.is_available === false ? 'No disponible' : `${product.discount_percentage}% OFF`}
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="product-price">${productPrice.toFixed(2)}</span>
+                          )}
+                          <button 
+                            className="add-button"
+                            onClick={(e) => handleAddToCart(e, product)}
+                            disabled={isButtonDisabled(product)}
+                          >
+                            {getButtonText(product)}
+                          </button>
                         </div>
                       </div>
-                    ) : (
-                      <span className="product-price">${productPrice.toFixed(2)}</span>
-                    )}
-                    <button 
-                      className="add-button"
-                      onClick={(e) => handleAddToCart(e, product)}
-                      disabled={isButtonDisabled(product)}
-                    >
-                      {getButtonText(product)}
-                    </button>
-                  </div>
+                    );
+                  })}
                 </div>
-              );
-            })
+              </div>
+            ))
           )}
         </div>
 
