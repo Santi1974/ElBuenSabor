@@ -26,13 +26,15 @@ interface GenericABMProps {
   }[];
   type?: ABMType;
   onViewOrders?: (item: any) => void;
+  filterType?: string;
 }
 
 const GenericABM: React.FC<GenericABMProps> = ({
   title,
   columns,
   type = 'employee',
-  onViewOrders
+  onViewOrders,
+  filterType
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -69,7 +71,7 @@ const GenericABM: React.FC<GenericABMProps> = ({
     handlePageChange,
     handleNextPage,
     handlePrevPage
-  } = useABMData(type, reloadCategoriesAfterCRUD);
+  } = useABMData(type, reloadCategoriesAfterCRUD, filterType);
 
   const {
     formData,

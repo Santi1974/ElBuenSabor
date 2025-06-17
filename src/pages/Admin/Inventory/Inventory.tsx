@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import GenericABM from '../../../components/GenericABM/GenericABM';
 
 const Inventory: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'manufactured' | 'inventory'>('manufactured');
+
   const inventarioColumns = [
     { field: 'name', headerName: 'Nombre', width: 180 },
-    { field: 'type_label', headerName: 'Tipo', width: 120 },
     { field: 'description', headerName: 'Descripción', width: 200 },
     { field: 'preparation_time', headerName: 'Tiempo Prep.', width: 120, type: 'number' as const },
     { field: 'price', headerName: 'Precio', width: 100, type: 'number' as const },
@@ -25,11 +26,50 @@ const Inventory: React.FC = () => {
 
   return (
     <div className="container-fluid p-4">
-      <GenericABM
-        title="Gestión de Inventario"
-        columns={inventarioColumns}
-        type="inventario"
-      />
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h2>Gestión de Inventario</h2>
+      </div>
+      
+      {/* Pestañas de navegación */}
+      <ul className="nav nav-tabs mb-4">
+        <li className="nav-item">
+          <button 
+            className={`nav-link ${activeTab === 'manufactured' ? 'active' : ''}`}
+            onClick={() => setActiveTab('manufactured')}
+          >
+            Productos Manufacturados
+          </button>
+        </li>
+        <li className="nav-item">
+          <button 
+            className={`nav-link ${activeTab === 'inventory' ? 'active' : ''}`}
+            onClick={() => setActiveTab('inventory')}
+          >
+            Inventario
+          </button>
+        </li>
+      </ul>
+
+      {/* Contenido de las pestañas */}
+      {activeTab === 'manufactured' && (
+        <GenericABM
+          title="Productos Manufacturados"
+          columns={inventarioColumns}
+          type="inventario"
+          filterType="manufactured"
+          key="manufactured" // Key para forzar re-render y reset de paginación
+        />
+      )}
+
+      {activeTab === 'inventory' && (
+        <GenericABM
+          title="Inventario"
+          columns={inventarioColumns}
+          type="inventario"
+          filterType="inventory"
+          key="inventory" // Key para forzar re-render y reset de paginación
+        />
+      )}
     </div>
   );
 };

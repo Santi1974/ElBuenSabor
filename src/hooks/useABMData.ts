@@ -8,7 +8,7 @@ import promotionService from '../services/promotionService';
 import { handleError, ERROR_MESSAGES } from '../utils/errorHandler';
 export type ABMType = 'employee' | 'client' | 'rubro' | 'inventario' | 'ingrediente' | 'promotion';
 
-export const useABMData = (type: ABMType, reloadCategories?: () => Promise<void>) => {
+export const useABMData = (type: ABMType, reloadCategories?: () => Promise<void>, filterType?: string) => {
   const [data, setData] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
@@ -36,9 +36,23 @@ export const useABMData = (type: ABMType, reloadCategories?: () => Promise<void>
           break;
         case 'inventario':
           const inventoryResponse = await inventoryService.getAllProducts(offset, itemsPerPage);
-          setData(inventoryResponse.data);
-          setTotalItems(inventoryResponse.total);
-          setHasNext(inventoryResponse.hasNext);
+          let filteredData = inventoryResponse.data;
+          
+          // Filtrar por tipo si se especifica
+          if (filterType) {
+            filteredData = inventoryResponse.data.filter((item: any) => {
+              if (filterType === 'manufactured') {
+                return item.product_type === 'manufactured' || item.type === 'manufactured';
+              } else if (filterType === 'inventory') {
+                return item.product_type === 'inventory' || item.type === 'inventory';
+              }
+              return true;
+            });
+          }
+          
+          setData(filteredData);
+          setTotalItems(filteredData.length);
+          setHasNext(false); // Ya que estamos filtrando localmente
           break;
         case 'ingrediente':
           const ingredientResponse = await ingredientService.getAll(offset, itemsPerPage);
@@ -71,11 +85,17 @@ export const useABMData = (type: ABMType, reloadCategories?: () => Promise<void>
             };
           });
           
-          setData(categoriesWithParent);
-          const totalFromBoth = (manufacturedCatsResponse.total || 0) + (inventoryCatsResponse.total || 0);
-          setTotalItems(totalFromBoth);
-          const hasNextFromEither = manufacturedCatsResponse.hasNext || inventoryCatsResponse.hasNext;
-          setHasNext(hasNextFromEither);
+          // Filtrar por tipo si se especifica
+          let filteredCategories = categoriesWithParent;
+          if (filterType) {
+            filteredCategories = categoriesWithParent.filter((category: any) => {
+              return category.category_type === filterType;
+            });
+          }
+          
+          setData(filteredCategories);
+          setTotalItems(filteredCategories.length);
+          setHasNext(false); // Ya que estamos filtrando localmente
           break;
         case 'promotion':
           response = await promotionService.getAll(offset, itemsPerPage);
@@ -97,7 +117,7 @@ export const useABMData = (type: ABMType, reloadCategories?: () => Promise<void>
 
   useEffect(() => {
     loadData();
-  }, [currentPage, type]);
+  }, [currentPage, type, filterType]);
 
   const handleDelete = async (id: number) => {
     if (window.confirm('¿Está seguro de que desea eliminar este registro?')) {
