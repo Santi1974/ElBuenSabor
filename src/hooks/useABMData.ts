@@ -165,7 +165,7 @@ export const useABMData = (type: ABMType, reloadCategories?: () => Promise<void>
             break;
           case 'inventario':
             const inventoryItemToDelete = data.find(item => item.id_key === id);
-            if (inventoryItemToDelete && inventoryItemToDelete.product_type === 'inventory') {
+            if (inventoryItemToDelete && (inventoryItemToDelete.product_type === 'inventory' || inventoryItemToDelete.type === 'inventory')) {
               await inventoryService.deleteInventoryProduct(id);
             } else {
               await inventoryService.delete(id);
