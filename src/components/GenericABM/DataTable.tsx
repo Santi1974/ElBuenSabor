@@ -70,7 +70,7 @@ const DataTable: React.FC<DataTableProps> = ({
     }
     
     // Special handling for stock fields with color indicators
-    if (column.field === 'current_stock' && (type === 'ingrediente' || (type === 'inventario' && item.product_type === 'inventory'))) {
+    if (column.field === 'current_stock' && (type === 'ingrediente' || (type === 'inventario' && (item.product_type === 'inventory' || item.type === 'inventory')))) {
       const currentStock = item.current_stock || 0;
       const minimumStock = item.minimum_stock || 0;
       const isLow = currentStock <= minimumStock;
@@ -98,7 +98,7 @@ const DataTable: React.FC<DataTableProps> = ({
       );
     }
     
-    if (column.field === 'minimum_stock' && (type === 'ingrediente' || (type === 'inventario' && item.product_type === 'inventory'))) {
+    if (column.field === 'minimum_stock' && (type === 'ingrediente' || (type === 'inventario' && (item.product_type === 'inventory' || item.type === 'inventory')))) {
       return (
         <span className="badge bg-info">
           {item.minimum_stock || 0}
@@ -116,7 +116,7 @@ const DataTable: React.FC<DataTableProps> = ({
   // Function to determine if an item has low stock
   const isLowStock = (item: any) => {
     // Check if it's an ingredient or inventory item with stock information
-    if (type === 'ingrediente' || (type === 'inventario' && item.product_type === 'inventory')) {
+    if (type === 'ingrediente' || (type === 'inventario' && (item.product_type === 'inventory' || item.type === 'inventory'))) {
       const currentStock = item.current_stock || 0;
       const minimumStock = item.minimum_stock || 0;
       return currentStock <= minimumStock;
@@ -127,7 +127,7 @@ const DataTable: React.FC<DataTableProps> = ({
   // Function to determine if an item is approaching minimum stock (20% above minimum)
   const isApproachingMinimumStock = (item: any) => {
     // Check if it's an ingredient or inventory item with stock information
-    if (type === 'ingrediente' || (type === 'inventario' && item.product_type === 'inventory')) {
+    if (type === 'ingrediente' || (type === 'inventario' && (item.product_type === 'inventory' || item.type === 'inventory'))) {
       const currentStock = item.current_stock || 0;
       const minimumStock = item.minimum_stock || 0;
       return currentStock > minimumStock && currentStock <= minimumStock * 1.2;

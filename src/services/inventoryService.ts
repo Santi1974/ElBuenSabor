@@ -150,6 +150,7 @@ const inventoryService = {
 
   // CRUD methods for inventory products
   createInventoryProduct: async (productData: Omit<InventoryItem, 'id_key'>): Promise<InventoryItem> => {
+    productData.current_stock = 0;
     const response = await api.post<InventoryItem>(`${API_URL}/inventory_item/`, productData);
     return response.data;
   },

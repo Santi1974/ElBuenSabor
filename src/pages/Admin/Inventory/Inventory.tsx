@@ -25,19 +25,20 @@ const Inventory: React.FC = () => {
     }
   ];
 
-  // Columnas para productos de inventario
+  // Columnas para productos de inventario (igual que ingredientes)
   const inventoryColumns = [
-    { field: 'name', headerName: 'Nombre', width: 180 },
+    { field: 'name', headerName: 'Nombre', width: 200 },
     { field: 'current_stock', headerName: 'Stock Actual', width: 120, type: 'number' as const },
     { field: 'minimum_stock', headerName: 'Stock Mínimo', width: 120, type: 'number' as const },
-    { field: 'purchase_cost', headerName: 'Costo Compra', width: 120, type: 'number' as const },
     { field: 'price', headerName: 'Precio', width: 100, type: 'number' as const },
+    { field: 'purchase_cost', headerName: 'Costo de Compra', width: 130, type: 'number' as const },
     { field: 'measurement_unit.name', headerName: 'Unidad', width: 100 },
-    { field: 'category.name', headerName: 'Categoría', width: 130 },
+    { field: 'category.name', headerName: 'Categoría', width: 150 },
+    { field: 'image_url', headerName: 'Imagen', width: 100 },
     { 
       field: 'active', 
       headerName: 'Activo', 
-      width: 80, 
+      width: 100, 
       type: 'select' as const, 
       options: [
         { value: 'true', label: 'Sí' },
