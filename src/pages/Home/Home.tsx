@@ -595,8 +595,8 @@ const Home = () => {
                   <div className="d-flex flex-column flex-md-row justify-content-between align-items-center">
                     <div className="mb-3 mb-md-0">
                       <small className="text-muted">
-                        Página {currentPage} de {totalPages} - 
-                        Mostrando {products.length} de {totalItems} elementos
+                        Página {currentPage} de {currentPage} - 
+                        Mostrando {filteredProducts.length} de {totalItems} elementos
                       </small>
                     </div>
                     
