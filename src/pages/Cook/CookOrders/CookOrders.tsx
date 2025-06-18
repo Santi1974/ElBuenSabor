@@ -481,7 +481,7 @@ const CookOrders = () => {
                           <div className="mb-2">
                             <strong>Dirección:</strong>
                             <div className="mt-1">
-                              {selectedOrder.address.street} {selectedOrder.address.number}, {selectedOrder.address.city}
+                              {selectedOrder.address.street} {selectedOrder.address.street_number}, {selectedOrder.address.locality.name}
                             </div>
                           </div>
                         )}

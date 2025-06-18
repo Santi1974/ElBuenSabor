@@ -10,6 +10,8 @@ interface User {
 }
 
 interface Address {
+  locality: any;
+  street_number: ReactNode;
   street: string;
   number: string;
   city: string;
