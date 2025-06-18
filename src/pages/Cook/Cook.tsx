@@ -97,7 +97,7 @@ const Cook = () => {
   );
 
   return (
-    <div className="container-fluid min-vh-100 d-flex flex-row p-0" style={{ width: '100vw', height: '100vh' }}>
+    <div className="container-fluid min-vh-100 d-flex flex-row p-0 min-vw-100" style={{ width: '100vw', height: '100vh' }}>
       {/* Desktop Sidebar */}
       <aside className="text-white d-flex flex-column justify-content-start align-items-start p-4 d-none d-lg-flex" style={{width: 250, backgroundColor: '#747474', minHeight: '100vh', flexShrink: 0}}>
         <SidebarContent />

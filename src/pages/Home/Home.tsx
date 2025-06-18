@@ -524,6 +524,19 @@ const Home = () => {
                               <h6 className="card-title text-truncate" title={productName}>
                                 {productName}
                               </h6>
+                              {isPromotion(product) && (
+                                <p className="card-text text-muted small flex-grow-1" 
+                                   style={{ 
+                                     display: '-webkit-box',
+                                     WebkitLineClamp: 2,
+                                     WebkitBoxOrient: 'vertical',
+                                     overflow: 'hidden',
+                                     height: '60px'
+                                   }}>
+                                  {productDescription}
+                                </p>
+                              )}
+                              {!isPromotion(product) && (
                               <p className="card-text text-muted small flex-grow-1" 
                                  style={{ 
                                    display: '-webkit-box',
@@ -533,6 +546,7 @@ const Home = () => {
                                  }}>
                                 {productDescription}
                               </p>
+                              )}
                               
                               <div className="mt-auto">
                                 <div className="d-flex justify-content-between align-items-center mb-2">

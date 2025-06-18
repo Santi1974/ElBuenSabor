@@ -73,7 +73,7 @@ const DataTable: React.FC<DataTableProps> = ({
     if (column.field === 'current_stock' && (type === 'ingrediente' || (type === 'inventario' && (item.product_type === 'inventory' || item.type === 'inventory')))) {
       const currentStock = item.current_stock || 0;
       const minimumStock = item.minimum_stock || 0;
-      const isLow = currentStock <= minimumStock;
+      const isLow = currentStock < minimumStock;
       const isApproachingMinimum = currentStock > minimumStock && currentStock <= minimumStock * 1.2;
       
       let badgeClass = 'bg-success';
