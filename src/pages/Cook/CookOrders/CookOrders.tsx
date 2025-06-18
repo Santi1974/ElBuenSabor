@@ -165,12 +165,10 @@ const CookOrders = () => {
   // Translate payment method to Spanish
   const translatePaymentMethod = (method: string) => {
     switch (method.toLowerCase()) {
-      case 'credit_card':
-        return 'Tarjeta de crédito';
+      case 'mercado_pago':
+        return 'Mercado Pago';
       case 'cash':
         return 'Efectivo';
-      case 'transfer':
-        return 'Transferencia';
       default:
         return method;
     }
