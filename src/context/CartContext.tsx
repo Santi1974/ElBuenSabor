@@ -18,7 +18,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return savedCart ? JSON.parse(savedCart) : [];
   });
 
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
 
   useEffect(() => {
     localStorage.setItem('cart', JSON.stringify(items));
@@ -26,11 +26,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Limpiar carrito cuando el usuario se desloguea
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated && !isLoading) {
       setItems([]);
       localStorage.removeItem('cart');
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, isLoading]);
 
   const addItem = (product: CartProduct, showLoginPrompt = true) => {
     if (!isAuthenticated) {
