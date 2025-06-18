@@ -113,7 +113,7 @@ const DataTable: React.FC<DataTableProps> = ({
     }
     
     // Format numeric fields (price, purchase_cost, etc.)
-    if (column.type === 'number' && (column.field === 'price' || column.field === 'purchase_cost' || column.field === 'preparation_time')) {
+    if (column.type === 'number' && (column.field === 'price' || column.field === 'purchase_cost')) {
       const value = item[column.field];
       if (value === null || value === undefined) return '';
       
