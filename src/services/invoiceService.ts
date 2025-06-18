@@ -221,7 +221,7 @@ class InvoiceService {
       'cash': 'Efectivo',
       'card': 'Tarjeta',
       'transfer': 'Transferencia',
-      'mercadopago': 'MercadoPago'
+      'mercado_pago': 'Mercado Pago'
     };
     return methods[method] || method;
   }
