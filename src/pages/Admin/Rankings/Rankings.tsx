@@ -11,12 +11,12 @@ const Rankings: React.FC = () => {
   
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [limit, setLimit] = useState(10);
   const [activeTab, setActiveTab] = useState<'products' | 'customers'>('products');
+  const limit = 10;
 
   useEffect(() => {
     loadData();
-  }, [limit]);
+  }, []);
 
   const loadData = async () => {
     setLoading(true);
@@ -62,7 +62,6 @@ const Rankings: React.FC = () => {
   const clearFilters = () => {
     setStartDate('');
     setEndDate('');
-    setLimit(10);
     setTimeout(() => loadData(), 100);
   };
 
@@ -132,20 +131,7 @@ const Rankings: React.FC = () => {
                 onChange={(e) => setEndDate(e.target.value)}
               />
             </div>
-            <div className="col-md-2">
-              <label className="form-label">Límite</label>
-              <select
-                className="form-select"
-                value={limit}
-                onChange={(e) => setLimit(parseInt(e.target.value))}
-              >
-                <option value={5}>Top 5</option>
-                <option value={10}>Top 10</option>
-                <option value={20}>Top 20</option>
-                <option value={50}>Top 50</option>
-              </select>
-            </div>
-            <div className="col-md-4 d-flex align-items-end gap-2">
+            <div className="col-md-6 d-flex align-items-end gap-2">
               <button
                 className="btn btn-primary"
                 onClick={handleFilterChange}
