@@ -94,7 +94,7 @@ const IngredientFormFields: React.FC<IngredientFormFieldsProps> = ({
               type="number"
               className={`form-control ${selectedItem ? 'bg-light' : ''}`}
               min="0"
-              step="0.1"
+              step="0.01"
               value={formData.current_stock || ''}
               onChange={(e) => onInputChange('current_stock', parseFloat(e.target.value) || '')}
               placeholder="0"
@@ -116,7 +116,7 @@ const IngredientFormFields: React.FC<IngredientFormFieldsProps> = ({
               type="number"
               className="form-control"
               min="0"
-              step="0.1"
+              step="0.01"
               value={formData.minimum_stock || ''}
               onChange={(e) => onInputChange('minimum_stock', parseFloat(e.target.value) || '')}
               placeholder="0"

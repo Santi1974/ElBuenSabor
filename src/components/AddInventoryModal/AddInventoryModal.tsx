@@ -262,8 +262,8 @@ const AddInventoryModal: React.FC<AddInventoryModalProps> = ({
                   <input
                     type="number"
                     className="form-control"
-                    min="0.1"
-                    step="0.1"
+                    min="0.01"
+                    step="0.01"
                     value={quantity}
                     onChange={(e) => setQuantity(parseFloat(e.target.value) || 0)}
                     placeholder="Ingrese la cantidad..."

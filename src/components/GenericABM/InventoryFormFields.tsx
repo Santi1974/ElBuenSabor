@@ -244,8 +244,9 @@ const InventoryFormFields: React.FC<InventoryFormFieldsProps> = ({
               type="number"
               className={`form-control ${selectedItem ? 'bg-light' : ''}`}
               min="0"
+              step="0.01"
               value={formData.current_stock || 0}
-              onChange={(e) => onInputChange('current_stock', parseInt(e.target.value) || 0)}
+              onChange={(e) => onInputChange('current_stock', parseFloat(e.target.value) || 0)}
               placeholder="0"
               readOnly={!!selectedItem}
               disabled={!!selectedItem}
@@ -263,8 +264,9 @@ const InventoryFormFields: React.FC<InventoryFormFieldsProps> = ({
               type="number"
               className="form-control"
               min="0"
+              step="0.01"
               value={formData.minimum_stock || 0}
-              onChange={(e) => onInputChange('minimum_stock', parseInt(e.target.value) || 0)}
+              onChange={(e) => onInputChange('minimum_stock', parseFloat(e.target.value) || 0)}
             />
           </div>
           <div className="mb-3">
@@ -381,7 +383,7 @@ const InventoryFormFields: React.FC<InventoryFormFieldsProps> = ({
                       type="number"
                       className="form-control form-control-sm"
                       min="0"
-                      step="0.1"
+                      step="0.01"
                       value={detail.quantity || ''}
                       onChange={(e) => 
                         onUpdateIngredientDetail(index, 'quantity', parseFloat(e.target.value) || 0)
