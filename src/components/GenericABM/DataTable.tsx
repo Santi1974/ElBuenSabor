@@ -30,6 +30,12 @@ const DataTable: React.FC<DataTableProps> = ({
   onViewOrders,
   type
 }) => {
+  // Helper function to format numbers with limited decimals
+  const formatNumber = (value: number, decimals: number = 2): string => {
+    if (value === null || value === undefined || isNaN(value)) return '0';
+    return Number(value).toFixed(decimals);
+  };
+
   const renderCellValue = (column: Column, item: any) => {
     if (column.type === 'password') {
       return '••••••••';
@@ -74,7 +80,7 @@ const DataTable: React.FC<DataTableProps> = ({
       const currentStock = item.current_stock || 0;
       const minimumStock = item.minimum_stock || 0;
       const isLow = currentStock < minimumStock;
-      const isApproachingMinimum = currentStock > minimumStock && currentStock <= minimumStock * 1.2;
+      const isApproachingMinimum = currentStock >= minimumStock && currentStock <= minimumStock * 1.2;
       
       let badgeClass = 'bg-success';
       let icon = null;
@@ -92,7 +98,7 @@ const DataTable: React.FC<DataTableProps> = ({
       
       return (
         <span className={`badge ${badgeClass}`} title={title}>
-          {currentStock}
+          {formatNumber(currentStock, 2)}
           {icon}
         </span>
       );
@@ -101,9 +107,23 @@ const DataTable: React.FC<DataTableProps> = ({
     if (column.field === 'minimum_stock') {
       return (
         <span className="badge bg-info">
-          {item.minimum_stock || 0}
+          {formatNumber(item.minimum_stock || 0, 2)}
         </span>
       );
+    }
+    
+    // Format numeric fields (price, purchase_cost, etc.)
+    if (column.type === 'number' && (column.field === 'price' || column.field === 'purchase_cost' || column.field === 'preparation_time')) {
+      const value = item[column.field];
+      if (value === null || value === undefined) return '';
+      
+      // For prices, show currency symbol
+      if (column.field === 'price' || column.field === 'purchase_cost') {
+        return `$${formatNumber(value, 2)}`;
+      }
+      
+      // For other numeric fields, just format the number
+      return formatNumber(value, 2);
     }
     
     if (column.field.includes('.')) {
@@ -119,18 +139,18 @@ const DataTable: React.FC<DataTableProps> = ({
     if (type === 'ingrediente' || (type === 'inventario' && (item.product_type === 'inventory' || item.type === 'inventory'))) {
       const currentStock = item.current_stock || 0;
       const minimumStock = item.minimum_stock || 0;
-      return currentStock <= minimumStock;
+      return currentStock < minimumStock;  // Changed from <= to < for consistency
     }
     return false;
   };
 
-  // Function to determine if an item is approaching minimum stock (20% above minimum)
+  // Function to determine if an item is approaching minimum stock (equal to minimum or up to 20% above minimum)
   const isApproachingMinimumStock = (item: any) => {
     // Check if it's an ingredient or inventory item with stock information
     if (type === 'ingrediente' || (type === 'inventario' && (item.product_type === 'inventory' || item.type === 'inventory'))) {
       const currentStock = item.current_stock || 0;
       const minimumStock = item.minimum_stock || 0;
-      return currentStock > minimumStock && currentStock <= minimumStock * 1.2;
+      return currentStock >= minimumStock && currentStock <= minimumStock * 1.2;
     }
     return false;
   };

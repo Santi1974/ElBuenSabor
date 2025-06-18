@@ -32,6 +32,11 @@ const AddInventoryModal: React.FC<AddInventoryModalProps> = ({
   inventoryItemName,
   userRole
 }) => {
+  // Helper function to format numbers with limited decimals
+  const formatNumber = (value: number, decimals: number = 2): string => {
+    if (value === null || value === undefined || isNaN(value)) return '0';
+    return Number(value).toFixed(decimals);
+  };
   const [selectedItemId, setSelectedItemId] = useState<number>(inventoryItemId || 0);
   const [quantity, setQuantity] = useState<number>(1);
   const [unitCost, setUnitCost] = useState<number>(0);
@@ -204,7 +209,7 @@ const AddInventoryModal: React.FC<AddInventoryModalProps> = ({
                     <option value="">Seleccione un elemento...</option>
                     {availableItems.map((item) => (
                       <option key={item.id_key} value={item.id_key}>
-                        {item.name} - Stock actual: {item.current_stock || 0} {item.measurement_unit?.name || 'unidades'}
+                        {item.name} - Stock actual: {formatNumber(item.current_stock || 0, 2)} {item.measurement_unit?.name || 'unidades'}
                       </option>
                     ))}
                   </select>
@@ -233,13 +238,13 @@ const AddInventoryModal: React.FC<AddInventoryModalProps> = ({
                         <div className="col-md-6">
                           <small className="text-muted">Stock Actual:</small>
                           <div className="fw-bold text-primary">
-                            {selectedItem.current_stock || 0} {selectedItem.measurement_unit?.name || 'unidades'}
+                            {formatNumber(selectedItem.current_stock || 0, 2)} {selectedItem.measurement_unit?.name || 'unidades'}
                           </div>
                         </div>
                         <div className="col-md-6">
                           <small className="text-muted">Stock Mínimo:</small>
                           <div className="fw-bold text-warning">
-                            {selectedItem.minimum_stock || 0} {selectedItem.measurement_unit?.name || 'unidades'}
+                            {formatNumber(selectedItem.minimum_stock || 0, 2)} {selectedItem.measurement_unit?.name || 'unidades'}
                           </div>
                         </div>
                       </div>
@@ -294,7 +299,7 @@ const AddInventoryModal: React.FC<AddInventoryModalProps> = ({
                   {selectedItem?.purchase_cost && unitCost === selectedItem.purchase_cost && (
                     <span className="text-success">
                       <i className="bi bi-check-circle me-1"></i>
-                      Usando último costo registrado: ${selectedItem.purchase_cost.toFixed(2)}
+                      Usando último costo registrado: ${formatNumber(selectedItem.purchase_cost, 2)}
                     </span>
                   )}
                   <br />

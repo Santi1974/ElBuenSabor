@@ -25,6 +25,11 @@ const ViewModal: React.FC<ViewModalProps> = ({
   viewItem,
   onClose
 }) => {
+  // Helper function to format numbers with limited decimals
+  const formatNumber = (value: number, decimals: number = 2): string => {
+    if (value === null || value === undefined || isNaN(value)) return '0';
+    return Number(value).toFixed(decimals);
+  };
   const filteredColumns = columns.filter(column => 
     column.field !== 'category.name' && 
     column.field !== 'parent_category_name' &&
@@ -63,7 +68,7 @@ const ViewModal: React.FC<ViewModalProps> = ({
     }
     
     if (column.field === 'price') {
-      return `$${value || 0}`;
+      return `$${formatNumber(value || 0, 2)}`;
     }
     
     if (column.field === 'preparation_time') {
@@ -223,7 +228,7 @@ const ViewModal: React.FC<ViewModalProps> = ({
                           <label className="fw-bold text-muted small">Stock Actual:</label>
                           <div className="ms-2">
                             <span className={`badge ${(viewItem.current_stock || 0) > (viewItem.minimum_stock || 0) ? 'bg-success' : 'bg-warning'}`}>
-                              {viewItem.current_stock || 0} {viewItem.measurement_unit?.name || 'unidades'}
+                              {formatNumber(viewItem.current_stock || 0, 2)} {viewItem.measurement_unit?.name || 'unidades'}
                             </span>
                           </div>
                         </div>
@@ -231,7 +236,7 @@ const ViewModal: React.FC<ViewModalProps> = ({
                           <label className="fw-bold text-muted small">Stock Mínimo:</label>
                           <div className="ms-2">
                             <span className="badge bg-info">
-                              {viewItem.minimum_stock || 0} {viewItem.measurement_unit?.name || 'unidades'}
+                              {formatNumber(viewItem.minimum_stock || 0, 2)} {viewItem.measurement_unit?.name || 'unidades'}
                             </span>
                           </div>
                         </div>
