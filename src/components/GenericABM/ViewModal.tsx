@@ -30,6 +30,18 @@ const ViewModal: React.FC<ViewModalProps> = ({
     if (value === null || value === undefined || isNaN(value)) return '0';
     return Number(value).toFixed(decimals);
   };
+
+  // Helper function to detect if an item is manufactured
+  const isManufacturedProduct = (item: any): boolean => {
+    return (
+      item && 
+      (item.product_type === 'manufactured' || 
+       item.type === 'manufactured' || 
+       'preparation_time' in item || 
+       'recipe' in item)
+    );
+  };
+
   const filteredColumns = columns.filter(column => 
     column.field !== 'category.name' && 
     column.field !== 'parent_category_name' &&
@@ -243,6 +255,109 @@ const ViewModal: React.FC<ViewModalProps> = ({
                       </div>
                     </div>
                   </div>
+                )}
+
+                {/* Manufactured Product Information */}
+                {type === 'inventario' && isManufacturedProduct(viewItem) && (
+                  <>
+                    <div className="card mb-3">
+                      <div className="card-header">
+                        <h6 className="mb-0">
+                          <i className="bi bi-gear me-2"></i>
+                          Información de Producto Manufacturado
+                        </h6>
+                      </div>
+                      <div className="card-body">
+                        <div className="row">
+                          <div className="col-md-12 mb-3">
+                            <label className="fw-bold text-muted small">Descripción:</label>
+                            <div className="ms-2">
+                              <div className="p-2 bg-light rounded">
+                                {viewItem.description || 'No especificado'}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="col-md-6 mb-3">
+                            <label className="fw-bold text-muted small">Tiempo de Preparación:</label>
+                            <div className="ms-2">
+                              <span className="badge bg-info">
+                                {viewItem.preparation_time || 0} minutos
+                              </span>
+                            </div>
+                          </div>
+                          <div className="col-md-6 mb-3">
+                            <label className="fw-bold text-muted small">Precio:</label>
+                            <div className="ms-2">
+                              <span className="badge bg-success">
+                                ${formatNumber(viewItem.price || 0, 2)}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="col-md-12 mb-3">
+                            <label className="fw-bold text-muted small">Receta:</label>
+                            <div className="ms-2">
+                              <div className="p-2 bg-light rounded">
+                                {viewItem.recipe || 'No especificado'}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Ingredients Section */}
+                    {viewItem.details && Array.isArray(viewItem.details) && viewItem.details.length > 0 && (
+                      <div className="card mb-3">
+                        <div className="card-header">
+                          <h6 className="mb-0">
+                            <i className="bi bi-list-ul me-2"></i>
+                            Ingredientes del Producto
+                          </h6>
+                        </div>
+                        <div className="card-body">
+                          <div className="table-responsive">
+                            <table className="table table-sm table-striped">
+                              <thead>
+                                <tr>
+                                  <th>Ingrediente</th>
+                                  <th className="text-center">Cantidad</th>
+                                  <th className="text-center">Unidad</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {viewItem.details.map((detail: any, index: number) => (
+                                  <tr key={index}>
+                                    <td>
+                                      <div className="d-flex align-items-center">
+                                        <i className="bi bi-box me-2 text-muted"></i>
+                                        <span>{detail.inventory_item?.name || detail.name || 'Ingrediente desconocido'}</span>
+                                      </div>
+                                    </td>
+                                    <td className="text-center">
+                                      <span className="badge bg-primary">
+                                        {detail.quantity || 0}
+                                      </span>
+                                    </td>
+                                    <td className="text-center">
+                                      <span className="badge bg-info">
+                                        {detail.inventory_item?.measurement_unit?.name || detail.unit || 'unidad'}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                          {viewItem.details.length === 0 && (
+                            <div className="alert alert-info mb-0">
+                              <i className="bi bi-info-circle me-2"></i>
+                              No hay ingredientes registrados para este producto.
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>
