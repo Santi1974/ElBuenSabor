@@ -76,10 +76,7 @@ const Cart = () => {
     try {
       setLoadingAddresses(true);
       
-      // Crear la dirección en el servidor
-      await api.post('/address/user/addresses', addressData);
-      
-      // Hacer GET para obtener todas las direcciones actualizadas con el ID real
+      // El AddressModal ya hizo el POST, solo necesitamos hacer GET para obtener las direcciones actualizadas
       const response = await api.get('/address/user/addresses');
       const mappedAddresses = response.data.items.map((addr: any) => ({
         id_key: addr.id_key,
@@ -107,7 +104,7 @@ const Cart = () => {
       
       setShowAddressModal(false);
     } catch (error) {
-      console.error('Error creating address:', error);
+      console.error('Error fetching updated addresses:', error);
       // Mantener el modal abierto en caso de error
     } finally {
       setLoadingAddresses(false);
