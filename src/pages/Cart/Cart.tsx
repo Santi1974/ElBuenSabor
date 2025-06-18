@@ -72,17 +72,46 @@ const Cart = () => {
     setShowAddressModal(false);
   };
 
-  const handleAddressSave = (addressData: AddressFormData) => {
-    const newAddress: Address = {
-      ...addressData,
-      id_key: Date.now(),
-      locality_name: '',
-    };
-    const updatedAddresses = [...addresses, newAddress];
-    setAddresses(updatedAddresses);
-    localStorage.setItem('addresses', JSON.stringify(updatedAddresses));
-    setSelectedAddress(newAddress);
-    setShowAddressModal(false);
+  const handleAddressSave = async (addressData: AddressFormData) => {
+    try {
+      setLoadingAddresses(true);
+      
+      // Crear la dirección en el servidor
+      await api.post('/address/user/addresses', addressData);
+      
+      // Hacer GET para obtener todas las direcciones actualizadas con el ID real
+      const response = await api.get('/address/user/addresses');
+      const mappedAddresses = response.data.items.map((addr: any) => ({
+        id_key: addr.id_key,
+        street: addr.street,
+        street_number: addr.street_number,
+        zip_code: addr.zip_code,
+        name: addr.name,
+        locality_id: addr.locality?.id_key,
+        user_id: addr.user_id
+      }));
+      
+      setAddresses(mappedAddresses);
+      
+      // Buscar la dirección recién creada (la que coincida con los datos enviados)
+      const newAddress = mappedAddresses.find((addr: Address) => 
+        addr.street === addressData.street && 
+        addr.street_number === addressData.street_number &&
+        addr.zip_code === addressData.zip_code &&
+        addr.name === addressData.name
+      );
+      
+      if (newAddress) {
+        setSelectedAddress(newAddress);
+      }
+      
+      setShowAddressModal(false);
+    } catch (error) {
+      console.error('Error creating address:', error);
+      // Mantener el modal abierto en caso de error
+    } finally {
+      setLoadingAddresses(false);
+    }
   };
 
   const getUserId = () => {
@@ -127,7 +156,7 @@ const Cart = () => {
     if (isDelivery && selectedAddress) {
       payload.address_id = selectedAddress.id_key;
     }
-    
+
     return payload;
   };
 
