@@ -168,7 +168,11 @@ export const useABMData = (type: ABMType, reloadCategories?: () => Promise<void>
           }
           break;
         case 'promotion':
-          response = await promotionService.getAll(offset, itemsPerPage);
+          if (searchTerm && searchTerm.trim() !== '') {
+            response = await promotionService.search(searchTerm.trim(), offset, itemsPerPage);
+          } else {
+            response = await promotionService.getAll(offset, itemsPerPage);
+          }
           setData(response.data);
           setTotalItems(response.total);
           setHasNext(response.hasNext);

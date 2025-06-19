@@ -252,8 +252,8 @@ const GenericABM: React.FC<GenericABMProps> = ({
         </div>
       )}
 
-      {/* Search Bar - Para ingredientes, rubros e inventario */}
-      {(type === 'ingrediente' || type === 'rubro' || type === 'inventario') && (
+      {/* Search Bar - Para ingredientes, rubros, inventario y promociones */}
+      {(type === 'ingrediente' || type === 'rubro' || type === 'inventario' || type === 'promotion') && (
         <div className="row mb-3">
           <div className="col-md-6">
             <form onSubmit={handleSearchSubmit} className="d-flex">
@@ -263,6 +263,7 @@ const GenericABM: React.FC<GenericABMProps> = ({
                 placeholder={
                   type === 'ingrediente' ? "Buscar ingredientes..." : 
                   type === 'rubro' ? "Buscar rubros..." : 
+                  type === 'promotion' ? "Buscar promociones..." :
                   "Buscar productos..."
                 }
                 value={searchInput}

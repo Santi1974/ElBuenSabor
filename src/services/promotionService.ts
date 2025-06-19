@@ -67,6 +67,20 @@ const promotionService = {
       console.error('Error deleting promotion:', error);
       throw error;
     }
+  },
+
+  search: async (searchTerm: string, offset: number = 0, limit: number = 10): Promise<{ data: Promotion[], total: number, hasNext: boolean }> => {
+    try {
+      const response = await api.get<PromotionResponse>(`${API_URL}/promotion/search?search_term=${encodeURIComponent(searchTerm)}&offset=${offset}&limit=${limit}`);
+      return {
+        data: response.data.items,
+        total: response.data.total,
+        hasNext: (response.data.offset + response.data.limit) < response.data.total
+      };
+    } catch (error) {
+      console.error('Error searching promotions:', error);
+      throw error;
+    }
   }
 };
 
