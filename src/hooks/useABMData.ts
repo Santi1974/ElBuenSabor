@@ -24,13 +24,21 @@ export const useABMData = (type: ABMType, reloadCategories?: () => Promise<void>
       
       switch (type) {
         case 'employee':
-          response = await employeeService.getAll(offset, itemsPerPage);
+          if (searchTerm && searchTerm.trim() !== '') {
+            response = await employeeService.search(searchTerm.trim(), offset, itemsPerPage);
+          } else {
+            response = await employeeService.getAll(offset, itemsPerPage);
+          }
           setData(response.data);
           setTotalItems(response.total);
           setHasNext(response.hasNext);
           break;
         case 'client':
-          response = await clientService.getAll(offset, itemsPerPage);
+          if (searchTerm && searchTerm.trim() !== '') {
+            response = await clientService.search(searchTerm.trim(), offset, itemsPerPage);
+          } else {
+            response = await clientService.getAll(offset, itemsPerPage);
+          }
           setData(response.data);
           setTotalItems(response.total);
           setHasNext(response.hasNext);

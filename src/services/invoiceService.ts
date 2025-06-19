@@ -195,6 +195,35 @@ class InvoiceService {
     }
   }
 
+  // Search method
+  async search(searchTerm: string, offset = 0, limit = 10): Promise<{ data: Invoice[], total: number, hasNext: boolean }> {
+    try {
+      const response = await api.get<InvoicesResponse>(`/invoice/search?search_term=${encodeURIComponent(searchTerm)}&offset=${offset}&limit=${limit}`);
+      
+      // Handle both paginated and direct array responses for backward compatibility
+      if (response.data && typeof response.data === 'object' && 'items' in response.data) {
+        // New paginated format
+        const { total, items } = response.data;
+        return {
+          data: items,
+          total: total,
+          hasNext: offset + limit < total
+        };
+      } else {
+        // Fallback for direct array response
+        const items = Array.isArray(response.data) ? response.data : [];
+        return {
+          data: items,
+          total: items.length,
+          hasNext: false
+        };
+      }
+    } catch (error) {
+      console.error('Error searching invoices:', error);
+      throw error;
+    }
+  }
+
 
   // Utility methods for formatting
   formatInvoiceNumber(number: string): string {

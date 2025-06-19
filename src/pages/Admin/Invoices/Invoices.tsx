@@ -18,8 +18,11 @@ const Invoices: React.FC = () => {
   const [totalItems, setTotalItems] = useState(0);
   const [hasNext, setHasNext] = useState(false);
   
+  // Search states
+  const [searchInput, setSearchInput] = useState<string>('');
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  
   // Filter states
-  const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [dateFrom, setDateFrom] = useState('');
@@ -27,7 +30,14 @@ const Invoices: React.FC = () => {
 
   useEffect(() => {
     loadData();
-  }, [currentPage, itemsPerPage]);
+  }, [currentPage, itemsPerPage, searchTerm]);
+
+  // Sincronizar searchInput con searchTerm cuando se limpia externamente
+  useEffect(() => {
+    if (!searchTerm) {
+      setSearchInput('');
+    }
+  }, [searchTerm]);
 
   const loadData = async () => {
     setLoading(true);
@@ -36,7 +46,13 @@ const Invoices: React.FC = () => {
     
     try {
       const offset = (currentPage - 1) * itemsPerPage;
-      const result = await invoiceService.getAll(offset, itemsPerPage);
+      let result;
+      
+      if (searchTerm && searchTerm.trim() !== '') {
+        result = await invoiceService.search(searchTerm.trim(), offset, itemsPerPage);
+      } else {
+        result = await invoiceService.getAll(offset, itemsPerPage);
+      }
       
       // Ensure invoices is always an array
       const invoicesData = Array.isArray(result.data) ? result.data : [];
@@ -55,18 +71,13 @@ const Invoices: React.FC = () => {
   const filteredInvoices = invoices.filter(invoice => {
     if (!Array.isArray(invoices)) return [];
     
-    const matchesSearch = searchTerm === '' || 
-      invoice.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      invoice.order?.user?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      invoice.order?.user?.email?.toLowerCase().includes(searchTerm.toLowerCase());
-    
     const matchesType = filterType === '' || invoice.type === filterType;
     const matchesStatus = filterStatus === '' || invoice.order?.status === filterStatus;
     
     const matchesDateFrom = dateFrom === '' || new Date(invoice.date) >= new Date(dateFrom);
     const matchesDateTo = dateTo === '' || new Date(invoice.date) <= new Date(dateTo);
     
-    return matchesSearch && matchesType && matchesStatus && matchesDateFrom && matchesDateTo;
+    return matchesType && matchesStatus && matchesDateFrom && matchesDateTo;
   });
 
   const totalPages = Math.ceil(totalItems / itemsPerPage);
@@ -126,8 +137,19 @@ const Invoices: React.FC = () => {
     }
   };
 
-  const clearFilters = () => {
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSearchTerm(searchInput);
+    setCurrentPage(1); // Reset to first page when searching
+  };
+
+  const handleClearSearch = () => {
+    setSearchInput('');
     setSearchTerm('');
+    setCurrentPage(1);
+  };
+
+  const clearFilters = () => {
     setFilterType('');
     setFilterStatus('');
     setDateFrom('');
@@ -215,6 +237,44 @@ const Invoices: React.FC = () => {
         </h2>
       </div>
 
+      {/* Search Bar */}
+      <div className="row mb-3">
+        <div className="col-md-6">
+          <form onSubmit={handleSearchSubmit} className="d-flex">
+            <input
+              type="text"
+              className="form-control me-2"
+              placeholder="Buscar facturas..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+            />
+            <button 
+              type="submit" 
+              className="btn btn-outline-primary me-2"
+              disabled={!searchInput.trim()}
+            >
+              <i className="bi bi-search"></i>
+            </button>
+            {searchTerm && (
+              <button 
+                type="button" 
+                className="btn btn-outline-secondary"
+                onClick={handleClearSearch}
+              >
+                <i className="bi bi-x-lg"></i>
+              </button>
+            )}
+          </form>
+        </div>
+        {searchTerm && (
+          <div className="col-md-6">
+            <div className="alert alert-info mb-0 py-2">
+              <small>Buscando: "{searchTerm}" - {totalItems} resultado(s) encontrado(s)</small>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Filters */}
       <div className="card mb-4">
         <div className="card-header">
@@ -226,16 +286,6 @@ const Invoices: React.FC = () => {
         <div className="card-body">
           <div className="row g-3">
             <div className="col-md-3">
-              <label className="form-label">Buscar</label>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Número, cliente, email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <div className="col-md-2">
               <label className="form-label">Tipo</label>
               <select
                 className="form-select"
@@ -247,7 +297,7 @@ const Invoices: React.FC = () => {
                 <option value="nota_credito">Nota de Crédito</option>
               </select>
             </div>
-            <div className="col-md-2">
+            <div className="col-md-3">
               <label className="form-label">Estado</label>
               <select
                 className="form-select"
@@ -280,7 +330,7 @@ const Invoices: React.FC = () => {
                 onChange={(e) => setDateTo(e.target.value)}
               />
             </div>
-            <div className="col-md-1 d-flex align-items-end">
+            <div className="col-md-2 d-flex align-items-end">
               <button
                 className="btn btn-outline-secondary w-100"
                 onClick={clearFilters}
