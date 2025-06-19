@@ -70,7 +70,11 @@ export const useABMData = (type: ABMType, reloadCategories?: () => Promise<void>
 
         case 'rubro':
           if (filterType === 'manufactured') {
-            response = await categoryService.getAll(offset, itemsPerPage);
+            if (searchTerm && searchTerm.trim() !== '') {
+              response = await categoryService.searchManufactured(searchTerm.trim(), offset, itemsPerPage);
+            } else {
+              response = await categoryService.getAll(offset, itemsPerPage);
+            }
             const allManufacturedResponse = await categoryService.getAll(0, 100);
             
             const categoriesWithParent = response.data.map((category: any) => {
@@ -95,7 +99,11 @@ export const useABMData = (type: ABMType, reloadCategories?: () => Promise<void>
             setTotalItems(response.total);
             setHasNext(response.hasNext);
           } else if (filterType === 'inventory') {
-            response = await categoryService.getInventoryCategories(offset, itemsPerPage);
+            if (searchTerm && searchTerm.trim() !== '') {
+              response = await categoryService.searchInventory(searchTerm.trim(), offset, itemsPerPage);
+            } else {
+              response = await categoryService.getInventoryCategories(offset, itemsPerPage);
+            }
             const allInventoryResponse = await categoryService.getInventoryCategories(0, 100);
             
             const categoriesWithParent = response.data.map((category: any) => {

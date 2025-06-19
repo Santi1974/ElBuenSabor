@@ -252,15 +252,15 @@ const GenericABM: React.FC<GenericABMProps> = ({
         </div>
       )}
 
-      {/* Search Bar - Solo para ingredientes */}
-      {type === 'ingrediente' && (
+      {/* Search Bar - Para ingredientes y rubros */}
+      {(type === 'ingrediente' || type === 'rubro') && (
         <div className="row mb-3">
           <div className="col-md-6">
             <form onSubmit={handleSearchSubmit} className="d-flex">
               <input
                 type="text"
                 className="form-control me-2"
-                placeholder="Buscar ingredientes..."
+                placeholder={type === 'ingrediente' ? "Buscar ingredientes..." : "Buscar rubros..."}
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
               />

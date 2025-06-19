@@ -156,6 +156,63 @@ const categoryService = {
     }
   },
 
+  // Search methods
+  searchManufactured: async (searchTerm: string, offset: number = 0, limit: number = 10): Promise<PaginatedResponse<Category>> => {
+    try {
+      const response = await api.get<ApiPaginatedResponse<Category> | Category[]>(`${API_URL}/manufactured_item_category/search?search_term=${encodeURIComponent(searchTerm)}&offset=${offset}&limit=${limit}`);
+      
+      // Handle both old and new response formats
+      if ('items' in response.data) {
+        // New format with pagination
+        return {
+          data: response.data.items,
+          total: response.data.total,
+          hasNext: (response.data.offset + response.data.limit) < response.data.total
+        };
+      } else {
+        // Old format - direct array
+        console.warn('API returned old format, converting to new format');
+        const items = response.data;
+        return {
+          data: items,
+          total: items.length,
+          hasNext: false
+        };
+      }
+    } catch (error) {
+      console.error('Error searching manufactured categories:', error);
+      throw error;
+    }
+  },
+
+  searchInventory: async (searchTerm: string, offset: number = 0, limit: number = 10): Promise<PaginatedResponse<Category>> => {
+    try {
+      const response = await api.get<ApiPaginatedResponse<Category> | Category[]>(`${API_URL}/inventory_item_category/search?search_term=${encodeURIComponent(searchTerm)}&offset=${offset}&limit=${limit}`);
+      
+      // Handle both old and new response formats
+      if ('items' in response.data) {
+        // New format with pagination
+        return {
+          data: response.data.items,
+          total: response.data.total,
+          hasNext: (response.data.offset + response.data.limit) < response.data.total
+        };
+      } else {
+        // Old format - direct array
+        console.warn('API returned old format, converting to new format');
+        const items = response.data;
+        return {
+          data: items,
+          total: items.length,
+          hasNext: false
+        };
+      }
+    } catch (error) {
+      console.error('Error searching inventory categories:', error);
+      throw error;
+    }
+  },
+
   getPublicSubcategories: async (): Promise<Category[]> => {
     try {
       const response = await api.get<{
