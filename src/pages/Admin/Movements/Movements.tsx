@@ -1,7 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+} from 'chart.js';
+import { Bar, Doughnut } from 'react-chartjs-2';
 import reportService from '../../../services/reportService';
 import type { ReportParams } from '../../../services/reportService';
+
+// Registrar componentes de Chart.js
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement
+);
 
 // Tipo específico para la respuesta de movimientos
 interface MovementsReport {
@@ -27,6 +49,7 @@ const Movements: React.FC = () => {
   // Filter states - no default dates for initial load
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [viewMode, setViewMode] = useState<'dashboard' | 'charts'>('dashboard');
 
   useEffect(() => {
     loadInitialData();
@@ -125,6 +148,168 @@ const Movements: React.FC = () => {
     revenueData.total_inventory_purchases > 0
   );
 
+  // Datos para gráfico de dona (Ingresos vs Gastos)
+  const getFinancialDonutData = () => {
+    if (!revenueData) return null;
+
+    return {
+      labels: ['Ingresos', 'Gastos'],
+      datasets: [
+        {
+          label: 'Distribución Financiera',
+          data: [revenueData.revenue, revenueData.total_expenses],
+          backgroundColor: ['#28a745', '#dc3545'],
+          borderColor: ['#28a745', '#dc3545'],
+          borderWidth: 2,
+          hoverBackgroundColor: ['#34ce57', '#e85a5a'],
+        },
+      ],
+    };
+  };
+
+  // Datos para gráfico de barras (Métricas principales)
+  const getFinancialBarData = () => {
+    if (!revenueData) return null;
+
+    return {
+      labels: ['Ingresos', 'Gastos', 'Ganancia Neta'],
+      datasets: [
+        {
+          label: 'Monto (ARS)',
+          data: [revenueData.revenue, revenueData.total_expenses, Math.abs(revenueData.profit)],
+          backgroundColor: [
+            '#28a745', // Verde para ingresos
+            '#dc3545', // Rojo para gastos
+            revenueData.profit >= 0 ? '#007bff' : '#ffc107' // Azul para ganancia, amarillo para pérdida
+          ],
+          borderColor: [
+            '#28a745',
+            '#dc3545', 
+            revenueData.profit >= 0 ? '#007bff' : '#ffc107'
+          ],
+          borderWidth: 1,
+        },
+      ],
+    };
+  };
+
+  // Datos para gráfico de transacciones
+  const getTransactionsBarData = () => {
+    if (!revenueData) return null;
+
+    return {
+      labels: ['Facturas Emitidas', 'Compras de Inventario'],
+      datasets: [
+        {
+          label: 'Cantidad de Transacciones',
+          data: [revenueData.total_invoices, revenueData.total_inventory_purchases],
+          backgroundColor: ['#17a2b8', '#fd7e14'],
+          borderColor: ['#17a2b8', '#fd7e14'],
+          borderWidth: 1,
+        },
+      ],
+    };
+  };
+
+  // Opciones para gráfico de dona
+  const donutOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom' as const,
+        labels: {
+          padding: 20,
+          usePointStyle: true,
+        }
+      },
+      title: {
+        display: true,
+        text: 'Distribución de Ingresos vs Gastos',
+        font: {
+          size: 16,
+        }
+      },
+      tooltip: {
+        callbacks: {
+          label: function(context: any) {
+            const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+            const percentage = ((context.parsed * 100) / total).toFixed(1);
+            return `${context.label}: ${formatCurrency(context.parsed)} (${percentage}%)`;
+          }
+        }
+      }
+    },
+  };
+
+  // Opciones para gráfico de barras financieras
+  const financialBarOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false,
+      },
+      title: {
+        display: true,
+        text: 'Resumen Financiero',
+        font: {
+          size: 16,
+        }
+      },
+      tooltip: {
+        callbacks: {
+          label: function(context: any) {
+            return `${context.dataset.label}: ${formatCurrency(context.parsed.y)}`;
+          }
+        }
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          callback: function(value: any) {
+            return formatCurrency(value);
+          }
+        }
+      }
+    },
+  };
+
+  // Opciones para gráfico de transacciones
+  const transactionsBarOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false,
+      },
+      title: {
+        display: true,
+        text: 'Volumen de Transacciones',
+        font: {
+          size: 16,
+        }
+      },
+      tooltip: {
+        callbacks: {
+          label: function(context: any) {
+            return `${context.dataset.label}: ${context.parsed.y}`;
+          }
+        }
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          stepSize: 1,
+        }
+      }
+    },
+  };
+
   return (
     <div className="container-fluid p-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
@@ -215,6 +400,30 @@ const Movements: React.FC = () => {
         </div>
       )}
 
+      {/* View Mode Toggle */}
+      {hasData && !loading && (
+        <div className="mb-4">
+          <div className="btn-group" role="group">
+            <button
+              type="button"
+              className={`btn ${viewMode === 'dashboard' ? 'btn-primary' : 'btn-outline-primary'}`}
+              onClick={() => setViewMode('dashboard')}
+            >
+              <i className="bi bi-grid-3x3-gap me-2"></i>
+              Dashboard
+            </button>
+            <button
+              type="button"
+              className={`btn ${viewMode === 'charts' ? 'btn-primary' : 'btn-outline-primary'}`}
+              onClick={() => setViewMode('charts')}
+            >
+              <i className="bi bi-bar-chart-fill me-2"></i>
+              Gráficos
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Loading */}
       {loading && (
         <div className="text-center py-4">
@@ -234,6 +443,10 @@ const Movements: React.FC = () => {
             <strong>Período de análisis:</strong> {formatDate(revenueData.start_date)} hasta {formatDate(revenueData.end_date)}
           </div>
         )}
+
+        {viewMode === 'dashboard' ? (
+          // Vista de Dashboard (existente)
+          <>
 
           {/* Main Financial Cards */}
           <div className="row mb-4">
@@ -462,6 +675,82 @@ const Movements: React.FC = () => {
               </div>
             </div>
           </div>
+          </>
+        ) : (
+          // Vista de Gráficos
+          <div className="row">
+            {/* Gráfico de Dona - Distribución Financiera */}
+            <div className="col-lg-6 mb-4">
+              <div className="card">
+                <div className="card-body" style={{ height: '400px' }}>
+                  {getFinancialDonutData() && (
+                    <Doughnut data={getFinancialDonutData()!} options={donutOptions} />
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Gráfico de Barras - Resumen Financiero */}
+            <div className="col-lg-6 mb-4">
+              <div className="card">
+                <div className="card-body" style={{ height: '400px' }}>
+                  {getFinancialBarData() && (
+                    <Bar data={getFinancialBarData()!} options={financialBarOptions} />
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Gráfico de Transacciones - Ancho completo */}
+            <div className="col-12 mb-4">
+              <div className="card">
+                <div className="card-body" style={{ height: '300px' }}>
+                  {getTransactionsBarData() && (
+                    <Bar data={getTransactionsBarData()!} options={transactionsBarOptions} />
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Resumen Numérico en Vista de Gráficos */}
+            <div className="col-12">
+              <div className="card">
+                <div className="card-header">
+                  <h5 className="mb-0">
+                    <i className="bi bi-calculator me-2"></i>
+                    Resumen Numérico
+                  </h5>
+                </div>
+                <div className="card-body">
+                  <div className="row text-center">
+                    <div className="col-md-3">
+                      <h4 className="text-success">{formatCurrency(revenueData.revenue)}</h4>
+                      <p className="text-muted mb-0">Ingresos Totales</p>
+                    </div>
+                    <div className="col-md-3">
+                      <h4 className="text-danger">{formatCurrency(revenueData.total_expenses)}</h4>
+                      <p className="text-muted mb-0">Gastos Totales</p>
+                    </div>
+                    <div className="col-md-3">
+                      <h4 className={revenueData.profit >= 0 ? 'text-primary' : 'text-danger'}>
+                        {formatCurrency(revenueData.profit)}
+                      </h4>
+                      <p className="text-muted mb-0">
+                        {revenueData.profit >= 0 ? 'Ganancia Neta' : 'Pérdida Neta'}
+                      </p>
+                    </div>
+                    <div className="col-md-3">
+                      <h4 className={revenueData.profit_margin_percentage >= 0 ? 'text-info' : 'text-warning'}>
+                        {formatPercentage(revenueData.profit_margin_percentage)}
+                      </h4>
+                      <p className="text-muted mb-0">Margen de Ganancia</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         </>
       )}
 
