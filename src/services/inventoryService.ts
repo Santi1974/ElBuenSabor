@@ -162,6 +162,53 @@ const inventoryService = {
 
   deleteInventoryProduct: async (id: number): Promise<void> => {
     await api.delete(`${API_URL}/inventory_item/${id}`);
+  },
+
+  // Search methods
+  searchManufactured: async (searchTerm: string, offset: number = 0, limit: number = 10): Promise<PaginatedResponse<ManufacturedItem>> => {
+    try {
+      const response = await api.get<ApiPaginatedResponse<ManufacturedItem> | ManufacturedItem[]>(
+        `${API_URL}/manufactured_item/search?search_term=${encodeURIComponent(searchTerm)}&offset=${offset}&limit=${limit}`
+      );
+      
+      // Handle both old and new response formats
+      if ('items' in response.data) {
+        // New format with pagination
+        return {
+          data: response.data.items,
+          total: response.data.total,
+          hasNext: (response.data.offset + response.data.limit) < response.data.total
+        };
+      } else {
+        // Old format - direct array
+        console.warn('API returned old format, converting to new format');
+        const items = response.data;
+        return {
+          data: items,
+          total: items.length,
+          hasNext: false
+        };
+      }
+    } catch (error) {
+      console.error('Error searching manufactured items:', error);
+      throw error;
+    }
+  },
+
+  searchInventoryProducts: async (searchTerm: string, offset: number = 0, limit: number = 10): Promise<PaginatedResponse<InventoryItem>> => {
+    try {
+      const response = await api.get<ApiPaginatedResponse<InventoryItem>>(
+        `${API_URL}/inventory_item/products/search?search_term=${encodeURIComponent(searchTerm)}&offset=${offset}&limit=${limit}`
+      );
+      return {
+        data: response.data.items,
+        total: response.data.total,
+        hasNext: (response.data.offset + response.data.limit) < response.data.total
+      };
+    } catch (error) {
+      console.error('Error searching inventory products:', error);
+      throw error;
+    }
   }
 };
 

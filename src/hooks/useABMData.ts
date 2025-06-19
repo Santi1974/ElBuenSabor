@@ -37,12 +37,20 @@ export const useABMData = (type: ABMType, reloadCategories?: () => Promise<void>
           break;
         case 'inventario':
           if (filterType === 'manufactured') {
-            response = await inventoryService.getAll(offset, itemsPerPage);
+            if (searchTerm && searchTerm.trim() !== '') {
+              response = await inventoryService.searchManufactured(searchTerm.trim(), offset, itemsPerPage);
+            } else {
+              response = await inventoryService.getAll(offset, itemsPerPage);
+            }
             setData(response.data);
             setTotalItems(response.total);
             setHasNext(response.hasNext);
           } else if (filterType === 'inventory') {
-            response = await inventoryService.getInventoryProducts(offset, itemsPerPage);
+            if (searchTerm && searchTerm.trim() !== '') {
+              response = await inventoryService.searchInventoryProducts(searchTerm.trim(), offset, itemsPerPage);
+            } else {
+              response = await inventoryService.getInventoryProducts(offset, itemsPerPage);
+            }
             // Agregar el tipo 'inventory' a cada item para que el DataTable pueda aplicar los indicadores de stock
             const dataWithType = response.data.map((item: any) => ({ ...item, type: 'inventory' }));
             setData(dataWithType);
