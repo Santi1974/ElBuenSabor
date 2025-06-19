@@ -350,7 +350,7 @@ const AddInventoryModal: React.FC<AddInventoryModalProps> = ({
               <button
                 type="submit"
                 className="btn btn-primary"
-                disabled={loading || !selectedItemId || quantity === 0 || (selectedItem?.current_stock && selectedItem.current_stock < Math.abs(quantity))}
+                disabled={loading || !selectedItemId || quantity === 0 || (quantity < 0 && selectedItem?.current_stock && selectedItem.current_stock < Math.abs(quantity))}
               >
                 <i className="bi bi-check-circle me-2"></i>
                 {loading ? (quantity < 0 ? 'Restando...' : 'Agregando...') : (quantity < 0 ? 'Restar Inventario' : 'Agregar Inventario')}

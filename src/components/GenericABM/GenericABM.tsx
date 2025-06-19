@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { useABMData } from '../../hooks/useABMData';
 import type { ABMType } from '../../hooks/useABMData';
@@ -43,6 +43,7 @@ const GenericABM: React.FC<GenericABMProps> = ({
   const [viewItem, setViewItem] = useState<any>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [isFormValid, setIsFormValid] = useState(true);
+  const [searchInput, setSearchInput] = useState<string>('');
 
   const {
     categories,
@@ -65,8 +66,11 @@ const GenericABM: React.FC<GenericABMProps> = ({
     totalItems,
     hasNext,
     error,
+    searchTerm,
     loadData,
     handleDelete,
+    handleSearch,
+    clearSearch,
     getTotalPages,
     handlePageChange,
     handleNextPage,
@@ -200,6 +204,23 @@ const GenericABM: React.FC<GenericABMProps> = ({
     });
   };
 
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleSearch(searchInput);
+  };
+
+  const handleClearSearch = () => {
+    setSearchInput('');
+    clearSearch();
+  };
+
+  // Sincronizar searchInput con searchTerm cuando se limpia externamente
+  useEffect(() => {
+    if (!searchTerm) {
+      setSearchInput('');
+    }
+  }, [searchTerm]);
+
   return (
     <div className="container-fluid p-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
@@ -211,7 +232,7 @@ const GenericABM: React.FC<GenericABMProps> = ({
               onClick={handleOpenAddInventoryModal}
             >
               <i className="bi bi-box-arrow-in-down me-2"></i>
-              Agregar Inventario
+              Modificar Inventario
             </button>
           )}
           <button
@@ -228,6 +249,46 @@ const GenericABM: React.FC<GenericABMProps> = ({
       {error && (
         <div className="alert alert-danger" role="alert">
           {error}
+        </div>
+      )}
+
+      {/* Search Bar - Solo para ingredientes */}
+      {type === 'ingrediente' && (
+        <div className="row mb-3">
+          <div className="col-md-6">
+            <form onSubmit={handleSearchSubmit} className="d-flex">
+              <input
+                type="text"
+                className="form-control me-2"
+                placeholder="Buscar ingredientes..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+              />
+              <button 
+                type="submit" 
+                className="btn btn-outline-primary me-2"
+                disabled={!searchInput.trim()}
+              >
+                <i className="bi bi-search"></i>
+              </button>
+              {searchTerm && (
+                <button 
+                  type="button" 
+                  className="btn btn-outline-secondary"
+                  onClick={handleClearSearch}
+                >
+                  <i className="bi bi-x-lg"></i>
+                </button>
+              )}
+            </form>
+          </div>
+          {searchTerm && (
+            <div className="col-md-6">
+              <div className="alert alert-info mb-0 py-2">
+                <small>Buscando: "{searchTerm}" - {totalItems} resultado(s) encontrado(s)</small>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

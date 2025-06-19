@@ -15,6 +15,7 @@ export const useABMData = (type: ABMType, reloadCategories?: () => Promise<void>
   const [totalItems, setTotalItems] = useState(0);
   const [hasNext, setHasNext] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState<string>('');
 
   const loadData = async () => {
     try {
@@ -56,7 +57,12 @@ export const useABMData = (type: ABMType, reloadCategories?: () => Promise<void>
           }
           break;
         case 'ingrediente':
-          const ingredientResponse = await ingredientService.getAll(offset, itemsPerPage);
+          let ingredientResponse;
+          if (searchTerm && searchTerm.trim() !== '') {
+            ingredientResponse = await ingredientService.search(searchTerm.trim(), offset, itemsPerPage);
+          } else {
+            ingredientResponse = await ingredientService.getAll(offset, itemsPerPage);
+          }
           setData(ingredientResponse.data);
           setTotalItems(ingredientResponse.total);
           setHasNext(ingredientResponse.hasNext);
@@ -165,7 +171,7 @@ export const useABMData = (type: ABMType, reloadCategories?: () => Promise<void>
 
   useEffect(() => {
     loadData();
-  }, [currentPage, type, filterType]);
+  }, [currentPage, type, filterType, searchTerm]);
 
   const handleDelete = async (id: number) => {
     if (window.confirm('¿Está seguro de que desea eliminar este registro?')) {
@@ -234,14 +240,27 @@ export const useABMData = (type: ABMType, reloadCategories?: () => Promise<void>
     }
   };
 
+  const handleSearch = (newSearchTerm: string) => {
+    setSearchTerm(newSearchTerm);
+    setCurrentPage(1); // Reset to first page when searching
+  };
+
+  const clearSearch = () => {
+    setSearchTerm('');
+    setCurrentPage(1);
+  };
+
   return {
     data,
     currentPage,
     totalItems,
     hasNext,
     error,
+    searchTerm,
     loadData,
     handleDelete,
+    handleSearch,
+    clearSearch,
     getTotalPages,
     handlePageChange,
     handleNextPage,
