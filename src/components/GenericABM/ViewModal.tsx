@@ -5,9 +5,10 @@ interface Column {
   field: string;
   headerName: string;
   width?: number;
-  type?: 'text' | 'number' | 'date' | 'select' | 'password';
+  type?: 'text' | 'number' | 'date' | 'select' | 'password' | 'calculated';
   options?: { value: string; label: string }[];
   createOnly?: boolean;
+  renderCell?: (item: any) => string;
 }
 
 interface ViewModalProps {
@@ -48,6 +49,7 @@ const ViewModal: React.FC<ViewModalProps> = ({
     column.field !== 'measurement_unit.name' &&
     column.field !== 'type_label' &&
     column.field !== 'password' && // Nunca mostrar contraseñas
+    column.type !== 'calculated' && // Campos calculados se muestran solo en tablas
     (type !== 'inventario' || (
       column.field !== 'description' && 
       column.field !== 'recipe' && 
@@ -357,6 +359,193 @@ const ViewModal: React.FC<ViewModalProps> = ({
                         </div>
                       </div>
                     )}
+                  </>
+                )}
+
+                {/* Promotion Items Information */}
+                {type === 'promotion' && (
+                  <>
+                    {/* Manufactured Items */}
+                    {viewItem.manufactured_item_details && viewItem.manufactured_item_details.length > 0 && (
+                      <div className="card mb-3">
+                        <div className="card-header">
+                          <h6 className="mb-0">
+                            <i className="bi bi-gear-fill me-2"></i>
+                            Productos Manufacturados Incluidos
+                          </h6>
+                        </div>
+                        <div className="card-body">
+                          <div className="table-responsive">
+                            <table className="table table-sm table-striped">
+                              <thead>
+                                <tr>
+                                  <th>Producto</th>
+                                  <th className="text-center">Cantidad</th>
+                                  <th className="text-center">Precio Unitario</th>
+                                  <th className="text-center">Subtotal</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {viewItem.manufactured_item_details.map((detail: any, index: number) => (
+                                  <tr key={index}>
+                                    <td>
+                                      <div className="d-flex align-items-center">
+                                        <i className="bi bi-gear me-2 text-primary"></i>
+                                        <div>
+                                          <div className="fw-bold">{detail.manufactured_item?.name || 'Producto desconocido'}</div>
+                                          {detail.manufactured_item?.description && (
+                                            <small className="text-muted">{detail.manufactured_item.description}</small>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </td>
+                                    <td className="text-center">
+                                      <span className="badge bg-primary">
+                                        {detail.quantity || 0}
+                                      </span>
+                                    </td>
+                                    <td className="text-center">
+                                      <span className="badge bg-success">
+                                        ${formatNumber(detail.manufactured_item?.price || 0, 2)}
+                                      </span>
+                                    </td>
+                                    <td className="text-center">
+                                      <span className="badge bg-warning">
+                                        ${formatNumber((detail.manufactured_item?.price || 0) * (detail.quantity || 0), 2)}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Inventory Items */}
+                    {viewItem.inventory_item_details && viewItem.inventory_item_details.length > 0 && (
+                      <div className="card mb-3">
+                        <div className="card-header">
+                          <h6 className="mb-0">
+                            <i className="bi bi-box-seam-fill me-2"></i>
+                            Productos de Inventario Incluidos
+                          </h6>
+                        </div>
+                        <div className="card-body">
+                          <div className="table-responsive">
+                            <table className="table table-sm table-striped">
+                              <thead>
+                                <tr>
+                                  <th>Producto</th>
+                                  <th className="text-center">Cantidad</th>
+                                  <th className="text-center">Precio Unitario</th>
+                                  <th className="text-center">Subtotal</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {viewItem.inventory_item_details.map((detail: any, index: number) => (
+                                  <tr key={index}>
+                                    <td>
+                                      <div className="d-flex align-items-center">
+                                        <i className="bi bi-box me-2 text-success"></i>
+                                        <div>
+                                          <div className="fw-bold">{detail.inventory_item?.name || 'Producto desconocido'}</div>
+                                          <small className="text-muted">
+                                            Stock: {detail.inventory_item?.current_stock || 0} {detail.inventory_item?.measurement_unit?.name || 'unidades'}
+                                          </small>
+                                        </div>
+                                      </div>
+                                    </td>
+                                    <td className="text-center">
+                                      <span className="badge bg-primary">
+                                        {detail.quantity || 0}
+                                      </span>
+                                    </td>
+                                    <td className="text-center">
+                                      <span className="badge bg-success">
+                                        ${formatNumber(detail.inventory_item?.price || 0, 2)}
+                                      </span>
+                                    </td>
+                                    <td className="text-center">
+                                      <span className="badge bg-warning">
+                                        ${formatNumber((detail.inventory_item?.price || 0) * (detail.quantity || 0), 2)}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Promotion Summary */}
+                    <div className="card mb-3">
+                      <div className="card-header">
+                        <h6 className="mb-0">
+                          <i className="bi bi-calculator me-2"></i>
+                          Resumen de la Promoción
+                        </h6>
+                      </div>
+                      <div className="card-body">
+                        <div className="row">
+                          <div className="col-md-6">
+                            <div className="d-flex justify-content-between align-items-center mb-2">
+                              <span className="text-muted">Precio sin descuento:</span>
+                              <span className="fw-bold">
+                                ${formatNumber(
+                                  ((viewItem.manufactured_item_details || []).reduce((total: number, detail: any) => 
+                                    total + ((detail.manufactured_item?.price || 0) * (detail.quantity || 0)), 0) +
+                                  (viewItem.inventory_item_details || []).reduce((total: number, detail: any) => 
+                                    total + ((detail.inventory_item?.price || 0) * (detail.quantity || 0)), 0)), 2
+                                )}
+                              </span>
+                            </div>
+                            <div className="d-flex justify-content-between align-items-center mb-2">
+                              <span className="text-muted">Descuento ({viewItem.discount_percentage || 0}%):</span>
+                              <span className="text-danger fw-bold">
+                                -${formatNumber(
+                                  ((viewItem.manufactured_item_details || []).reduce((total: number, detail: any) => 
+                                    total + ((detail.manufactured_item?.price || 0) * (detail.quantity || 0)), 0) +
+                                  (viewItem.inventory_item_details || []).reduce((total: number, detail: any) => 
+                                    total + ((detail.inventory_item?.price || 0) * (detail.quantity || 0)), 0)) *
+                                  (viewItem.discount_percentage || 0) / 100, 2
+                                )}
+                              </span>
+                            </div>
+                            <hr />
+                            <div className="d-flex justify-content-between align-items-center">
+                              <span className="fw-bold text-primary">Precio Final:</span>
+                              <span className="fw-bold text-primary fs-5">
+                                ${formatNumber(
+                                  ((viewItem.manufactured_item_details || []).reduce((total: number, detail: any) => 
+                                    total + ((detail.manufactured_item?.price || 0) * (detail.quantity || 0)), 0) +
+                                  (viewItem.inventory_item_details || []).reduce((total: number, detail: any) => 
+                                    total + ((detail.inventory_item?.price || 0) * (detail.quantity || 0)), 0)) *
+                                  (1 - (viewItem.discount_percentage || 0) / 100), 2
+                                )}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="col-md-6">
+                            <div className="d-flex justify-content-between align-items-center mb-2">
+                              <span className="text-muted">Estado:</span>
+                              <span className={`badge ${viewItem.active ? 'bg-success' : 'bg-danger'}`}>
+                                {viewItem.active ? 'Activa' : 'Inactiva'}
+                              </span>
+                            </div>
+                            <div className="d-flex justify-content-between align-items-center mb-2">
+                              <span className="text-muted">Disponibilidad:</span>
+                              <span className={`badge ${viewItem.is_available ? 'bg-success' : 'bg-warning'}`}>
+                                {viewItem.is_available ? 'Disponible' : 'No Disponible'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </>
                 )}
               </div>

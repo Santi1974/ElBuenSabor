@@ -4,9 +4,10 @@ interface Column {
   field: string;
   headerName: string;
   width?: number;
-  type?: 'text' | 'number' | 'date' | 'select' | 'password';
+  type?: 'text' | 'number' | 'date' | 'select' | 'password' | 'calculated';
   options?: { value: string; label: string }[];
   createOnly?: boolean;
+  renderCell?: (item: any) => string;
 }
 
 interface DataTableProps {
@@ -39,6 +40,10 @@ const DataTable: React.FC<DataTableProps> = ({
   const renderCellValue = (column: Column, item: any) => {
     if (column.type === 'password') {
       return '••••••••';
+    }
+    
+    if (column.type === 'calculated' && column.renderCell) {
+      return column.renderCell(item);
     }
     
     if (column.type === 'select' && column.options) {

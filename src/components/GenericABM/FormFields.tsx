@@ -6,9 +6,10 @@ interface Column {
   field: string;
   headerName: string;
   width?: number;
-  type?: 'text' | 'number' | 'date' | 'select' | 'password';
+  type?: 'text' | 'number' | 'date' | 'select' | 'password' | 'calculated';
   options?: { value: string; label: string }[];
   createOnly?: boolean;
+  renderCell?: (item: any) => string;
 }
 
 interface FormFieldsProps {
@@ -30,10 +31,13 @@ const FormFields: React.FC<FormFieldsProps> = ({
 }) => {
   const [passwordError, setPasswordError] = useState('');
 
-  // Filter out createOnly fields when editing
+  // Filter out createOnly fields when editing and calculated fields (they don't belong in forms)
   const filteredColumns = columns.filter(column => {
     if (isEditing && column.createOnly) {
       return false;
+    }
+    if (column.type === 'calculated') {
+      return false; // Calculated fields should not appear in forms
     }
     return true;
   });

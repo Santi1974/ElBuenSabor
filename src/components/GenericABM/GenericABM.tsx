@@ -21,8 +21,9 @@ interface GenericABMProps {
     field: string;
     headerName: string;
     width?: number;
-    type?: 'text' | 'number' | 'date' | 'select' | 'password';
+    type?: 'text' | 'number' | 'date' | 'select' | 'password' | 'calculated';
     options?: { value: string; label: string }[];
+    renderCell?: (item: any) => string;
   }[];
   type?: ABMType;
   onViewOrders?: (item: any) => void;
