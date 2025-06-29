@@ -120,15 +120,21 @@ const Orders = () => {
         limit: itemsPerPage.toString()
       });
       
-      if (searchTerm) {
-        params.append('search', searchTerm);
-      }
-      
+      // Agregar filtros de status
       if (activeFilters.length > 0) {
         params.append('status', activeFilters.join(','));
       }
       
-      const response = await api.get(`/order/user/token?${params.toString()}`);
+      let response;
+      
+      // Si hay término de búsqueda, usar el endpoint de búsqueda
+      if (searchTerm) {
+        params.append('search_term', searchTerm);
+        response = await api.get(`/order/all/search?${params.toString()}`);
+      } else {
+        // Si no hay búsqueda, usar el endpoint normal
+        response = await api.get(`/order/user/token?${params.toString()}`);
+      }
       
       if (response.data && response.data.items !== undefined) {
         setOrders(response.data.items);

@@ -168,6 +168,9 @@ const Home = () => {
     if (!product?.id_key || !isAuthenticated || isPromotion(product)) {
       return;
     }
+    if (isInventoryProduct(product) && (product.current_stock ?? 0) <= 0) {
+      return;
+    }
     const productType = isManufacturedItem(product) ? 'manufactured' : 'inventory';
     navigate(`/product/${product.id_key}?type=${productType}`);
   };
