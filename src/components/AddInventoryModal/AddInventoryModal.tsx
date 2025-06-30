@@ -259,15 +259,15 @@ const AddInventoryModal: React.FC<AddInventoryModalProps> = ({
                   <strong>Cantidad a {quantity < 0 ? 'Restar' : 'Agregar'}</strong>
                 </label>
                 <div className="input-group">
-                  <input
-                    type="number"
-                    className="form-control"
-                    step="0.01"
-                    value={quantity}
-                    onChange={(e) => setQuantity(parseFloat(e.target.value) || 0)}
-                    placeholder="Ingrese la cantidad (+ para agregar, - para restar)..."
-                    required
-                  />
+                                      <input
+                      type="number"
+                      className="form-control"
+                      step="0.001"
+                      value={quantity}
+                      onChange={(e) => setQuantity(parseFloat(e.target.value) || 0)}
+                      placeholder="Ingrese la cantidad (+ para agregar, - para restar)..."
+                      required
+                    />
                   {selectedItem?.measurement_unit && (
                     <span className="input-group-text">
                       {selectedItem.measurement_unit.name}
@@ -293,7 +293,7 @@ const AddInventoryModal: React.FC<AddInventoryModalProps> = ({
                     type="number"
                     className="form-control"
                     min="0"
-                    step="0.01"
+                    step="0.001"
                     value={quantity < 0 ? 0 : unitCost}
                     onChange={(e) => setUnitCost(parseFloat(e.target.value) || 0)}
                     placeholder="0.00"

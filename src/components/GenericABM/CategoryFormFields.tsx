@@ -284,7 +284,7 @@ const CategoryFormFields: React.FC<CategoryFormFieldsProps> = ({
                 type="number"
                 className="form-control"
                 min="0"
-                step="0.01"
+                step="0.001"
                 value={formData.current_stock || 0}
                 onChange={(e) => onInputChange('current_stock', parseFloat(e.target.value) || 0)}
                 placeholder="Stock inicial del ingrediente..."

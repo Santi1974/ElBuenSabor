@@ -127,7 +127,7 @@ const PromotionFormFields: React.FC<PromotionFormFieldsProps> = ({
             className="form-control"
             min="0"
             max="100"
-            step="0.01"
+            step="0.001"
             value={formData.discount_percentage || ''}
             onChange={(e) => onInputChange('discount_percentage', parseFloat(e.target.value) || 0)}
             placeholder="0.00"
