@@ -381,41 +381,61 @@ const ViewModal: React.FC<ViewModalProps> = ({
                                 <tr>
                                   <th>Producto</th>
                                   <th className="text-center">Cantidad</th>
-                                  <th className="text-center">Precio Unitario</th>
-                                  <th className="text-center">Subtotal</th>
+                                  <th className="text-center">Precio Original</th>
+                                  <th className="text-center">Precio con Descuento</th>
+                                  <th className="text-center">Subtotal Original</th>
+                                  <th className="text-center">Subtotal con Descuento</th>
                                 </tr>
                               </thead>
                               <tbody>
-                                {viewItem.manufactured_item_details.map((detail: any, index: number) => (
-                                  <tr key={index}>
-                                    <td>
-                                      <div className="d-flex align-items-center">
-                                        <i className="bi bi-gear me-2 text-primary"></i>
-                                        <div>
-                                          <div className="fw-bold">{detail.manufactured_item?.name || 'Producto desconocido'}</div>
-                                          {detail.manufactured_item?.description && (
-                                            <small className="text-muted">{detail.manufactured_item.description}</small>
-                                          )}
+                                {viewItem.manufactured_item_details.map((detail: any, index: number) => {
+                                  const originalPrice = detail.manufactured_item?.price || 0;
+                                  const discountedPrice = originalPrice * (1 - (viewItem.discount_percentage || 0) / 100);
+                                  const quantity = detail.quantity || 0;
+                                  const originalSubtotal = originalPrice * quantity;
+                                  const discountedSubtotal = discountedPrice * quantity;
+                                  
+                                  return (
+                                    <tr key={index}>
+                                      <td>
+                                        <div className="d-flex align-items-center">
+                                          <i className="bi bi-gear me-2 text-primary"></i>
+                                          <div>
+                                            <div className="fw-bold">{detail.manufactured_item?.name || 'Producto desconocido'}</div>
+                                            {detail.manufactured_item?.description && (
+                                              <small className="text-muted">{detail.manufactured_item.description}</small>
+                                            )}
+                                          </div>
                                         </div>
-                                      </div>
-                                    </td>
-                                    <td className="text-center">
-                                      <span className="badge bg-primary">
-                                        {detail.quantity || 0}
-                                      </span>
-                                    </td>
-                                    <td className="text-center">
-                                      <span className="badge bg-success">
-                                        ${formatNumber(detail.manufactured_item?.price || 0, 2)}
-                                      </span>
-                                    </td>
-                                    <td className="text-center">
-                                      <span className="badge bg-warning">
-                                        ${formatNumber((detail.manufactured_item?.price || 0) * (detail.quantity || 0), 2)}
-                                      </span>
-                                    </td>
-                                  </tr>
-                                ))}
+                                      </td>
+                                      <td className="text-center">
+                                        <span className="badge bg-primary">
+                                          {quantity}
+                                        </span>
+                                      </td>
+                                      <td className="text-center">
+                                        <span className="badge bg-secondary text-decoration-line-through">
+                                          ${formatNumber(originalPrice, 2)}
+                                        </span>
+                                      </td>
+                                      <td className="text-center">
+                                        <span className="badge bg-success">
+                                          ${formatNumber(discountedPrice, 2)}
+                                        </span>
+                                      </td>
+                                      <td className="text-center">
+                                        <span className="badge bg-secondary text-decoration-line-through">
+                                          ${formatNumber(originalSubtotal, 2)}
+                                        </span>
+                                      </td>
+                                      <td className="text-center">
+                                        <span className="badge bg-warning">
+                                          ${formatNumber(discountedSubtotal, 2)}
+                                        </span>
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
                               </tbody>
                             </table>
                           </div>
@@ -439,41 +459,61 @@ const ViewModal: React.FC<ViewModalProps> = ({
                                 <tr>
                                   <th>Producto</th>
                                   <th className="text-center">Cantidad</th>
-                                  <th className="text-center">Precio Unitario</th>
-                                  <th className="text-center">Subtotal</th>
+                                  <th className="text-center">Precio Original</th>
+                                  <th className="text-center">Precio con Descuento</th>
+                                  <th className="text-center">Subtotal Original</th>
+                                  <th className="text-center">Subtotal con Descuento</th>
                                 </tr>
                               </thead>
                               <tbody>
-                                {viewItem.inventory_item_details.map((detail: any, index: number) => (
-                                  <tr key={index}>
-                                    <td>
-                                      <div className="d-flex align-items-center">
-                                        <i className="bi bi-box me-2 text-success"></i>
-                                        <div>
-                                          <div className="fw-bold">{detail.inventory_item?.name || 'Producto desconocido'}</div>
-                                          <small className="text-muted">
-                                            Stock: {detail.inventory_item?.current_stock || 0} {detail.inventory_item?.measurement_unit?.name || 'unidades'}
-                                          </small>
+                                {viewItem.inventory_item_details.map((detail: any, index: number) => {
+                                  const originalPrice = detail.inventory_item?.price || 0;
+                                  const discountedPrice = originalPrice * (1 - (viewItem.discount_percentage || 0) / 100);
+                                  const quantity = detail.quantity || 0;
+                                  const originalSubtotal = originalPrice * quantity;
+                                  const discountedSubtotal = discountedPrice * quantity;
+                                  
+                                  return (
+                                    <tr key={index}>
+                                      <td>
+                                        <div className="d-flex align-items-center">
+                                          <i className="bi bi-box me-2 text-success"></i>
+                                          <div>
+                                            <div className="fw-bold">{detail.inventory_item?.name || 'Producto desconocido'}</div>
+                                            <small className="text-muted">
+                                              Stock: {detail.inventory_item?.current_stock || 0} {detail.inventory_item?.measurement_unit?.name || 'unidades'}
+                                            </small>
+                                          </div>
                                         </div>
-                                      </div>
-                                    </td>
-                                    <td className="text-center">
-                                      <span className="badge bg-primary">
-                                        {detail.quantity || 0}
-                                      </span>
-                                    </td>
-                                    <td className="text-center">
-                                      <span className="badge bg-success">
-                                        ${formatNumber(detail.inventory_item?.price || 0, 2)}
-                                      </span>
-                                    </td>
-                                    <td className="text-center">
-                                      <span className="badge bg-warning">
-                                        ${formatNumber((detail.inventory_item?.price || 0) * (detail.quantity || 0), 2)}
-                                      </span>
-                                    </td>
-                                  </tr>
-                                ))}
+                                      </td>
+                                      <td className="text-center">
+                                        <span className="badge bg-primary">
+                                          {quantity}
+                                        </span>
+                                      </td>
+                                      <td className="text-center">
+                                        <span className="badge bg-secondary text-decoration-line-through">
+                                          ${formatNumber(originalPrice, 2)}
+                                        </span>
+                                      </td>
+                                      <td className="text-center">
+                                        <span className="badge bg-success">
+                                          ${formatNumber(discountedPrice, 2)}
+                                        </span>
+                                      </td>
+                                      <td className="text-center">
+                                        <span className="badge bg-secondary text-decoration-line-through">
+                                          ${formatNumber(originalSubtotal, 2)}
+                                        </span>
+                                      </td>
+                                      <td className="text-center">
+                                        <span className="badge bg-warning">
+                                          ${formatNumber(discountedSubtotal, 2)}
+                                        </span>
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
                               </tbody>
                             </table>
                           </div>
